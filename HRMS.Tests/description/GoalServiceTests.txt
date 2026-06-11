@@ -1,0 +1,15 @@
+✅ AddGoal Success
+✅ Manager Not Found
+✅ Employee Not In Team
+✅ Past Target Date
+
+✅ GetGoals Success
+✅ GetGoals Manager Not Found
+
+✅ GetEmployeeGoals Success
+✅ GetEmployeeGoals Manager Not Found
+
+✅ UpdateGoalStatus Success
+✅ Goal Not Found
+✅ Unauthorized
+✅ Invalid Status

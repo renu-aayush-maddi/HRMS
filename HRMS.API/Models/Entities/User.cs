@@ -1,0 +1,27 @@
+﻿using System;
+using System.Collections.Generic;
+
+namespace HRMS.API.Models.Entities;
+
+public partial class User
+{
+    public Guid Id { get; set; }
+
+    public string Email { get; set; } = null!;
+
+    public string PasswordHash { get; set; } = null!;
+
+    public bool? IsActive { get; set; }
+
+    public DateTime? CreatedAt { get; set; }
+
+    public virtual Employee? Employee { get; set; }
+
+    public virtual ICollection<EmployeeDocument> EmployeeDocuments { get; set; } = new List<EmployeeDocument>();
+
+    public virtual ICollection<Notification> Notifications { get; set; } = new List<Notification>();
+
+    public virtual ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
+
+    public virtual ICollection<Role> Roles { get; set; } = new List<Role>();
+}
