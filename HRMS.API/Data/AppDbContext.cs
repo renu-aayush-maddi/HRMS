@@ -22,6 +22,8 @@ public partial class AppDbContext : DbContext
 
     public virtual DbSet<Bonuse> Bonuses { get; set; }
 
+    public virtual DbSet<Deduction> Deductions { get; set; }
+
     public virtual DbSet<Department> Departments { get; set; }
 
     public virtual DbSet<Employee> Employees { get; set; }
@@ -171,6 +173,38 @@ public partial class AppDbContext : DbContext
             entity.HasOne(d => d.Employee).WithMany(p => p.Bonuses)
                 .HasForeignKey(d => d.EmployeeId)
                 .HasConstraintName("bonuses_employee_id_fkey");
+        });
+
+        modelBuilder.Entity<Deduction>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("deductions_pkey");
+
+            entity.ToTable("deductions");
+
+            entity.Property(e => e.Id)
+                .HasDefaultValueSql("uuid_generate_v4()")
+                .HasColumnName("id");
+            entity.Property(e => e.Amount)
+                .HasPrecision(12, 2)
+                .HasColumnName("amount");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnType("timestamp without time zone")
+                .HasColumnName("created_at");
+            entity.Property(e => e.DeductionMonth).HasColumnName("deduction_month");
+            entity.Property(e => e.DeductionYear).HasColumnName("deduction_year");
+            entity.Property(e => e.EmployeeId).HasColumnName("employee_id");
+            entity.Property(e => e.Reason)
+                .HasMaxLength(200)
+                .HasColumnName("reason");
+            entity.Property(e => e.Status)
+                .HasMaxLength(30)
+                .HasDefaultValueSql("'Pending'::character varying")
+                .HasColumnName("status");
+
+            entity.HasOne(d => d.Employee).WithMany(p => p.Deductions)
+                .HasForeignKey(d => d.EmployeeId)
+                .HasConstraintName("deductions_employee_id_fkey");
         });
 
         modelBuilder.Entity<Department>(entity =>

@@ -172,8 +172,13 @@ builder.Services.AddScoped<IEmployeeSalaryRepository,EmployeeSalaryRepository>()
 builder.Services.AddScoped<IEmployeeSalaryService,EmployeeSalaryService>();
 
 builder.Services.AddScoped<IBonusRepository,BonusRepository>();
-
 builder.Services.AddScoped<IBonusService,BonusService>();
+
+
+builder.Services.AddScoped<IDeductionRepository,DeductionRepository>();
+
+builder.Services.AddScoped<IDeductionService,DeductionService>();
+
 
 builder.Services.AddAuthentication(options =>
 {

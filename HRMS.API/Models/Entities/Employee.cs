@@ -41,6 +41,8 @@ public partial class Employee
 
     public virtual ICollection<Bonuse> Bonuses { get; set; } = new List<Bonuse>();
 
+    public virtual ICollection<Deduction> Deductions { get; set; } = new List<Deduction>();
+
     public virtual Department? Department { get; set; }
 
     public virtual ICollection<EmployeeAddress> EmployeeAddresses { get; set; } = new List<EmployeeAddress>();
