@@ -85,4 +85,19 @@ public class PayrollController : ControllerBase
             payrollService
                 .GetMyPayrolls(userId));
     }
+
+
+    [Authorize(Roles = "Admin,HR")]
+    [HttpPost("generate-monthly")]
+    public IActionResult GenerateMonthlyPayroll(
+        GenerateMonthlyPayrollDto dto)
+    {
+        return Ok(
+            payrollService
+                .GenerateMonthlyPayroll(
+                    dto));
+    }
+
+
+    
 }

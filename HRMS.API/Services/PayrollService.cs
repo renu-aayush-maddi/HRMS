@@ -4,21 +4,28 @@ using HRMS.API.Models.Entities;
 
 namespace HRMS.API.Services;
 
-public class PayrollService : IPayrollService
-{
-    private readonly IPayrollRepository payrollRepository;
-    private readonly INotificationService notificationService;
-
-    public PayrollService(IPayrollRepository payrollRepository, INotificationService notificationService)
+    public class PayrollService : IPayrollService
     {
-        this.payrollRepository = payrollRepository;
-        this.notificationService = notificationService;
-    }
+        private readonly IPayrollRepository payrollRepository;
+        private readonly INotificationService notificationService;
+
+        public PayrollService(IPayrollRepository payrollRepository, INotificationService notificationService)
+        {
+            this.payrollRepository = payrollRepository;
+            this.notificationService = notificationService;
+        }
 
     public void GeneratePayroll(GeneratePayrollDto dto)
     {
-        var employee =
-            payrollRepository.GetEmployee(dto.EmployeeId);
+
+        var existingPayroll = payrollRepository.GetPayroll(dto.EmployeeId,dto.PayMonth,dto.PayYear);
+
+        if (existingPayroll != null)
+        {
+            throw new Exception(
+                "Payroll already generated");
+        }
+        var employee = payrollRepository.GetEmployee(dto.EmployeeId);
 
         if (employee == null)
         {
@@ -105,13 +112,27 @@ public class PayrollService : IPayrollService
         decimal lopDeduction =
             perDaySalary * lopDays;
 
+        decimal approvedBonus =
+            payrollRepository
+                .GetApprovedBonusAmount(
+                    dto.EmployeeId,
+                    dto.PayMonth,
+                    dto.PayYear);
+
+        decimal approvedDeduction =
+            payrollRepository
+                .GetApprovedDeductionAmount(
+                    dto.EmployeeId,
+                    dto.PayMonth,
+                    dto.PayYear);
+
         decimal totalDeductions =
-            dto.Deductions +
+            approvedDeduction +
             lopDeduction;
 
         decimal netSalary =
             monthlySalary +
-            dto.Bonus -
+            approvedBonus -
             totalDeductions;
 
         Payroll payroll = new Payroll
@@ -141,24 +162,52 @@ public class PayrollService : IPayrollService
             TravelAllowanceComponent =
                 travelAllowanceComponent,
 
-            Bonus = dto.Bonus,
+            Bonus =
+                approvedBonus,
 
-            Deductions = totalDeductions,
+            Deductions =
+                totalDeductions,
 
-            NetSalary = netSalary,
+            NetSalary =
+                netSalary,
 
-            WorkingDays = workingDays,
+            WorkingDays =
+                workingDays,
 
-            PresentDays = presentDays,
+            PresentDays =
+                presentDays,
 
-            LopDays = lopDays,
+            LopDays =
+                lopDays,
 
-            LopDeduction = lopDeduction,
+            LopDeduction =
+                lopDeduction,
 
-            Status = "Generated"
+            Status =
+                "Generated"
         };
 
         payrollRepository.AddPayroll(payroll);
+
+        var bonuses =payrollRepository.GetApprovedBonuses(
+            dto.EmployeeId,
+            dto.PayMonth,
+            dto.PayYear);
+
+        foreach (var bonus in bonuses)
+        {
+            bonus.IsProcessed = true;
+        }
+
+        var deductions = payrollRepository.GetApprovedDeductions(
+                    dto.EmployeeId,
+                    dto.PayMonth,
+                    dto.PayYear);
+
+        foreach (var deduction in deductions)
+        {
+            deduction.IsProcessed = true;
+        }
 
         payrollRepository.SaveChanges();
 
@@ -374,4 +423,52 @@ public class PayrollService : IPayrollService
             })
             .ToList();
     }
+
+
+
+    public BulkPayrollResponseDto
+    GenerateMonthlyPayroll(
+        GenerateMonthlyPayrollDto dto)
+{
+    var employees =
+        payrollRepository
+            .GetActiveEmployees();
+
+    BulkPayrollResponseDto result =
+        new()
+        {
+            TotalEmployees =
+                employees.Count
+        };
+
+    foreach (var employee in employees)
+    {
+        try
+        {
+            GeneratePayroll(
+                new GeneratePayrollDto
+                {
+                    EmployeeId =
+                        employee.Id,
+
+                    PayMonth =
+                        dto.PayMonth,
+
+                    PayYear =
+                        dto.PayYear
+                });
+
+            result.SuccessCount++;
+        }
+        catch (Exception ex)
+        {
+            result.FailedCount++;
+
+            result.Errors.Add(
+                $"{employee.EmployeeCode} : {ex.Message}");
+        }
+    }
+
+    return result;
+}
 }

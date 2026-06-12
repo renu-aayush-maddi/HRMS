@@ -168,11 +168,11 @@ public class PayrollRepository : IPayrollRepository
             });
     }
 
-
     public Payroll? GetPayrollById(Guid payrollId)
     {
         return context.Payrolls
             .Include(p => p.Employee)
+            .ThenInclude(e => e.Department)
             .FirstOrDefault(p => p.Id == payrollId);
     }
 
@@ -200,6 +200,73 @@ public class PayrollRepository : IPayrollRepository
                 x.IsActive == true);
     }
 
+
+    public decimal GetApprovedBonusAmount(Guid employeeId,int month,int year)
+    {
+        return context.Bonuses
+            .Where(x =>
+                x.EmployeeId == employeeId &&
+                x.BonusMonth == month &&
+                x.BonusYear == year &&
+                x.Status == "Approved"
+                && x.IsProcessed == false)
+            .Sum(x => (decimal?)x.Amount) ?? 0;
+    }
+
+
+    public decimal GetApprovedDeductionAmount(Guid employeeId,int month,int year)
+    {
+        return context.Deductions
+            .Where(x =>
+                x.EmployeeId == employeeId &&
+                x.DeductionMonth == month &&
+                x.DeductionYear == year &&
+                x.Status == "Approved"&&
+                x.IsProcessed == false)
+            .Sum(x => (decimal?)x.Amount) ?? 0;
+    }
+
+
+    public List<Employee> GetActiveEmployees()
+    {
+        return context.Employees
+            .Where(x =>
+                x.EmploymentStatus == "Active")
+            .ToList();
+    }
+
+    public Payroll? GetPayroll(Guid employeeId,int month,int year)
+    {
+        return context.Payrolls
+            .FirstOrDefault(x =>
+                x.EmployeeId == employeeId &&
+                x.PayMonth == month &&
+                x.PayYear == year);
+    }
+
+    public List<Bonuse> GetApprovedBonuses(Guid employeeId,int month,int year)
+    {
+        return context.Bonuses
+            .Where(x =>
+                x.EmployeeId == employeeId &&
+                x.BonusMonth == month &&
+                x.BonusYear == year &&
+                x.Status == "Approved" &&
+                x.IsProcessed == false)
+            .ToList();
+    }
+
+    public List<Deduction> GetApprovedDeductions(Guid employeeId,int month,int year)
+    {
+        return context.Deductions
+            .Where(x =>
+                x.EmployeeId == employeeId &&
+                x.DeductionMonth == month &&
+                x.DeductionYear == year &&
+                x.Status == "Approved" &&
+                x.IsProcessed == false)
+            .ToList();
+    }
 
 
 }

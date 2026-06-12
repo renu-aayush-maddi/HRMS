@@ -15,4 +15,7 @@ public interface IPayrollService
     void MarkPayrollPaid(Guid payrollId);
 
     List<PayrollResponseDto> GetMyPayrolls(Guid userId);
+
+    BulkPayrollResponseDto GenerateMonthlyPayroll(GenerateMonthlyPayrollDto dto);
+
 }

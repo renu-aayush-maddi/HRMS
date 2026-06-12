@@ -176,8 +176,9 @@ builder.Services.AddScoped<IBonusService,BonusService>();
 
 
 builder.Services.AddScoped<IDeductionRepository,DeductionRepository>();
-
 builder.Services.AddScoped<IDeductionService,DeductionService>();
+
+builder.Services.AddScoped<IPayslipService,PayslipService>();
 
 
 builder.Services.AddAuthentication(options =>
@@ -213,6 +214,8 @@ builder.Services.AddAuthentication(options =>
                         builder.Configuration["Jwt:Key"]!))
         };
 });
+
+QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
 
 var app = builder.Build();
 

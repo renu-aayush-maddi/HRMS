@@ -21,5 +21,7 @@ public partial class Deduction
 
     public DateTime? CreatedAt { get; set; }
 
+    public bool? IsProcessed { get; set; }
+
     public virtual Employee Employee { get; set; } = null!;
 }

@@ -162,6 +162,9 @@ public partial class AppDbContext : DbContext
                 .HasColumnType("timestamp without time zone")
                 .HasColumnName("created_at");
             entity.Property(e => e.EmployeeId).HasColumnName("employee_id");
+            entity.Property(e => e.IsProcessed)
+                .HasDefaultValue(false)
+                .HasColumnName("is_processed");
             entity.Property(e => e.Reason)
                 .HasMaxLength(200)
                 .HasColumnName("reason");
@@ -194,6 +197,9 @@ public partial class AppDbContext : DbContext
             entity.Property(e => e.DeductionMonth).HasColumnName("deduction_month");
             entity.Property(e => e.DeductionYear).HasColumnName("deduction_year");
             entity.Property(e => e.EmployeeId).HasColumnName("employee_id");
+            entity.Property(e => e.IsProcessed)
+                .HasDefaultValue(false)
+                .HasColumnName("is_processed");
             entity.Property(e => e.Reason)
                 .HasMaxLength(200)
                 .HasColumnName("reason");
