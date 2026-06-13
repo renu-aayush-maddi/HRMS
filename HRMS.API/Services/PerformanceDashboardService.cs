@@ -2,7 +2,6 @@ using HRMS.API.Exceptions;
 using HRMS.API.Interfaces;
 using HRMS.API.Models.DTOs.Dashboard;
 
-
 namespace HRMS.API.Services;
 
 public class PerformanceDashboardService
@@ -20,7 +19,8 @@ public class PerformanceDashboardService
 
     public ManagerDashboardDto
         GetManagerDashboard(
-            Guid managerUserId)
+            Guid managerUserId,
+            Guid cycleId)
     {
         var manager =
             repository.GetEmployeeByUserId(
@@ -58,38 +58,49 @@ public class PerformanceDashboardService
 
             AverageRating =
                 repository.GetAverageRating(
-                    manager.Id),
+                    manager.Id,
+                    cycleId),
 
             TopPerformer =
                 repository.GetTopPerformer(
-                    manager.Id)
+                    manager.Id,
+                    cycleId)
                 ?? "N/A"
         };
     }
-    public HrDashboardDto GetHrDashboard()
-{
-    return new HrDashboardDto
+
+    public HrDashboardDto
+        GetHrDashboard(
+            Guid cycleId)
     {
-        TotalEmployees =
-            repository.GetTotalEmployees(),
+        return new HrDashboardDto
+        {
+            TotalEmployees =
+                repository.GetTotalEmployees(),
 
-        TotalReviews =
-            repository.GetTotalReviews(),
+            TotalReviews =
+                repository.GetTotalReviews(
+                    cycleId),
 
-        AverageRating =
-            repository.GetCompanyAverageRating(),
+            AverageRating =
+                repository.GetCompanyAverageRating(
+                    cycleId),
 
-        ReviewCompletionPercentage =
-            repository.GetReviewCompletionPercentage(),
+            ReviewCompletionPercentage =
+                repository.GetReviewCompletionPercentage(
+                    cycleId),
 
-        TopPerformers =
-            repository.GetTopPerformers(),
+            TopPerformers =
+                repository.GetTopPerformers(
+                    cycleId),
 
-        LowestPerformers =
-            repository.GetLowestPerformers(),
+            LowestPerformers =
+                repository.GetLowestPerformers(
+                    cycleId),
 
-        DepartmentRatings =
-            repository.GetDepartmentRatings()
-    };
-}
+            DepartmentRatings =
+                repository.GetDepartmentRatings(
+                    cycleId)
+        };
+    }
 }

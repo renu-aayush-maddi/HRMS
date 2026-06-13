@@ -23,7 +23,8 @@ public class PerformanceDashboardController
 
     [Authorize(Roles = "Manager")]
     [HttpGet("manager")]
-    public IActionResult GetManagerDashboard()
+    public IActionResult GetManagerDashboard(
+        [FromQuery] Guid cycleId)
     {
         var managerUserId =
             Guid.Parse(
@@ -33,14 +34,17 @@ public class PerformanceDashboardController
 
         return Ok(
             service.GetManagerDashboard(
-                managerUserId));
+                managerUserId,
+                cycleId));
     }
 
     [Authorize(Roles = "Admin,HR")]
     [HttpGet("hr")]
-    public IActionResult GetHrDashboard()
+    public IActionResult GetHrDashboard(
+        [FromQuery] Guid cycleId)
     {
         return Ok(
-            service.GetHrDashboard());
+            service.GetHrDashboard(
+                cycleId));
     }
 }

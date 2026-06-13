@@ -13,25 +13,33 @@ public interface IPerformanceDashboardRepository
 
     int GetCompletedGoals(Guid managerId);
 
-    decimal GetAverageRating(Guid managerId);
+    decimal GetAverageRating(Guid managerId,Guid cycleId);
 
-    string? GetTopPerformer(Guid managerId);
+    string? GetTopPerformer(Guid managerId,Guid cycleId);
 
 
 
     int GetTotalEmployees();
 
-    int GetTotalReviews();
+int GetTotalReviews(
+    Guid cycleId);
 
-    decimal GetCompanyAverageRating();
+decimal GetCompanyAverageRating(
+    Guid cycleId);
 
-    decimal GetReviewCompletionPercentage();
+decimal GetReviewCompletionPercentage(
+    Guid cycleId);
 
-    List<EmployeePerformanceDto> GetTopPerformers();
+List<EmployeePerformanceDto>
+    GetTopPerformers(
+        Guid cycleId);
 
-    List<EmployeePerformanceDto> GetLowestPerformers();
+List<EmployeePerformanceDto>
+    GetLowestPerformers(
+        Guid cycleId);
 
-    List<DepartmentRatingDto> GetDepartmentRatings();
-
+List<DepartmentRatingDto>
+    GetDepartmentRatings(
+        Guid cycleId);
     
 }
