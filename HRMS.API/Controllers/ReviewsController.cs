@@ -2,6 +2,7 @@ using HRMS.API.Interfaces;
 using HRMS.API.Models.DTOs.Review;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace HRMS.API.Controllers;
 
@@ -20,13 +21,15 @@ public class ReviewsController : ControllerBase
 
     [Authorize(Roles = "Admin,HR,Manager")]
     [HttpPost]
-    public IActionResult AddReview(
-        AddReviewDto dto)
+    public IActionResult AddReview(AddReviewDto dto)
     {
-        reviewService.AddReview(dto);
+        var reviewerUserId = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+
+        reviewService.AddReview(reviewerUserId,dto);
 
         return Ok("Review Added Successfully");
     }
+
 
     [Authorize(Roles = "Admin,HR")]
     [HttpGet]

@@ -13,4 +13,8 @@ public interface IGoalService
     List<GoalResponseDto> GetEmployeeGoals(Guid managerUserId,Guid employeeId);
 
     void UpdateGoalStatus(Guid managerUserId,Guid goalId,UpdateGoalStatusDto dto);
+
+    List<GoalResponseDto> GetMyGoals(Guid employeeUserId);
+
+    void UpdateMyGoalStatus(Guid employeeUserId,Guid goalId,UpdateGoalStatusDto dto);
 }

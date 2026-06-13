@@ -180,6 +180,20 @@ builder.Services.AddScoped<IDeductionService,DeductionService>();
 
 builder.Services.AddScoped<IPayslipService,PayslipService>();
 
+builder.Services.AddScoped<IPerformanceDashboardRepository,PerformanceDashboardRepository>();
+builder.Services.AddScoped<IPerformanceDashboardService,PerformanceDashboardService>();
+
+
+builder.Services.AddScoped<IPerformanceBonusRuleRepository,PerformanceBonusRuleRepository>();
+builder.Services.AddScoped<IPerformanceBonusRuleService,PerformanceBonusRuleService>();
+
+builder.Services.AddScoped<IPerformanceBonusRecommendationService,PerformanceBonusRecommendationService>();
+builder.Services.AddScoped<IPerformanceBonusRecommendationRepository,PerformanceBonusRecommendationRepository>();
+
+
+builder.Services.AddScoped<IPerformanceCycleRepository,PerformanceCycleRepository>();
+
+builder.Services.AddScoped<IPerformanceCycleService,PerformanceCycleService>();
 
 builder.Services.AddAuthentication(options =>
 {

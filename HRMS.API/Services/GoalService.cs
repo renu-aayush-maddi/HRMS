@@ -188,4 +188,94 @@ public class GoalService : IGoalService
 
         repository.SaveChanges();
     }
+
+
+    public List<GoalResponseDto> GetMyGoals(
+    Guid employeeUserId)
+{
+    var employee =
+        repository
+        .GetEmployeeByUserId(
+            employeeUserId);
+
+    if (employee == null)
+    {
+        throw new NotFoundException(
+            "Employee not found");
+    }
+
+    return repository
+        .GetGoalsByEmployee(
+            employee.Id)
+        .Select(g =>
+            new GoalResponseDto
+            {
+                Id = g.Id,
+
+                EmployeeName =
+                    employee.FirstName +
+                    " " +
+                    employee.LastName,
+
+                Title = g.Title,
+
+                Description =
+                    g.Description ?? "",
+
+                TargetDate =
+                    g.TargetDate,
+
+                Status =
+                    g.Status ?? ""
+            })
+        .ToList();
+}
+
+public void UpdateMyGoalStatus(
+    Guid employeeUserId,
+    Guid goalId,
+    UpdateGoalStatusDto dto)
+{
+    var employee =
+        repository
+        .GetEmployeeByUserId(
+            employeeUserId);
+
+    if (employee == null)
+    {
+        throw new NotFoundException(
+            "Employee not found");
+    }
+
+    var goal =
+        repository.GetEmployeeGoal(
+            goalId,
+            employee.Id);
+
+    if (goal == null)
+    {
+        throw new NotFoundException(
+            "Goal not found");
+    }
+
+    string[] validStatuses =
+    {
+        "Assigned",
+        "InProgress",
+        "Completed"
+    };
+
+    if (!validStatuses.Contains(
+        dto.Status))
+    {
+        throw new BusinessException(
+            "Invalid status");
+    }
+
+    goal.Status = dto.Status;
+
+    repository.UpdateGoal(goal);
+
+    repository.SaveChanges();
+}
 }

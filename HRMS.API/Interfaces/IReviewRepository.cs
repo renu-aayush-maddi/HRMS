@@ -14,4 +14,10 @@ public interface IReviewRepository
     void AddReview(PerformanceReview review);
 
     void SaveChanges();
+
+    Employee? GetEmployeeByUserId(Guid userId);
+
+    PerformanceCycle? GetCycle(Guid cycleId);
+
+    
 }

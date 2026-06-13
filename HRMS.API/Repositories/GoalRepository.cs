@@ -188,4 +188,28 @@ public class GoalRepository : IGoalRepository
     {
         context.SaveChanges();
     }
+
+
+
+    public List<EmployeeGoal> GetGoalsByEmployee(
+        Guid employeeId)
+    {
+        return context.EmployeeGoals
+            .Include(g => g.Employee)
+            .Where(g =>
+                g.EmployeeId == employeeId)
+            .ToList();
+    }
+
+    public EmployeeGoal? GetEmployeeGoal(
+        Guid goalId,
+        Guid employeeId)
+    {
+        return context.EmployeeGoals
+            .Include(g => g.Employee)
+            .FirstOrDefault(g =>
+                g.Id == goalId
+                &&
+                g.EmployeeId == employeeId);
+    }
 }

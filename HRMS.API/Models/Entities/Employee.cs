@@ -73,6 +73,8 @@ public partial class Employee
 
     public virtual ICollection<Payroll> Payrolls { get; set; } = new List<Payroll>();
 
+    public virtual ICollection<PerformanceBonusRecommendation> PerformanceBonusRecommendations { get; set; } = new List<PerformanceBonusRecommendation>();
+
     public virtual ICollection<PerformanceReview> PerformanceReviewEmployees { get; set; } = new List<PerformanceReview>();
 
     public virtual ICollection<PerformanceReview> PerformanceReviewReviewers { get; set; } = new List<PerformanceReview>();

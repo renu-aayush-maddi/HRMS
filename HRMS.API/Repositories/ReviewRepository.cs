@@ -47,4 +47,20 @@ public class ReviewRepository : IReviewRepository
     {
         context.SaveChanges();
     }
+
+
+    public Employee? GetEmployeeByUserId(Guid userId)
+    {
+        return context.Employees
+            .FirstOrDefault(
+                e => e.UserId == userId);
+    }
+
+
+    public PerformanceCycle? GetCycle(Guid cycleId)
+    {
+        return context.PerformanceCycles
+            .FirstOrDefault(
+                x => x.Id == cycleId);
+    }
 }

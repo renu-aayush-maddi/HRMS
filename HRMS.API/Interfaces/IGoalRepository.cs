@@ -23,4 +23,8 @@ public interface IGoalRepository
     void UpdateGoal(EmployeeGoal goal);
 
     void SaveChanges();
+
+    List<EmployeeGoal> GetGoalsByEmployee(Guid employeeId);
+
+    EmployeeGoal? GetEmployeeGoal(Guid goalId,Guid employeeId);
 }

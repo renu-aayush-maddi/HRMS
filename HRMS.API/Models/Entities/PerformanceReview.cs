@@ -19,7 +19,11 @@ public partial class PerformanceReview
 
     public DateTime? CreatedAt { get; set; }
 
+    public Guid PerformanceCycleId { get; set; }
+
     public virtual Employee? Employee { get; set; }
+
+    public virtual PerformanceCycle PerformanceCycle { get; set; } = null!;
 
     public virtual Employee? Reviewer { get; set; }
 }

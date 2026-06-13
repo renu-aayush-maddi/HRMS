@@ -56,6 +56,12 @@ public partial class AppDbContext : DbContext
 
     public virtual DbSet<Payroll> Payrolls { get; set; }
 
+    public virtual DbSet<PerformanceBonusRecommendation> PerformanceBonusRecommendations { get; set; }
+
+    public virtual DbSet<PerformanceBonusRule> PerformanceBonusRules { get; set; }
+
+    public virtual DbSet<PerformanceCycle> PerformanceCycles { get; set; }
+
     public virtual DbSet<PerformanceReview> PerformanceReviews { get; set; }
 
     public virtual DbSet<RefreshToken> RefreshTokens { get; set; }
@@ -806,6 +812,96 @@ public partial class AppDbContext : DbContext
                 .HasConstraintName("payrolls_employee_id_fkey");
         });
 
+        modelBuilder.Entity<PerformanceBonusRecommendation>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("performance_bonus_recommendations_pkey");
+
+            entity.ToTable("performance_bonus_recommendations");
+
+            entity.Property(e => e.Id)
+                .HasDefaultValueSql("uuid_generate_v4()")
+                .HasColumnName("id");
+            entity.Property(e => e.ApprovedAmount)
+                .HasPrecision(12, 2)
+                .HasColumnName("approved_amount");
+            entity.Property(e => e.AverageRating)
+                .HasPrecision(3, 2)
+                .HasColumnName("average_rating");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnType("timestamp without time zone")
+                .HasColumnName("created_at");
+            entity.Property(e => e.EmployeeId).HasColumnName("employee_id");
+            entity.Property(e => e.PerformanceCycleId).HasColumnName("performance_cycle_id");
+            entity.Property(e => e.RecommendedAmount)
+                .HasPrecision(12, 2)
+                .HasColumnName("recommended_amount");
+            entity.Property(e => e.RecommendedPercentage)
+                .HasPrecision(5, 2)
+                .HasColumnName("recommended_percentage");
+            entity.Property(e => e.Remarks).HasColumnName("remarks");
+            entity.Property(e => e.Status)
+                .HasMaxLength(30)
+                .HasDefaultValueSql("'Pending'::character varying")
+                .HasColumnName("status");
+
+            entity.HasOne(d => d.Employee).WithMany(p => p.PerformanceBonusRecommendations)
+                .HasForeignKey(d => d.EmployeeId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("fk_bonus_recommendation_employee");
+        });
+
+        modelBuilder.Entity<PerformanceBonusRule>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("performance_bonus_rules_pkey");
+
+            entity.ToTable("performance_bonus_rules");
+
+            entity.Property(e => e.Id)
+                .ValueGeneratedNever()
+                .HasColumnName("id");
+            entity.Property(e => e.BonusPercentage)
+                .HasPrecision(5, 2)
+                .HasColumnName("bonus_percentage");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnType("timestamp without time zone")
+                .HasColumnName("created_at");
+            entity.Property(e => e.IsActive)
+                .HasDefaultValue(true)
+                .HasColumnName("is_active");
+            entity.Property(e => e.MaxRating)
+                .HasPrecision(3, 2)
+                .HasColumnName("max_rating");
+            entity.Property(e => e.MinRating)
+                .HasPrecision(3, 2)
+                .HasColumnName("min_rating");
+        });
+
+        modelBuilder.Entity<PerformanceCycle>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("performance_cycles_pkey");
+
+            entity.ToTable("performance_cycles");
+
+            entity.Property(e => e.Id)
+                .HasDefaultValueSql("uuid_generate_v4()")
+                .HasColumnName("id");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnType("timestamp without time zone")
+                .HasColumnName("created_at");
+            entity.Property(e => e.EndDate).HasColumnName("end_date");
+            entity.Property(e => e.Name)
+                .HasMaxLength(100)
+                .HasColumnName("name");
+            entity.Property(e => e.StartDate).HasColumnName("start_date");
+            entity.Property(e => e.Status)
+                .HasMaxLength(20)
+                .HasDefaultValueSql("'Open'::character varying")
+                .HasColumnName("status");
+        });
+
         modelBuilder.Entity<PerformanceReview>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("performance_reviews_pkey");
@@ -821,6 +917,7 @@ public partial class AppDbContext : DbContext
                 .HasColumnType("timestamp without time zone")
                 .HasColumnName("created_at");
             entity.Property(e => e.EmployeeId).HasColumnName("employee_id");
+            entity.Property(e => e.PerformanceCycleId).HasColumnName("performance_cycle_id");
             entity.Property(e => e.Rating)
                 .HasPrecision(2, 1)
                 .HasColumnName("rating");
@@ -833,6 +930,11 @@ public partial class AppDbContext : DbContext
                 .HasForeignKey(d => d.EmployeeId)
                 .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("performance_reviews_employee_id_fkey");
+
+            entity.HasOne(d => d.PerformanceCycle).WithMany(p => p.PerformanceReviews)
+                .HasForeignKey(d => d.PerformanceCycleId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("fk_performance_cycle");
 
             entity.HasOne(d => d.Reviewer).WithMany(p => p.PerformanceReviewReviewers)
                 .HasForeignKey(d => d.ReviewerId)
