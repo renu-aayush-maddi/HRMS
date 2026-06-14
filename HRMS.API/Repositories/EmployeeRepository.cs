@@ -9,18 +9,18 @@ public class EmployeeRepository : IEmployeeRepository
 {
     private readonly AppDbContext context;
 
+
     public EmployeeRepository(AppDbContext context)
     {
         this.context = context;
     }
 
-    public List<Employee> GetAllEmployees(
-        string? search,
-        int page,
-        int pageSize)
+    public async Task<(List<Employee> Employees, int TotalCount)>
+        GetAllEmployeesAsync(string? search, int page, int pageSize)
     {
         var query = context.Employees
             .Include(e => e.Department)
+            .Where(e => e.IsDeleted == false)
             .AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(search))
@@ -32,63 +32,33 @@ public class EmployeeRepository : IEmployeeRepository
                 ||
                 e.LastName.ToLower().Contains(search)
                 ||
-                e.Email.ToLower().Contains(search)
-            );
+                e.Email.ToLower().Contains(search));
         }
 
-        return query
+        var totalCount = await query.CountAsync();
+
+        var employees =
+            await query
+            .OrderBy(e => e.FirstName)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .ToList();
+            .ToListAsync();
+
+        return (employees, totalCount);
     }
 
-    public Employee? GetEmployeeById(Guid id)
+    public async Task<Employee?> GetEmployeeByIdAsync(Guid id)
     {
-        return context.Employees
+        return await context.Employees
             .Include(e => e.Department)
-            .FirstOrDefault(e => e.Id == id);
+            .FirstOrDefaultAsync(e =>
+            e.Id == id &&
+                e.IsDeleted == false);
     }
 
-    public void AddEmployee(Employee employee)
+    public async Task<Employee?> GetEmployeeFullProfileAsync(Guid employeeId)
     {
-        context.Employees.Add(employee);
-    }
-
-    public void UpdateEmployee(Employee employee)
-    {
-        context.Employees.Update(employee);
-    }
-
-    public void DeleteEmployee(Employee employee)
-    {
-        context.Employees.Remove(employee);
-    }
-
-    public bool EmployeeExists(string email)
-    {
-        return context.Employees
-            .Any(e => e.Email == email);
-    }
-
-    public Role? GetRoleByName(string roleName)
-    {
-        return context.Roles
-            .FirstOrDefault(r => r.Name == roleName);
-    }
-
-    public void AddUser(User user)
-    {
-        context.Users.Add(user);
-    }
-
-    public void SaveChanges()
-    {
-        context.SaveChanges();
-    }
-
-    public Employee? GetEmployeeFullProfile(Guid employeeId)
-    {
-        return context.Employees
+        return await context.Employees
             .Include(e => e.Department)
 
             .Include(e => e.Manager)
@@ -103,8 +73,65 @@ public class EmployeeRepository : IEmployeeRepository
 
             .Include(e => e.EmployeeDocuments)
 
-            .FirstOrDefault(e =>
-                e.Id == employeeId);
+            .AsSplitQuery()
+
+            .FirstOrDefaultAsync(e =>
+                e.Id == employeeId &&
+                e.IsDeleted == false);
+    }
+
+    public async Task<bool> EmployeeExistsAsync(string email)
+    {
+        return await context.Employees
+            .AnyAsync(e =>
+                e.Email == email &&
+                e.IsDeleted == false);
+    }
+
+    public async Task<bool> DepartmentExistsAsync(Guid departmentId)
+    {
+        return await context.Departments.AnyAsync(d =>d.Id == departmentId);
+    }
+
+    public async Task<Role?> GetRoleByNameAsync(string roleName)
+    {
+        return await context.Roles.FirstOrDefaultAsync(r =>r.Name == roleName);
+    }
+
+    public async Task AddEmployeeAsync(Employee employee)
+    {
+        await context.Employees.AddAsync(employee);
+    }
+
+    public async Task AddUserAsync(User user)
+    {
+        await context.Users.AddAsync(user);
+    }
+
+    public void UpdateEmployee(Employee employee)
+    {
+        context.Employees.Update(employee);
+    }
+
+    public void SoftDeleteEmployee(Employee employee,Guid deletedBy)
+    {
+        employee.IsDeleted = true;
+
+        employee.DeletedAt = DateTime.UtcNow;
+
+        employee.DeletedBy = deletedBy;
+
+        context.Employees.Update(employee);
+    }
+
+    public async Task AddAuditLogAsync(AuditLog auditLog)
+    {
+        await context.AuditLogs.AddAsync(auditLog);
+    }
+
+    public async Task SaveChangesAsync()
+    {
+        await context.SaveChangesAsync();
     }
 
 

@@ -20,6 +20,8 @@ public partial class AppDbContext : DbContext
 
     public virtual DbSet<AttendanceRegularization> AttendanceRegularizations { get; set; }
 
+    public virtual DbSet<AuditLog> AuditLogs { get; set; }
+
     public virtual DbSet<Bonuse> Bonuses { get; set; }
 
     public virtual DbSet<Deduction> Deductions { get; set; }
@@ -149,6 +151,30 @@ public partial class AppDbContext : DbContext
                 .HasConstraintName("attendance_regularizations_employee_id_fkey");
         });
 
+        modelBuilder.Entity<AuditLog>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("audit_logs_pkey");
+
+            entity.ToTable("audit_logs");
+
+            entity.Property(e => e.Id)
+                .HasDefaultValueSql("uuid_generate_v4()")
+                .HasColumnName("id");
+            entity.Property(e => e.Action)
+                .HasMaxLength(100)
+                .HasColumnName("action");
+            entity.Property(e => e.Details).HasColumnName("details");
+            entity.Property(e => e.EntityId).HasColumnName("entity_id");
+            entity.Property(e => e.EntityType)
+                .HasMaxLength(100)
+                .HasColumnName("entity_type");
+            entity.Property(e => e.PerformedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnType("timestamp without time zone")
+                .HasColumnName("performed_at");
+            entity.Property(e => e.PerformedBy).HasColumnName("performed_by");
+        });
+
         modelBuilder.Entity<Bonuse>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("bonuses_pkey");
@@ -260,6 +286,11 @@ public partial class AppDbContext : DbContext
                 .HasDefaultValueSql("CURRENT_TIMESTAMP")
                 .HasColumnType("timestamp without time zone")
                 .HasColumnName("created_at");
+            entity.Property(e => e.CreatedBy).HasColumnName("created_by");
+            entity.Property(e => e.DeletedAt)
+                .HasColumnType("timestamp without time zone")
+                .HasColumnName("deleted_at");
+            entity.Property(e => e.DeletedBy).HasColumnName("deleted_by");
             entity.Property(e => e.DepartmentId).HasColumnName("department_id");
             entity.Property(e => e.Designation)
                 .HasMaxLength(100)
@@ -277,6 +308,9 @@ public partial class AppDbContext : DbContext
             entity.Property(e => e.FirstName)
                 .HasMaxLength(100)
                 .HasColumnName("first_name");
+            entity.Property(e => e.IsDeleted)
+                .HasDefaultValue(false)
+                .HasColumnName("is_deleted");
             entity.Property(e => e.JoiningDate).HasColumnName("joining_date");
             entity.Property(e => e.LastName)
                 .HasMaxLength(100)
@@ -290,6 +324,10 @@ public partial class AppDbContext : DbContext
                 .HasPrecision(12, 2)
                 .HasDefaultValueSql("0")
                 .HasColumnName("salary");
+            entity.Property(e => e.UpdatedAt)
+                .HasColumnType("timestamp without time zone")
+                .HasColumnName("updated_at");
+            entity.Property(e => e.UpdatedBy).HasColumnName("updated_by");
             entity.Property(e => e.UserId).HasColumnName("user_id");
 
             entity.HasOne(d => d.Department).WithMany(p => p.Employees)

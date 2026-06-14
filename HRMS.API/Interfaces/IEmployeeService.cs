@@ -1,23 +1,21 @@
+using HRMS.API.Models.Common;
 using HRMS.API.Models.DTOs.Employee;
 
 namespace HRMS.API.Interfaces;
 
 public interface IEmployeeService
 {
-    List<EmployeeResponseDto> GetAllEmployees(
-        string? search,
-        int page,
-        int pageSize);
+    Task<PagedResult<EmployeeResponseDto>> GetAllEmployeesAsync(string? search,int page,int pageSize);
 
-    EmployeeResponseDto? GetEmployeeById(Guid id);
+    Task<EmployeeResponseDto?> GetEmployeeByIdAsync(Guid id);
 
-    EmployeeCreatedDto AddEmployee(AddEmployeeDto dto);
+    Task<EmployeeCreatedDto> AddEmployeeAsync(AddEmployeeDto dto);
 
-    void UpdateEmployee(Guid id, UpdateEmployeeDto dto);
+    Task UpdateEmployeeAsync(Guid id, UpdateEmployeeDto dto);
 
-    void DeleteEmployee(Guid id);
+    Task DeleteEmployeeAsync(Guid id);
 
-    void UpdateEmployeeStatus(Guid employeeId,UpdateEmployeeStatusDto dto);
+    Task UpdateEmployeeStatusAsync(Guid employeeId,UpdateEmployeeStatusDto dto);
 
-    EmployeeFullProfileDto? GetFullProfile(Guid employeeId);
+    Task<EmployeeFullProfileDto?> GetFullProfileAsync(Guid employeeId);
 }

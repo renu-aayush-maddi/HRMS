@@ -26,6 +26,8 @@ using HRMS.API.Middleware;
 using Microsoft.AspNetCore.RateLimiting;
 using System.Threading.RateLimiting;
 
+using HRMS.API.Validators;
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services
@@ -260,6 +262,8 @@ builder.Services.AddAuthentication(options =>
                         builder.Configuration["Jwt:Key"]!))
         };
 });
+
+builder.Services.AddScoped<EmployeeValidator>();
 
 QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
 

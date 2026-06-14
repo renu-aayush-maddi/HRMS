@@ -3,6 +3,7 @@ using HRMS.API.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using System.Security.Claims;
 
 namespace HRMS.API.Controllers;
 
@@ -26,7 +27,7 @@ public class AuthController : ControllerBase
 
     }
 
-    
+
     [AllowAnonymous]
     [EnableRateLimiting("LoginPolicy")]
     [HttpPost("login")]
@@ -34,5 +35,16 @@ public class AuthController : ControllerBase
     {
         var result = await _authService.Login(dto);
         return Ok(result);
+    }
+    [HttpGet("test-token")]
+    [Authorize]
+    public IActionResult TestToken()
+    {
+        return Ok(new
+        {
+            UserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value,
+            Email = User.FindFirst(ClaimTypes.Email)?.Value,
+            Role = User.FindFirst(ClaimTypes.Role)?.Value
+        });
     }
 }

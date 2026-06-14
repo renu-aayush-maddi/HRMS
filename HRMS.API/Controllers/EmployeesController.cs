@@ -17,95 +17,71 @@ public class EmployeesController : ControllerBase
         this.employeeService = employeeService;
     }
 
-    [Authorize(Roles = "Admin,HR,Manager")]
+    [Authorize(Roles = "Admin,HR")]
     [HttpGet]
-    public IActionResult GetAllEmployees(string? search = null,
+    public async Task<IActionResult> GetAllEmployees(
+        string? search = null,
         int page = 1,
         int pageSize = 5)
     {
-        var employees =
-            employeeService.GetAllEmployees(
-                search,
-                page,
-                pageSize);
+        var employees = await employeeService.GetAllEmployeesAsync(search,page,pageSize);
 
         return Ok(employees);
     }
 
-    [Authorize(Roles = "Admin,HR,Manager")]
+    [Authorize(Roles = "Admin,HR")]
     [HttpGet("{id}")]
-    public IActionResult GetEmployeeById(Guid id)
+    public async Task<IActionResult> GetEmployeeById(Guid id)
     {
         var employee =
-            employeeService.GetEmployeeById(id);
-
-        if (employee == null)
-        {
-            return NotFound();
-        }
+            await employeeService.GetEmployeeByIdAsync(id);
 
         return Ok(employee);
     }
 
     [Authorize(Roles = "Admin,HR")]
     [HttpPost]
-    public IActionResult AddEmployee(
-        AddEmployeeDto dto)
+    public async Task<IActionResult> AddEmployee(AddEmployeeDto dto)
     {
-        var result = employeeService.AddEmployee(dto);
+        var result =
+            await employeeService.AddEmployeeAsync(dto);
 
         return Ok(result);
     }
 
     [Authorize(Roles = "Admin,HR")]
     [HttpPut("{id}")]
-    public IActionResult UpdateEmployee(
-        Guid id,
-        UpdateEmployeeDto dto)
+    public async Task<IActionResult> UpdateEmployee(Guid id,UpdateEmployeeDto dto)
     {
-        employeeService.UpdateEmployee(id, dto);
+        await employeeService.UpdateEmployeeAsync(id, dto);
 
         return Ok("Employee Updated Successfully");
     }
 
     [Authorize(Roles = "Admin")]
     [HttpDelete("{id}")]
-    public IActionResult DeleteEmployee(Guid id)
+    public async Task<IActionResult> DeleteEmployee(Guid id)
     {
-        employeeService.DeleteEmployee(id);
+        await employeeService.DeleteEmployeeAsync(id);
 
         return Ok("Employee Deleted Successfully");
     }
 
-
     [Authorize(Roles = "Admin,HR")]
     [HttpPut("{id}/status")]
-    public IActionResult UpdateStatus(
-        Guid id,
-        UpdateEmployeeStatusDto dto)
+    public async Task<IActionResult> UpdateStatus(Guid id,UpdateEmployeeStatusDto dto)
     {
-        employeeService
-            .UpdateEmployeeStatus(id, dto);
+        await employeeService.UpdateEmployeeStatusAsync(id,dto);
 
-        return Ok(
-            "Employee Status Updated Successfully");
+        return Ok("Employee Status Updated Successfully");
     }
 
-
-    [Authorize(Roles = "Admin,HR,Manager")]
+    [Authorize(Roles = "Admin,HR")]
     [HttpGet("{employeeId}/full-profile")]
-    public IActionResult GetFullProfile(
-        Guid employeeId)
+    public async Task<IActionResult> GetFullProfile(Guid employeeId)
     {
         var result =
-            employeeService
-            .GetFullProfile(
-                employeeId);
-
-        if(result == null)
-        {
-            return NotFound();
-        }
+            await employeeService.GetFullProfileAsync(employeeId);
 
         return Ok(result);
     }

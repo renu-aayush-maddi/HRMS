@@ -4,23 +4,27 @@ namespace HRMS.API.Interfaces;
 
 public interface IEmployeeRepository
 {
-    List<Employee> GetAllEmployees(string? search,int page,int pageSize);
+    Task<(List<Employee> Employees, int TotalCount)> GetAllEmployeesAsync(string? search,int page,int pageSize);
 
-    Employee? GetEmployeeById(Guid id);
+    Task<Employee?> GetEmployeeByIdAsync(Guid id);
 
-    void AddEmployee(Employee employee);
+    Task<Employee?> GetEmployeeFullProfileAsync(Guid employeeId);
+
+    Task<bool> EmployeeExistsAsync(string email);
+
+    Task<bool> DepartmentExistsAsync(Guid departmentId);
+
+    Task<Role?> GetRoleByNameAsync(string roleName);
+
+    Task AddEmployeeAsync(Employee employee);
+
+    Task AddUserAsync(User user);
 
     void UpdateEmployee(Employee employee);
 
-    void DeleteEmployee(Employee employee);
+    void SoftDeleteEmployee(Employee employee,Guid deletedBy);
 
-    bool EmployeeExists(string email);
+    Task AddAuditLogAsync(AuditLog auditLog);
 
-    Role? GetRoleByName(string roleName);
-
-    void AddUser(User user);
-
-    Employee? GetEmployeeFullProfile(Guid employeeId);
-
-    void SaveChanges();
+    Task SaveChangesAsync();
 }

@@ -1,20 +1,33 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace HRMS.API.Models.DTOs.Employee;
 
 public class AddEmployeeDto
 {
-    public string FirstName { get; set; }
+    [Required]
+    [StringLength(100)]
+    public string FirstName { get; set; } = string.Empty;
 
-    public string LastName { get; set; }
+    [Required]
+    [StringLength(100)]
+    public string LastName { get; set; } = string.Empty;
 
-    public string Email { get; set; }
+    [Required]
+    [EmailAddress]
+    public string Email { get; set; } = string.Empty;
 
+    [Phone]
     public string? Phone { get; set; }
 
+    [Required]
     public string? Designation { get; set; }
 
+    [Required]
     public Guid DepartmentId { get; set; }
 
+    [Range(1, 10000000)]
     public decimal Salary { get; set; }
 
-    public string Role { get; set; }
+    [Required]
+    public string Role { get; set; } = string.Empty;
 }
