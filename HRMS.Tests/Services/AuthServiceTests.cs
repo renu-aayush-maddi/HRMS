@@ -119,8 +119,19 @@ public class AuthServiceTests
                 CreateJwtHelper());
 
         Assert.That(
-            async () => await service.Register(new RegisterDto()),
-            Throws.TypeOf<BusinessException>());
+    async () => await service.Register(
+        new RegisterDto
+        {
+            Email = "test@test.com",
+            Password = "Password123",
+            FirstName = "John",
+            LastName = "Doe",
+            Role = "Employee",
+            DepartmentId = Guid.NewGuid(),
+            Designation = "Developer",
+            Salary = 50000
+        }),
+    Throws.TypeOf<BusinessException>());
     }
 
     [Test]
@@ -158,134 +169,258 @@ public class AuthServiceTests
     }
 
     [Test]
-    public async Task Login_ShouldReturnToken_WhenValid()
-    {
-        var repository =
-            new Mock<IAuthRepository>();
+public async Task Login_ShouldReturnToken_WhenValid()
+{
+    var repository =
+        new Mock<IAuthRepository>();
 
-        var password =
-            BCrypt.Net.BCrypt
-            .HashPassword(
-                "Password123");
-
-        var user =
-            new User
+    var user =
+        new User
+        {
+            Id = Guid.NewGuid(),
+            Email = "test@test.com",
+            PasswordHash =
+                BCrypt.Net.BCrypt.HashPassword(
+                    "Password123"),
+            IsActive = true,
+            Roles =
             {
-                Id = Guid.NewGuid(),
+                new Role
+                {
+                    Name = "Employee"
+                }
+            }
+        };
+
+    repository
+        .Setup(x =>
+            x.GetUserByEmail(
+                It.IsAny<string>()))
+        .ReturnsAsync(user);
+
+    var service =
+        new AuthService(
+            repository.Object,
+            CreateJwtHelper());
+
+    var result =
+        await service.Login(
+            new LoginDto
+            {
                 Email = "test@test.com",
-                PasswordHash = password,
-                IsActive = true
-            };
+                Password = "Password123"
+            });
 
-        repository
-            .Setup(x =>
-                x.GetUserByEmail(
-                    It.IsAny<string>()))
-            .ReturnsAsync(user);
+    Assert.That(
+        result.Token,
+        Is.Not.Null.And.Not.Empty);
 
-        repository
-            .Setup(x =>
-                x.GetUserRole(
-                    user.Id))
-            .ReturnsAsync(
-                "Employee");
+    Assert.That(
+        result.Email,
+        Is.EqualTo(
+            "test@test.com"));
 
-        var service =
-            new AuthService(
-                repository.Object,
-                CreateJwtHelper());
+    Assert.That(
+        result.Role,
+        Is.EqualTo(
+            "Employee"));
 
-        var result =
+    Assert.That(
+        user.LastLoginAt,
+        Is.Not.Null);
+
+    repository.Verify(
+        x => x.SaveChanges(),
+        Times.Once);
+}
+
+    [Test]
+public void Login_ShouldThrowBusinessException_WhenUserNotFound()
+{
+    var repository =
+        new Mock<IAuthRepository>();
+
+    repository
+        .Setup(x =>
+            x.GetUserByEmail(
+                It.IsAny<string>()))
+        .ReturnsAsync((User?)null);
+
+    var service =
+        new AuthService(
+            repository.Object,
+            CreateJwtHelper());
+
+    Assert.ThrowsAsync<BusinessException>(
+        async () =>
             await service.Login(
                 new LoginDto
                 {
                     Email = "test@test.com",
                     Password = "Password123"
-                });
-
-        Assert.That(
-            result.Token,
-            Is.Not.Null);
-
-        Assert.That(
-            result.Role,
-            Is.EqualTo(
-                "Employee"));
-    }
-
+                }));
+}
     [Test]
-    public async Task Login_ShouldThrowBusinessException_WhenUserNotFound()
-    {
-        var repository = new Mock<IAuthRepository>();
+public void Login_ShouldThrowBusinessException_WhenUserDisabled()
+{
+    var repository =
+        new Mock<IAuthRepository>();
 
-        repository
-            .Setup(x => x.GetUserByEmail(It.IsAny<string>()))
-            .ReturnsAsync((User?)null);
-
-        var service =
-            new AuthService(
-                repository.Object,
-                CreateJwtHelper());
-
-        Assert.That(
-            async () => await service.Login(new LoginDto()),
-            Throws.TypeOf<BusinessException>());
-    }
-
-    [Test]
-    public async Task Login_ShouldThrowBusinessException_WhenUserDisabled()
-    {
-        var repository = new Mock<IAuthRepository>();
-
-        repository
-            .Setup(x => x.GetUserByEmail(It.IsAny<string>()))
-            .ReturnsAsync(
-                new User
-                {
-                    IsActive = false
-                });
-
-        var service =
-            new AuthService(
-                repository.Object,
-                CreateJwtHelper());
-
-        Assert.That(
-            async () => await service.Login(new LoginDto()),
-            Throws.TypeOf<BusinessException>());
-    }
-
-    [Test]
-    public async Task Login_ShouldThrowBusinessException_WhenPasswordInvalid()
-    {
-        var repository = new Mock<IAuthRepository>();
-
-        var user =
+    repository
+        .Setup(x =>
+            x.GetUserByEmail(
+                It.IsAny<string>()))
+        .ReturnsAsync(
             new User
             {
                 Email = "test@test.com",
+                IsActive = false
+            });
+
+    var service =
+        new AuthService(
+            repository.Object,
+            CreateJwtHelper());
+
+    Assert.ThrowsAsync<BusinessException>(
+        async () =>
+            await service.Login(
+                new LoginDto
+                {
+                    Email = "test@test.com",
+                    Password = "Password123"
+                }));
+}
+
+    [Test]
+public void Login_ShouldThrowBusinessException_WhenPasswordInvalid()
+{
+    var repository =
+        new Mock<IAuthRepository>();
+
+    repository
+        .Setup(x =>
+            x.GetUserByEmail(
+                It.IsAny<string>()))
+        .ReturnsAsync(
+            new User
+            {
+                Email = "test@test.com",
+
+                IsActive = true,
+
                 PasswordHash =
                     BCrypt.Net.BCrypt.HashPassword(
                         "CorrectPassword"),
-                IsActive = true
-            };
 
-        repository
-            .Setup(x => x.GetUserByEmail(It.IsAny<string>()))
-            .ReturnsAsync(user);
+                Roles =
+                {
+                    new Role
+                    {
+                        Name = "Employee"
+                    }
+                }
+            });
 
-        var service =
-            new AuthService(
-                repository.Object,
-                CreateJwtHelper());
+    var service =
+        new AuthService(
+            repository.Object,
+            CreateJwtHelper());
 
-        Assert.That(
-            async () => await service.Login(
+    Assert.ThrowsAsync<BusinessException>(
+        async () =>
+            await service.Login(
                 new LoginDto
                 {
                     Email = "test@test.com",
                     Password = "WrongPassword"
-                }),
-            Throws.TypeOf<BusinessException>());
-    }
+                }));
+}
+[Test]
+public void Login_ShouldThrowBusinessException_WhenRoleMissing()
+{
+    var repository =
+        new Mock<IAuthRepository>();
+
+    repository
+        .Setup(x =>
+            x.GetUserByEmail(
+                It.IsAny<string>()))
+        .ReturnsAsync(
+            new User
+            {
+                Email = "test@test.com",
+
+                IsActive = true,
+
+                PasswordHash =
+                    BCrypt.Net.BCrypt.HashPassword(
+                        "Password123")
+            });
+
+    var service =
+        new AuthService(
+            repository.Object,
+            CreateJwtHelper());
+
+    Assert.ThrowsAsync<BusinessException>(
+        async () =>
+            await service.Login(
+                new LoginDto
+                {
+                    Email = "test@test.com",
+                    Password = "Password123"
+                }));
+}
+[Test]
+public async Task Login_ShouldNormalizeEmailBeforeLookup()
+{
+    var repository =
+        new Mock<IAuthRepository>();
+
+    var user =
+        new User
+        {
+            Id = Guid.NewGuid(),
+
+            Email = "test@test.com",
+
+            PasswordHash =
+                BCrypt.Net.BCrypt.HashPassword(
+                    "Password123"),
+
+            IsActive = true,
+
+            Roles =
+            {
+                new Role
+                {
+                    Name = "Employee"
+                }
+            }
+        };
+
+    repository
+        .Setup(x =>
+            x.GetUserByEmail(
+                "test@test.com"))
+        .ReturnsAsync(user);
+
+    var service =
+        new AuthService(
+            repository.Object,
+            CreateJwtHelper());
+
+    await service.Login(
+        new LoginDto
+        {
+            Email = " TEST@TEST.COM ",
+            Password = "Password123"
+        });
+
+    repository.Verify(
+        x => x.GetUserByEmail(
+            "test@test.com"),
+        Times.Once);
+}
 }
