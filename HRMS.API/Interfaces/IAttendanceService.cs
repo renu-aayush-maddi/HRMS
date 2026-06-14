@@ -1,17 +1,15 @@
 using HRMS.API.Models.DTOs.Attendance;
 using HRMS.API.Models.DTOs.Common;
 
-
 namespace HRMS.API.Interfaces;
 
 public interface IAttendanceService
 {
+    Task CheckInAsync(Guid userId);
 
-    void CheckIn(Guid userId);
+    Task CheckOutAsync(Guid userId);
 
-    void CheckOut(Guid userId);
+    Task<PaginatedResponseDto<AttendanceResponseDto>> GetAttendanceAsync(AttendanceQueryDto query);
 
-    PaginatedResponseDto<AttendanceResponseDto> GetAttendance(AttendanceQueryDto query);    
-    
-    List<AttendanceResponseDto> GetEmployeeAttendance(Guid employeeId);
+    Task<List<AttendanceResponseDto>>GetEmployeeAttendanceAsync(Guid employeeId);
 }

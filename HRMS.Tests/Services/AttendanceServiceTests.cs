@@ -3,440 +3,446 @@ using NUnit.Framework;
 
 using HRMS.API.Services;
 using HRMS.API.Interfaces;
-using HRMS.API.Models.Entities;
 using HRMS.API.Exceptions;
+using HRMS.API.Models.Entities;
 using HRMS.API.Models.DTOs.Attendance;
+using HRMS.API.Models.DTOs.Common;
+using HRMS.API.Validators;
 
 namespace HRMS.Tests.Services;
 
 [TestFixture]
 public class AttendanceServiceTests
 {
-    [Test]
-    public void CheckIn_ShouldAddAttendance_WhenValid()
-    {
-        var repository =
-            new Mock<IAttendanceRepository>();
+private Mock<IAttendanceRepository>
+repository;
 
-        var employee =
-            new Employee
-            {
-                Id = Guid.NewGuid()
-            };
 
-        repository
-            .Setup(x =>
-                x.GetEmployeeByUserId(
-                    It.IsAny<Guid>()))
-            .Returns(employee);
+private AttendanceValidator
+    validator;
 
-        repository
-            .Setup(x =>
-                x.GetTodayAttendance(
-                    employee.Id))
-            .Returns((AttendanceLog?)null);
+private AttendanceService
+    service;
 
-        var service =
-            new AttendanceService(
-                repository.Object);
+[SetUp]
+public void Setup()
+{
+    repository =
+        new Mock<IAttendanceRepository>();
 
-        service.CheckIn(
+    validator =
+        new AttendanceValidator();
+
+    service =
+        new AttendanceService(
+            repository.Object,
+            validator);
+}
+
+[Test]
+public async Task CheckInAsync_ShouldCheckIn_WhenValid()
+{
+    var userId =
+        Guid.NewGuid();
+
+    var employee =
+        new Employee
+        {
+            Id = Guid.NewGuid()
+        };
+
+    repository
+        .Setup(x =>
+            x.GetEmployeeByUserIdAsync(
+                userId))
+        .ReturnsAsync(employee);
+
+    repository
+        .Setup(x =>
+            x.GetTodayAttendanceAsync(
+                employee.Id))
+        .ReturnsAsync(
+            (AttendanceLog?)null);
+
+    await service
+        .CheckInAsync(userId);
+
+    repository.Verify(
+        x => x.AddAttendanceAsync(
+            It.IsAny<AttendanceLog>()),
+        Times.Once);
+
+    repository.Verify(
+        x => x.SaveChangesAsync(),
+        Times.Once);
+}
+
+[Test]
+public void CheckInAsync_ShouldThrowNotFoundException_WhenEmployeeNotFound()
+{
+    repository
+        .Setup(x =>
+            x.GetEmployeeByUserIdAsync(
+                It.IsAny<Guid>()))
+        .ReturnsAsync(
+            (Employee?)null);
+
+    Assert.ThrowsAsync<
+        NotFoundException>(
+        async () =>
+            await service
+                .CheckInAsync(
+                    Guid.NewGuid()));
+}
+
+[Test]
+public void CheckInAsync_ShouldThrowBusinessException_WhenAlreadyCheckedIn()
+{
+    var employee =
+        new Employee
+        {
+            Id = Guid.NewGuid()
+        };
+
+    repository
+        .Setup(x =>
+            x.GetEmployeeByUserIdAsync(
+                It.IsAny<Guid>()))
+        .ReturnsAsync(employee);
+
+    repository
+        .Setup(x =>
+            x.GetTodayAttendanceAsync(
+                employee.Id))
+        .ReturnsAsync(
+            new AttendanceLog());
+
+    Assert.ThrowsAsync<
+        BusinessException>(
+        async () =>
+            await service
+                .CheckInAsync(
+                    Guid.NewGuid()));
+}
+
+[Test]
+public async Task CheckOutAsync_ShouldCheckOut_WhenValid()
+{
+    var employee =
+        new Employee
+        {
+            Id = Guid.NewGuid()
+        };
+
+    var attendance =
+        new AttendanceLog
+        {
+            CheckIn =
+                DateTime.UtcNow
+        };
+
+    repository
+        .Setup(x =>
+            x.GetEmployeeByUserIdAsync(
+                It.IsAny<Guid>()))
+        .ReturnsAsync(employee);
+
+    repository
+        .Setup(x =>
+            x.GetTodayAttendanceAsync(
+                employee.Id))
+        .ReturnsAsync(attendance);
+
+    await service
+        .CheckOutAsync(
             Guid.NewGuid());
 
-        repository.Verify(
-            x => x.AddAttendance(
-                It.IsAny<AttendanceLog>()),
-            Times.Once);
+    repository.Verify(
+        x => x.UpdateAttendance(
+            attendance),
+        Times.Once);
 
-        repository.Verify(
-            x => x.SaveChanges(),
-            Times.Once);
-    }
+    repository.Verify(
+        x => x.SaveChangesAsync(),
+        Times.Once);
 
-    [Test]
-    public void CheckIn_ShouldThrowNotFoundException_WhenEmployeeNotFound()
-    {
-        var repository =
-            new Mock<IAttendanceRepository>();
+    Assert.That(
+        attendance.CheckOut,
+        Is.Not.Null);
+}
 
-        repository
-            .Setup(x =>
-                x.GetEmployeeByUserId(
-                    It.IsAny<Guid>()))
-            .Returns((Employee?)null);
+[Test]
+public void CheckOutAsync_ShouldThrowNotFoundException_WhenEmployeeNotFound()
+{
+    repository
+        .Setup(x =>
+            x.GetEmployeeByUserIdAsync(
+                It.IsAny<Guid>()))
+        .ReturnsAsync(
+            (Employee?)null);
 
-        var service =
-            new AttendanceService(
-                repository.Object);
+    Assert.ThrowsAsync<
+        NotFoundException>(
+        async () =>
+            await service
+                .CheckOutAsync(
+                    Guid.NewGuid()));
+}
 
-        Assert.Throws<NotFoundException>(
-            () =>
-            service.CheckIn(
-                Guid.NewGuid()));
-    }
+[Test]
+public void CheckOutAsync_ShouldThrowNotFoundException_WhenCheckInNotFound()
+{
+    var employee =
+        new Employee
+        {
+            Id = Guid.NewGuid()
+        };
 
-    [Test]
-    public void CheckIn_ShouldThrowBusinessException_WhenAlreadyCheckedIn()
-    {
-        var repository =
-            new Mock<IAttendanceRepository>();
+    repository
+        .Setup(x =>
+            x.GetEmployeeByUserIdAsync(
+                It.IsAny<Guid>()))
+        .ReturnsAsync(employee);
 
-        var employee =
-            new Employee
-            {
-                Id = Guid.NewGuid()
-            };
+    repository
+        .Setup(x =>
+            x.GetTodayAttendanceAsync(
+                employee.Id))
+        .ReturnsAsync(
+            (AttendanceLog?)null);
 
-        repository
-            .Setup(x =>
-                x.GetEmployeeByUserId(
-                    It.IsAny<Guid>()))
-            .Returns(employee);
+    Assert.ThrowsAsync<
+        NotFoundException>(
+        async () =>
+            await service
+                .CheckOutAsync(
+                    Guid.NewGuid()));
+}
 
-        repository
-            .Setup(x =>
-                x.GetTodayAttendance(
-                    employee.Id))
-            .Returns(
-                new AttendanceLog());
+[Test]
+public void CheckOutAsync_ShouldThrowBusinessException_WhenAlreadyCheckedOut()
+{
+    var employee =
+        new Employee
+        {
+            Id = Guid.NewGuid()
+        };
 
-        var service =
-            new AttendanceService(
-                repository.Object);
+    repository
+        .Setup(x =>
+            x.GetEmployeeByUserIdAsync(
+                It.IsAny<Guid>()))
+        .ReturnsAsync(employee);
 
-        Assert.Throws<BusinessException>(
-            () =>
-            service.CheckIn(
-                Guid.NewGuid()));
-    }
-
-    [Test]
-    public void CheckOut_ShouldUpdateAttendance_WhenValid()
-    {
-        var repository =
-            new Mock<IAttendanceRepository>();
-
-        var employee =
-            new Employee
-            {
-                Id = Guid.NewGuid()
-            };
-
-        var attendance =
+    repository
+        .Setup(x =>
+            x.GetTodayAttendanceAsync(
+                employee.Id))
+        .ReturnsAsync(
             new AttendanceLog
             {
-                CheckOut = null
-            };
-
-        repository
-            .Setup(x =>
-                x.GetEmployeeByUserId(
-                    It.IsAny<Guid>()))
-            .Returns(employee);
-
-        repository
-            .Setup(x =>
-                x.GetTodayAttendance(
-                    employee.Id))
-            .Returns(attendance);
-
-        var service =
-            new AttendanceService(
-                repository.Object);
-
-        service.CheckOut(
-            Guid.NewGuid());
-
-        repository.Verify(
-            x => x.UpdateAttendance(
-                attendance),
-            Times.Once);
-
-        repository.Verify(
-            x => x.SaveChanges(),
-            Times.Once);
-    }
-
-    [Test]
-    public void CheckOut_ShouldThrowNotFoundException_WhenEmployeeNotFound()
-    {
-        var repository =
-            new Mock<IAttendanceRepository>();
-
-        repository
-            .Setup(x =>
-                x.GetEmployeeByUserId(
-                    It.IsAny<Guid>()))
-            .Returns((Employee?)null);
-
-        var service =
-            new AttendanceService(
-                repository.Object);
-
-        Assert.Throws<NotFoundException>(
-            () =>
-            service.CheckOut(
-                Guid.NewGuid()));
-    }
-
-    [Test]
-    public void CheckOut_ShouldThrowNotFoundException_WhenAttendanceNotFound()
-    {
-        var repository =
-            new Mock<IAttendanceRepository>();
-
-        var employee =
-            new Employee
-            {
-                Id = Guid.NewGuid()
-            };
-
-        repository
-            .Setup(x =>
-                x.GetEmployeeByUserId(
-                    It.IsAny<Guid>()))
-            .Returns(employee);
-
-        repository
-            .Setup(x =>
-                x.GetTodayAttendance(
-                    employee.Id))
-            .Returns((AttendanceLog?)null);
-
-        var service =
-            new AttendanceService(
-                repository.Object);
-
-        Assert.Throws<NotFoundException>(
-            () =>
-            service.CheckOut(
-                Guid.NewGuid()));
-    }
-
-    [Test]
-    public void CheckOut_ShouldThrowBusinessException_WhenAlreadyCheckedOut()
-    {
-        var repository =
-            new Mock<IAttendanceRepository>();
-
-        var employee =
-            new Employee
-            {
-                Id = Guid.NewGuid()
-            };
-
-        repository
-            .Setup(x =>
-                x.GetEmployeeByUserId(
-                    It.IsAny<Guid>()))
-            .Returns(employee);
-
-        repository
-            .Setup(x =>
-                x.GetTodayAttendance(
-                    employee.Id))
-            .Returns(
-                new AttendanceLog
-                {
-                    CheckOut =
-                        DateTime.Now
-                });
-
-        var service =
-            new AttendanceService(
-                repository.Object);
-
-        Assert.Throws<BusinessException>(
-            () =>
-            service.CheckOut(
-                Guid.NewGuid()));
-    }
-
-    [Test]
-    public void GetAttendance_ShouldReturnEmptyList_WhenNoRecordsExist()
-    {
-        var repository =
-            new Mock<IAttendanceRepository>();
-
-        repository
-            .Setup(x =>
-                x.GetAttendance(
-                    It.IsAny<AttendanceQueryDto>(),
-                    It.IsAny<int>(),
-                    It.IsAny<int>()))
-            .Returns(new List<AttendanceLog>());
-
-        repository
-            .Setup(x =>
-                x.GetAttendanceCount(
-                    It.IsAny<AttendanceQueryDto>()))
-            .Returns(0);
-
-        var service =
-            new AttendanceService(
-                repository.Object);
-
-        var result =
-            service.GetAttendance(
-                new AttendanceQueryDto());
-
-        Assert.That(
-            result.Data.Count,
-            Is.EqualTo(0));
-
-        Assert.That(
-            result.TotalRecords,
-            Is.EqualTo(0));
-    }
-
-    [Test]
-    public void GetAttendance_ShouldMapEntityToDto()
-    {
-        var repository =
-            new Mock<IAttendanceRepository>();
-
-        var employeeId =
-            Guid.NewGuid();
-
-        repository
-            .Setup(x =>
-                x.GetAttendance(
-                    It.IsAny<AttendanceQueryDto>(),
-                    It.IsAny<int>(),
-                    It.IsAny<int>()))
-            .Returns(
-                new List<AttendanceLog>
-                {
-                    new AttendanceLog
-                    {
-                        Id = Guid.NewGuid(),
-
-                        EmployeeId =
-                            employeeId,
-
-                        AttendanceDate =
-                            new DateOnly(
-                                2026,
-                                1,
-                                1),
-
-                        Status =
-                            "Present",
-
-                        Employee =
-                            new Employee
-                            {
-                                FirstName =
-                                    "John",
-
-                                LastName =
-                                    "Doe"
-                            }
-                    }
-                });
-
-        repository
-            .Setup(x =>
-                x.GetAttendanceCount(
-                    It.IsAny<AttendanceQueryDto>()))
-            .Returns(1);
-
-        var service =
-            new AttendanceService(
-                repository.Object);
-
-        var result =
-            service.GetAttendance(
-                new AttendanceQueryDto());
-
-        Assert.That(
-            result.Data.Count,
-            Is.EqualTo(1));
-
-        Assert.That(
-            result.Data[0].EmployeeName,
-            Is.EqualTo("John Doe"));
-
-        Assert.That(
-            result.Data[0].Status,
-            Is.EqualTo("Present"));
-    }
-
-    [Test]
-    public void GetAttendance_ShouldCalculateSkipCorrectly()
-    {
-        var repository =
-            new Mock<IAttendanceRepository>();
-
-        repository
-            .Setup(x =>
-                x.GetAttendance(
-                    It.IsAny<AttendanceQueryDto>(),
-                    10,
-                    10))
-            .Returns(
-                new List<AttendanceLog>());
-
-        repository
-            .Setup(x =>
-                x.GetAttendanceCount(
-                    It.IsAny<AttendanceQueryDto>()))
-            .Returns(0);
-
-        var service =
-            new AttendanceService(
-                repository.Object);
-
-        service.GetAttendance(
-            new AttendanceQueryDto
-            {
-                Page = 2,
-                PageSize = 10
+                CheckOut =
+                    DateTime.UtcNow
             });
 
-        repository.Verify(
-            x =>
-            x.GetAttendance(
-                It.IsAny<AttendanceQueryDto>(),
-                10,
-                10),
-            Times.Once);
-    }
+    Assert.ThrowsAsync<
+        BusinessException>(
+        async () =>
+            await service
+                .CheckOutAsync(
+                    Guid.NewGuid()));
+}
 
-    [Test]
-    public void GetAttendance_ShouldUsePageOne_WhenPageIsInvalid()
-    {
-        var repository =
-            new Mock<IAttendanceRepository>();
+[Test]
+public async Task GetAttendanceAsync_ShouldReturnPaginatedAttendance()
+{
+    var query =
+        new AttendanceQueryDto
+        {
+            Page = 1,
+            PageSize = 10
+        };
 
-        repository
-            .Setup(x =>
-                x.GetAttendance(
-                    It.IsAny<AttendanceQueryDto>(),
-                    It.IsAny<int>(),
-                    It.IsAny<int>()))
-            .Returns(
-                new List<AttendanceLog>());
-
-        repository
-            .Setup(x =>
-                x.GetAttendanceCount(
-                    It.IsAny<AttendanceQueryDto>()))
-            .Returns(0);
-
-        var service =
-            new AttendanceService(
-                repository.Object);
-
-        var result =
-            service.GetAttendance(
-                new AttendanceQueryDto
+    repository
+        .Setup(x =>
+            x.GetAttendanceAsync(
+                query,
+                0,
+                10))
+        .ReturnsAsync(
+            new List<AttendanceLog>
+            {
+                new AttendanceLog
                 {
-                    Page = -5
-                });
+                    Id = Guid.NewGuid(),
 
-        Assert.That(
-            result.Page,
-            Is.EqualTo(1));
-    }
+                    AttendanceDate =
+                        DateOnly.FromDateTime(
+                            DateTime.UtcNow),
+
+                    Status = "Present",
+
+                    Employee =
+                        new Employee
+                        {
+                            FirstName = "John",
+                            LastName = "Doe"
+                        }
+                }
+            });
+
+    repository
+        .Setup(x =>
+            x.GetAttendanceCountAsync(
+                query))
+        .ReturnsAsync(1);
+
+    var result =
+        await service
+            .GetAttendanceAsync(
+                query);
+
+    Assert.That(
+        result.TotalRecords,
+        Is.EqualTo(1));
+
+    Assert.That(
+        result.Data.Count,
+        Is.EqualTo(1));
+
+    Assert.That(
+        result.Data[0].EmployeeName,
+        Is.EqualTo("John Doe"));
+}
+
+[Test]
+public void GetAttendanceAsync_ShouldThrowValidationException_WhenPageInvalid()
+{
+    Assert.ThrowsAsync<
+        ValidationException>(
+        async () =>
+            await service
+                .GetAttendanceAsync(
+                    new AttendanceQueryDto
+                    {
+                        Page = 0,
+                        PageSize = 10
+                    }));
+}
+
+[Test]
+public void GetAttendanceAsync_ShouldThrowValidationException_WhenPageSizeInvalid()
+{
+    Assert.ThrowsAsync<
+        ValidationException>(
+        async () =>
+            await service
+                .GetAttendanceAsync(
+                    new AttendanceQueryDto
+                    {
+                        Page = 1,
+                        PageSize = 0
+                    }));
+}
+
+[Test]
+public void GetAttendanceAsync_ShouldThrowValidationException_WhenFromDateGreaterThanToDate()
+{
+    Assert.ThrowsAsync<
+        ValidationException>(
+        async () =>
+            await service
+                .GetAttendanceAsync(
+                    new AttendanceQueryDto
+                    {
+                        Page = 1,
+                        PageSize = 10,
+                        FromDate =
+                            DateOnly.FromDateTime(
+                                DateTime.UtcNow.AddDays(5)),
+                        ToDate =
+                            DateOnly.FromDateTime(
+                                DateTime.UtcNow)
+                    }));
+}
+
+[Test]
+public void GetAttendanceAsync_ShouldThrowValidationException_WhenStatusInvalid()
+{
+    Assert.ThrowsAsync<
+        ValidationException>(
+        async () =>
+            await service
+                .GetAttendanceAsync(
+                    new AttendanceQueryDto
+                    {
+                        Page = 1,
+                        PageSize = 10,
+                        Status = "XYZ"
+                    }));
+}
+
+[Test]
+public async Task GetEmployeeAttendanceAsync_ShouldReturnAttendance()
+{
+    var employeeId =
+        Guid.NewGuid();
+
+    repository
+        .Setup(x =>
+            x.GetEmployeeAsync(
+                employeeId))
+        .ReturnsAsync(
+            new Employee());
+
+    repository
+        .Setup(x =>
+            x.GetEmployeeAttendanceAsync(
+                employeeId))
+        .ReturnsAsync(
+            new List<AttendanceLog>
+            {
+                new AttendanceLog
+                {
+                    Employee =
+                        new Employee
+                        {
+                            FirstName = "John",
+                            LastName = "Doe"
+                        },
+
+                    Status =
+                        "Present"
+                }
+            });
+
+    var result =
+        await service
+            .GetEmployeeAttendanceAsync(
+                employeeId);
+
+    Assert.That(
+        result.Count,
+        Is.EqualTo(1));
+}
+
+[Test]
+public void GetEmployeeAttendanceAsync_ShouldThrowNotFoundException_WhenEmployeeNotFound()
+{
+    repository
+        .Setup(x =>
+            x.GetEmployeeAsync(
+                It.IsAny<Guid>()))
+        .ReturnsAsync(
+            (Employee?)null);
+
+    Assert.ThrowsAsync<
+        NotFoundException>(
+        async () =>
+            await service
+                .GetEmployeeAttendanceAsync(
+                    Guid.NewGuid()));
+}
+
+
 }

@@ -1,25 +1,25 @@
-using HRMS.API.Models.Entities;
 using HRMS.API.Models.DTOs.Attendance;
+using HRMS.API.Models.Entities;
 
 namespace HRMS.API.Interfaces;
 
 public interface IAttendanceRepository
 {
-    AttendanceLog? GetTodayAttendance(Guid employeeId);
+    Task<AttendanceLog?> GetTodayAttendanceAsync(Guid employeeId);
 
-    List<AttendanceLog> GetAttendance(AttendanceQueryDto query,int skip,int take);
+    Task<List<AttendanceLog>> GetAttendanceAsync(AttendanceQueryDto query, int skip, int take);
 
-    int GetAttendanceCount(AttendanceQueryDto query);
+    Task<int> GetAttendanceCountAsync(AttendanceQueryDto query);
 
-    List<AttendanceLog> GetEmployeeAttendance(Guid employeeId);
+    Task<List<AttendanceLog>> GetEmployeeAttendanceAsync(Guid employeeId);
 
-    void AddAttendance(AttendanceLog attendance);
+    Task AddAttendanceAsync(AttendanceLog attendance);
 
     void UpdateAttendance(AttendanceLog attendance);
 
-    Employee? GetEmployee(Guid employeeId);
+    Task<Employee?> GetEmployeeAsync(Guid employeeId);
 
-    Employee? GetEmployeeByUserId(Guid userId);
+    Task<Employee?> GetEmployeeByUserIdAsync(Guid userId);
 
-    void SaveChanges();
+    Task SaveChangesAsync();
 }
