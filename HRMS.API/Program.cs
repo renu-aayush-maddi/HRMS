@@ -264,6 +264,8 @@ builder.Services.AddAuthentication(options =>
 });
 
 builder.Services.AddScoped<EmployeeValidator>();
+builder.Services.AddScoped<LeaveBalanceValidator>();
+builder.Services.AddScoped<LeaveValidator>();
 
 QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
 

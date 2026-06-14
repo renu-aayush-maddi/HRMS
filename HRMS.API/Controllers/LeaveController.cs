@@ -1,8 +1,8 @@
+using System.Security.Claims;
 using HRMS.API.Interfaces;
 using HRMS.API.Models.DTOs.Leave;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 
 namespace HRMS.API.Controllers;
 
@@ -20,60 +20,56 @@ public class LeaveController : ControllerBase
 
     [Authorize(Roles = "Employee,HR,Manager,Admin")]
     [HttpPost("apply")]
-    public IActionResult ApplyLeave(ApplyLeaveDto dto)
+    public async Task<IActionResult> ApplyLeave(ApplyLeaveDto dto)
     {
-
         var userId = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
         var role = User.FindFirst(ClaimTypes.Role)!.Value;
 
-        leaveService.ApplyLeave(dto, userId, role);
-
+        await leaveService.ApplyLeaveAsync(dto, userId, role);
 
         return Ok("Leave Applied Successfully");
     }
 
     [Authorize(Roles = "Employee,Manager")]
     [HttpGet("my-leaves")]
-    public IActionResult GetMyLeaves()
+    public async Task<IActionResult> GetMyLeaves()
     {
         var userId = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+        var leaves = await leaveService.GetMyLeavesAsync(userId);
 
-        return Ok(leaveService.GetMyLeaves(userId));
+        return Ok(leaves);
     }
 
     [Authorize(Roles = "Admin,HR")]
     [HttpGet]
-    public IActionResult GetAllLeaves()
+    public async Task<IActionResult> GetAllLeaves()
     {
-        return Ok(leaveService.GetAllLeaves());
+        var leaves = await leaveService.GetAllLeavesAsync();
+
+        return Ok(leaves);
     }
 
     [Authorize(Roles = "Admin,HR,Manager")]
     [HttpPut("{leaveId}/approve")]
-    public IActionResult ApproveLeave(Guid leaveId,LeaveActionDto dto)
+    public async Task<IActionResult> ApproveLeave(Guid leaveId, LeaveActionDto dto)
     {
         var userId = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
         var role = User.FindFirst(ClaimTypes.Role)!.Value;
 
-        leaveService.ApproveLeave(leaveId, userId, role, dto);
+        await leaveService.ApproveLeaveAsync(leaveId, userId, role, dto);
 
         return Ok("Leave Approved");
     }
 
-
     [Authorize(Roles = "Admin,HR,Manager")]
     [HttpPut("{leaveId}/reject")]
-    public IActionResult RejectLeave(Guid leaveId,LeaveActionDto dto)
+    public async Task<IActionResult> RejectLeave(Guid leaveId, LeaveActionDto dto)
     {
-
         var userId = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
         var role = User.FindFirst(ClaimTypes.Role)!.Value;
 
-        leaveService.RejectLeave(leaveId, userId, role, dto);
+        await leaveService.RejectLeaveAsync(leaveId, userId, role, dto);
 
         return Ok("Leave Rejected");
     }
-
-
-
 }

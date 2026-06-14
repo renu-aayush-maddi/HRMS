@@ -4,17 +4,15 @@ namespace HRMS.API.Interfaces;
 
 public interface ILeaveService
 {
-    
-void ApplyLeave(ApplyLeaveDto dto, Guid userId, string role);
+    Task ApplyLeaveAsync(ApplyLeaveDto dto, Guid userId, string role);
 
-List<LeaveResponseDto> GetMyLeaves(Guid userId);
+    Task<List<LeaveResponseDto>> GetMyLeavesAsync(Guid userId);
 
-List<LeaveResponseDto> GetEmployeeLeaves(Guid employeeId);
+    Task<List<LeaveResponseDto>> GetEmployeeLeavesAsync(Guid employeeId);
 
-void ApproveLeave(Guid leaveId, Guid userId, string role, LeaveActionDto dto);
+    Task ApproveLeaveAsync(Guid leaveId, Guid userId, string role, LeaveActionDto dto);
 
-void RejectLeave(Guid leaveId, Guid userId, string role, LeaveActionDto dto);
+    Task RejectLeaveAsync(Guid leaveId, Guid userId, string role, LeaveActionDto dto);
 
-List<LeaveResponseDto> GetAllLeaves();
-
+    Task<List<LeaveResponseDto>> GetAllLeavesAsync();
 }

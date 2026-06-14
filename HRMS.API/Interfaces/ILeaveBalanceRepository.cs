@@ -4,21 +4,21 @@ namespace HRMS.API.Interfaces;
 
 public interface ILeaveBalanceRepository
 {
-    Employee? GetEmployee(Guid employeeId);
+    Task<Employee?> GetEmployeeAsync(Guid employeeId);
 
-    LeaveType? GetLeaveType(Guid leaveTypeId);
+    Task<LeaveType?> GetLeaveTypeAsync(Guid leaveTypeId);
 
-    EmployeeLeaveBalance? GetBalance(Guid employeeId,Guid leaveTypeId);
+    Task<EmployeeLeaveBalance?> GetBalanceAsync(Guid employeeId, Guid leaveTypeId);
 
-    List<EmployeeLeaveBalance> GetAllBalances();
+    Task<List<EmployeeLeaveBalance>> GetAllBalancesAsync();
 
-    List<EmployeeLeaveBalance> GetEmployeeBalances(Guid employeeId);
+    Task<List<EmployeeLeaveBalance>> GetEmployeeBalancesAsync(Guid employeeId);
 
-    void AddBalance(EmployeeLeaveBalance balance);
+    Task AddBalanceAsync(EmployeeLeaveBalance balance);
 
     void UpdateBalance(EmployeeLeaveBalance balance);
 
-    List<LeaveType> GetActiveLeaveTypes();
+    Task<List<LeaveType>> GetActiveLeaveTypesAsync();
 
-    void SaveChanges();
+    Task SaveChangesAsync();
 }

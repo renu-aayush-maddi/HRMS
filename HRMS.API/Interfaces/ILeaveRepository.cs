@@ -4,28 +4,31 @@ namespace HRMS.API.Interfaces;
 
 public interface ILeaveRepository
 {
-    Employee? GetEmployee(Guid employeeId);
+    Task<Employee?> GetEmployeeAsync(Guid employeeId);
 
-    Employee? GetEmployeeByUserId(Guid userId);
+    Task<Employee?> GetEmployeeByUserIdAsync(Guid userId);
 
-    LeaveRequest? GetLeaveById(Guid leaveId);
+    Task<LeaveRequest?> GetLeaveByIdAsync(Guid leaveId);
 
-    List<LeaveRequest> GetAllLeaves();
+    Task<List<LeaveRequest>> GetAllLeavesAsync();
 
-    List<LeaveRequest> GetEmployeeLeaves(Guid employeeId);
+    Task<List<LeaveRequest>> GetEmployeeLeavesAsync(
+        Guid employeeId);
 
-    void AddLeave(LeaveRequest leave);
+    Task AddLeaveAsync(LeaveRequest leave);
 
     void UpdateLeave(LeaveRequest leave);
 
+    Task<EmployeeLeaveBalance?> GetLeaveBalanceAsync(Guid employeeId,Guid leaveTypeId);
 
-    EmployeeLeaveBalance? GetLeaveBalance(Guid employeeId,Guid leaveTypeId);
-
-    LeaveType? GetLeaveType(Guid leaveTypeId);
+    Task<LeaveType?> GetLeaveTypeAsync(Guid leaveTypeId);
 
     void UpdateLeaveBalance(EmployeeLeaveBalance balance);
 
-    bool HasOverlappingLeave(Guid employeeId,DateOnly fromDate,DateOnly toDate);
+    Task<bool> HasOverlappingLeaveAsync(
+        Guid employeeId,
+        DateOnly fromDate,
+        DateOnly toDate);
 
-    void SaveChanges();
+    Task SaveChangesAsync();
 }

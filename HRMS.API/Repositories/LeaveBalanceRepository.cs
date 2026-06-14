@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HRMS.API.Repositories;
 
-public class LeaveBalanceRepository: ILeaveBalanceRepository
+public class LeaveBalanceRepository : ILeaveBalanceRepository
 {
     private readonly AppDbContext context;
 
@@ -14,65 +14,62 @@ public class LeaveBalanceRepository: ILeaveBalanceRepository
         this.context = context;
     }
 
-    public Employee? GetEmployee(Guid employeeId)
+    public async Task<Employee?> GetEmployeeAsync(Guid employeeId)
     {
-        return context.Employees.FirstOrDefault(x => x.Id == employeeId);
+        return await context.Employees
+            .FirstOrDefaultAsync(x => x.Id == employeeId);
     }
 
-    public LeaveType? GetLeaveType(Guid leaveTypeId)
+    public async Task<LeaveType?> GetLeaveTypeAsync(Guid leaveTypeId)
     {
-        return context.LeaveTypes
-            .FirstOrDefault(x =>
-                x.Id == leaveTypeId);
+        return await context.LeaveTypes
+            .FirstOrDefaultAsync(x => x.Id == leaveTypeId);
     }
 
-    public EmployeeLeaveBalance? GetBalance(Guid employeeId,Guid leaveTypeId)
+    public async Task<EmployeeLeaveBalance?> GetBalanceAsync(Guid employeeId,Guid leaveTypeId)
     {
-        return context.EmployeeLeaveBalances
-            .FirstOrDefault(x =>
-                x.EmployeeId == employeeId
-                &&
+        return await context.EmployeeLeaveBalances
+            .FirstOrDefaultAsync(x =>
+                x.EmployeeId == employeeId &&
                 x.LeaveTypeId == leaveTypeId);
     }
 
-    public List<EmployeeLeaveBalance> GetAllBalances()
+    public async Task<List<EmployeeLeaveBalance>> GetAllBalancesAsync()
     {
-        return context.EmployeeLeaveBalances
+        return await context.EmployeeLeaveBalances
             .Include(x => x.Employee)
             .Include(x => x.LeaveType)
-            .ToList();
+            .ToListAsync();
     }
 
-    public List<EmployeeLeaveBalance> GetEmployeeBalances(Guid employeeId)
+    public async Task<List<EmployeeLeaveBalance>> GetEmployeeBalancesAsync(Guid employeeId)
     {
-        return context.EmployeeLeaveBalances
+        return await context.EmployeeLeaveBalances
             .Include(x => x.Employee)
             .Include(x => x.LeaveType)
-            .Where(x =>
-                x.EmployeeId == employeeId)
-            .ToList();
+            .Where(x => x.EmployeeId == employeeId)
+            .ToListAsync();
     }
 
-    public void AddBalance(EmployeeLeaveBalance balance)
+    public async Task AddBalanceAsync(EmployeeLeaveBalance balance)
     {
-        context.EmployeeLeaveBalances.Add(balance);
+        await context.EmployeeLeaveBalances.AddAsync(balance);
     }
 
     public void UpdateBalance(EmployeeLeaveBalance balance)
     {
-        context.EmployeeLeaveBalances
-            .Update(balance);
+        context.EmployeeLeaveBalances.Update(balance);
     }
 
-    public List<LeaveType> GetActiveLeaveTypes()
+    public async Task<List<LeaveType>> GetActiveLeaveTypesAsync()
     {
-        return context.LeaveTypes
+        return await context.LeaveTypes
             .Where(x => x.IsActive == true)
-            .ToList();
+            .ToListAsync();
     }
 
-    public void SaveChanges()
+    public async Task SaveChangesAsync()
     {
-        context.SaveChanges();
+        await context.SaveChangesAsync();
     }
 }

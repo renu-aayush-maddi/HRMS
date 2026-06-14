@@ -8,7 +8,7 @@ namespace HRMS.API.Controllers;
 [Route("api/leave-balances")]
 [ApiController]
 [Authorize]
-public class LeaveBalancesController: ControllerBase
+public class LeaveBalancesController : ControllerBase
 {
     private readonly ILeaveBalanceService service;
 
@@ -19,24 +19,24 @@ public class LeaveBalancesController: ControllerBase
 
     [Authorize(Roles = "Admin,HR")]
     [HttpPost("allocate")]
-    public IActionResult Allocate(AllocateLeaveBalanceDto dto)
+    public async Task<IActionResult> Allocate(AllocateLeaveBalanceDto dto)
     {
-        service.Allocate(dto);
+        await service.AllocateAsync(dto);
 
         return Ok("Leave Balance Allocated");
     }
 
     [Authorize(Roles = "Admin,HR")]
     [HttpGet]
-    public IActionResult GetAll()
+    public async Task<IActionResult> GetAll()
     {
-        return Ok(service.GetAllBalances());
+        return Ok(await service.GetAllBalancesAsync());
     }
 
-    [Authorize]
+    
     [HttpGet("{employeeId}")]
-    public IActionResult GetEmployeeBalances(Guid employeeId)
+    public async Task<IActionResult> GetEmployeeBalances(Guid employeeId)
     {
-        return Ok(service.GetEmployeeBalances(employeeId));
+        return Ok(await service.GetEmployeeBalancesAsync(employeeId));
     }
 }

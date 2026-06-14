@@ -4,11 +4,11 @@ namespace HRMS.API.Interfaces;
 
 public interface ILeaveBalanceService
 {
-    void Allocate(AllocateLeaveBalanceDto dto);
+    Task AllocateAsync(AllocateLeaveBalanceDto dto);
 
-    List<LeaveBalanceResponseDto> GetAllBalances();
+    Task<List<LeaveBalanceResponseDto>> GetAllBalancesAsync();
 
-    List<LeaveBalanceResponseDto> GetEmployeeBalances(Guid employeeId);
+    Task<List<LeaveBalanceResponseDto>> GetEmployeeBalancesAsync(Guid employeeId);
 
-    void AllocateDefaultBalances(Guid employeeId);
+    Task AllocateDefaultBalancesAsync(Guid employeeId);
 }

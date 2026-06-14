@@ -552,11 +552,6 @@ public class EmployeeService : IEmployeeService
 
         var role = await employeeRepository.GetRoleByNameAsync(dto.Role);
 
-        if (role == null)
-        {
-            throw new ValidationException("Invalid role");
-        }
-
         string temporaryPassword = GenerateTemporaryPassword();
 
         var user = new User
@@ -592,7 +587,7 @@ public class EmployeeService : IEmployeeService
 
         await employeeRepository.SaveChangesAsync();
 
-        leaveBalanceService.AllocateDefaultBalances(employee.Id);
+        await leaveBalanceService.AllocateDefaultBalancesAsync(employee.Id);
 
         notificationService.CreateNotification(
             user.Id,

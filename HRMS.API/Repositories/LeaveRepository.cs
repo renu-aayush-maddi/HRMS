@@ -14,47 +14,46 @@ public class LeaveRepository : ILeaveRepository
         this.context = context;
     }
 
-    public Employee? GetEmployee(Guid employeeId)
+    public async Task<Employee?> GetEmployeeAsync(Guid employeeId)
     {
-        return context.Employees.FirstOrDefault(e => e.Id == employeeId);
+        return await context.Employees
+            .FirstOrDefaultAsync(e => e.Id == employeeId);
     }
 
-    public LeaveRequest? GetLeaveById(Guid leaveId)
+    public async Task<Employee?> GetEmployeeByUserIdAsync(Guid userId)
     {
-        return context.LeaveRequests
+        return await context.Employees
+            .FirstOrDefaultAsync(e => e.UserId == userId);
+    }
+
+    public async Task<LeaveRequest?> GetLeaveByIdAsync(Guid leaveId)
+    {
+        return await context.LeaveRequests
             .Include(l => l.Employee)
             .Include(l => l.LeaveType)
-            .FirstOrDefault(l => l.Id == leaveId);
+            .FirstOrDefaultAsync(l => l.Id == leaveId);
     }
 
-    public List<LeaveRequest> GetAllLeaves()
+    public async Task<List<LeaveRequest>> GetAllLeavesAsync()
     {
-        return context.LeaveRequests
+        return await context.LeaveRequests
             .Include(l => l.Employee)
-            .Include(x => x.LeaveType)
-            .ToList();
+            .Include(l => l.LeaveType)
+            .ToListAsync();
     }
 
-
-    public Employee? GetEmployeeByUserId(Guid userId)
+    public async Task<List<LeaveRequest>> GetEmployeeLeavesAsync(Guid employeeId)
     {
-        return context.Employees
-            .FirstOrDefault(e =>
-                e.UserId == userId);
-    }
-
-    public List<LeaveRequest> GetEmployeeLeaves(Guid employeeId)
-    {
-        return context.LeaveRequests
+        return await context.LeaveRequests
             .Include(l => l.Employee)
             .Include(l => l.LeaveType)
             .Where(l => l.EmployeeId == employeeId)
-            .ToList();
+            .ToListAsync();
     }
 
-    public void AddLeave(LeaveRequest leave)
+    public async Task AddLeaveAsync(LeaveRequest leave)
     {
-        context.LeaveRequests.Add(leave);
+        await context.LeaveRequests.AddAsync(leave);
     }
 
     public void UpdateLeave(LeaveRequest leave)
@@ -62,43 +61,34 @@ public class LeaveRepository : ILeaveRepository
         context.LeaveRequests.Update(leave);
     }
 
-
-
-    public EmployeeLeaveBalance? GetLeaveBalance(Guid employeeId,Guid leaveTypeId)
+    public async Task<EmployeeLeaveBalance?> GetLeaveBalanceAsync(Guid employeeId, Guid leaveTypeId)
     {
-        return context.EmployeeLeaveBalances
-            .FirstOrDefault(x =>
-                x.EmployeeId == employeeId &&
-                x.LeaveTypeId == leaveTypeId);
+        return await context.EmployeeLeaveBalances
+            .FirstOrDefaultAsync(x => x.EmployeeId == employeeId && x.LeaveTypeId == leaveTypeId);
     }
 
-    public LeaveType? GetLeaveType(
-        Guid leaveTypeId)
+    public async Task<LeaveType?> GetLeaveTypeAsync(Guid leaveTypeId)
     {
-        return context.LeaveTypes
-            .FirstOrDefault(x =>
-                x.Id == leaveTypeId);
+        return await context.LeaveTypes
+            .FirstOrDefaultAsync(x => x.Id == leaveTypeId);
     }
 
-    public void UpdateLeaveBalance(
-        EmployeeLeaveBalance balance)
+    public void UpdateLeaveBalance(EmployeeLeaveBalance balance)
     {
-        context.EmployeeLeaveBalances
-            .Update(balance);
+        context.EmployeeLeaveBalances.Update(balance);
     }
 
-    public void SaveChanges()
+    public async Task<bool> HasOverlappingLeaveAsync(Guid employeeId, DateOnly fromDate, DateOnly toDate)
     {
-        context.SaveChanges();
+        return await context.LeaveRequests
+            .AnyAsync(l => l.EmployeeId == employeeId && 
+                          (l.Status == "Pending" || l.Status == "Approved") && 
+                           fromDate <= l.ToDate && 
+                           toDate >= l.FromDate);
     }
 
-
-    public bool HasOverlappingLeave(Guid employeeId,DateOnly fromDate,DateOnly toDate)
+    public async Task SaveChangesAsync()
     {
-        return context.LeaveRequests.Any(l =>
-            l.EmployeeId == employeeId &&
-            l.Status != "Rejected" &&
-            fromDate <= l.ToDate &&
-            toDate >= l.FromDate);
+        await context.SaveChangesAsync();
     }
 }

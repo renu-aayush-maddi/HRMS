@@ -1,182 +1,156 @@
+using HRMS.API.Exceptions;
 using HRMS.API.Interfaces;
 using HRMS.API.Models.DTOs.LeaveBalance;
 using HRMS.API.Models.Entities;
-using HRMS.API.Exceptions;
+using HRMS.API.Validators;
 
 namespace HRMS.API.Services;
 
-public class LeaveBalanceService: ILeaveBalanceService
+public class LeaveBalanceService : ILeaveBalanceService
 {
     private readonly ILeaveBalanceRepository repository;
-    
+    private readonly LeaveBalanceValidator validator;
 
-    public LeaveBalanceService(ILeaveBalanceRepository repository)
+    public LeaveBalanceService(
+        ILeaveBalanceRepository repository,
+        LeaveBalanceValidator validator)
     {
         this.repository = repository;
+        this.validator = validator;
     }
 
-    public void Allocate(AllocateLeaveBalanceDto dto)
+    public async Task AllocateAsync(AllocateLeaveBalanceDto dto)
     {
+        await validator.ValidateAllocationAsync(dto);
+
         var employee =
-            repository.GetEmployee(
+            await repository.GetEmployeeAsync(
                 dto.EmployeeId);
 
-        if(employee == null)
+        if (employee == null)
         {
             throw new NotFoundException("Employee not found");
         }
 
         var leaveType =
-            repository.GetLeaveType(
+            await repository.GetLeaveTypeAsync(
                 dto.LeaveTypeId);
 
-        if(leaveType == null)
+        if (leaveType == null)
         {
-            throw new NotFoundException("Leave type not found");
+            throw new NotFoundException(
+                "Leave type not found");
         }
 
         var existing =
-            repository.GetBalance(
+            await repository.GetBalanceAsync(
                 dto.EmployeeId,
                 dto.LeaveTypeId);
 
-        if(existing != null)
+        if (existing != null)
         {
-            throw new BusinessException("Balance already exists");  
+            existing.AllocatedDays += dto.AllocatedDays;
+            existing.RemainingDays += dto.AllocatedDays;
+
+            repository.UpdateBalance(existing);
+
+            await repository.SaveChangesAsync();
+
+            return;
         }
 
-        EmployeeLeaveBalance balance =
-            new EmployeeLeaveBalance
+        var balance = new EmployeeLeaveBalance
+        {
+            Id = Guid.NewGuid(),
+            EmployeeId = dto.EmployeeId,
+            LeaveTypeId = dto.LeaveTypeId,
+            AllocatedDays = dto.AllocatedDays,
+            UsedDays = 0,
+            RemainingDays = dto.AllocatedDays
+        };
+
+        await repository.AddBalanceAsync(balance);
+
+        await repository.SaveChangesAsync();
+    }
+
+    public async Task<List<LeaveBalanceResponseDto>> GetAllBalancesAsync()
+    {
+        var balances =
+            await repository.GetAllBalancesAsync();
+
+        return balances
+            .Select(x => new LeaveBalanceResponseDto
             {
-                Id = Guid.NewGuid(),
-
-                EmployeeId =
-                    dto.EmployeeId,
-
-                LeaveTypeId =
-                    dto.LeaveTypeId,
-
-                AllocatedDays =
-                    dto.AllocatedDays,
-
-                UsedDays = 0,
-
-                RemainingDays =
-                    dto.AllocatedDays
-            };
-
-        repository.AddBalance(balance);
-
-        repository.SaveChanges();
-    }
-
-    public List<LeaveBalanceResponseDto>
-        GetAllBalances()
-    {
-        return repository
-            .GetAllBalances()
-            .Select(x =>
-                new LeaveBalanceResponseDto
-                {
-                    Id = x.Id,
-
-                    EmployeeName =
-                        x.Employee!.FirstName
-                        + " "
-                        + x.Employee.LastName,
-
-                    LeaveType =
-                        x.LeaveType!.Name,
-
-                    AllocatedDays =
-                        x.AllocatedDays,
-
-                    UsedDays =
-                        x.UsedDays ?? 0,
-
-                    RemainingDays =
-                        x.RemainingDays
-                })
+                Id = x.Id,
+                EmployeeName =
+                    $"{x.Employee!.FirstName} {x.Employee.LastName}",
+                LeaveType = x.LeaveType!.Name,
+                AllocatedDays = x.AllocatedDays,
+                UsedDays = x.UsedDays ?? 0,
+                RemainingDays = x.RemainingDays
+            })
             .ToList();
     }
 
-    public List<LeaveBalanceResponseDto> GetEmployeeBalances(Guid employeeId)
+    public async Task<List<LeaveBalanceResponseDto>> GetEmployeeBalancesAsync(Guid employeeId)
     {
-        return repository
-            .GetEmployeeBalances(
-                employeeId)
-            .Select(x =>
-                new LeaveBalanceResponseDto
-                {
-                    Id = x.Id,
+        var balances =
+            await repository.GetEmployeeBalancesAsync(employeeId);
 
-                    EmployeeName =
-                        x.Employee!.FirstName
-                        + " "
-                        + x.Employee.LastName,
-
-                    LeaveType =
-                        x.LeaveType!.Name,
-
-                    AllocatedDays =
-                        x.AllocatedDays,
-
-                    UsedDays =
-                        x.UsedDays ?? 0,
-
-                    RemainingDays =
-                        x.RemainingDays
-                })
+        return balances
+            .Select(x => new LeaveBalanceResponseDto
+            {
+                Id = x.Id,
+                EmployeeName =
+                    $"{x.Employee!.FirstName} {x.Employee.LastName}",
+                LeaveType = x.LeaveType!.Name,
+                AllocatedDays = x.AllocatedDays,
+                UsedDays = x.UsedDays ?? 0,
+                RemainingDays = x.RemainingDays
+            })
             .ToList();
     }
 
-    public void AllocateDefaultBalances(
-        Guid employeeId)
+    public async Task AllocateDefaultBalancesAsync(Guid employeeId)
     {
         var employee =
-            repository.GetEmployee(employeeId);
+            await repository.GetEmployeeAsync(
+                employeeId);
 
-        if(employee == null)
+        if (employee == null)
         {
             throw new NotFoundException("Employee not found");
         }
 
         var leaveTypes =
-            repository.GetActiveLeaveTypes();
+            await repository.GetActiveLeaveTypesAsync();
 
-        foreach(var leaveType in leaveTypes)
+        foreach (var leaveType in leaveTypes)
         {
-            bool exists =
-                repository.GetBalance(
+            var existing =
+                await repository.GetBalanceAsync(
                     employeeId,
-                    leaveType.Id) != null;
+                    leaveType.Id);
 
-            if(exists)
+            if (existing != null)
             {
                 continue;
             }
 
-            EmployeeLeaveBalance balance =
-                new EmployeeLeaveBalance
-                {
-                    Id = Guid.NewGuid(),
+            var balance = new EmployeeLeaveBalance
+            {
+                Id = Guid.NewGuid(),
+                EmployeeId = employeeId,
+                LeaveTypeId = leaveType.Id,
+                AllocatedDays = leaveType.AnnualAllocation,
+                UsedDays = 0,
+                RemainingDays = leaveType.AnnualAllocation
+            };
 
-                    EmployeeId = employeeId,
-
-                    LeaveTypeId = leaveType.Id,
-
-                    AllocatedDays =
-                        leaveType.AnnualAllocation,
-
-                    UsedDays = 0,
-
-                    RemainingDays =
-                        leaveType.AnnualAllocation
-                };
-
-            repository.AddBalance(balance);
+            await repository.AddBalanceAsync(balance);
         }
 
-        repository.SaveChanges();
+        await repository.SaveChangesAsync();
     }
 }
