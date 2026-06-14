@@ -2,6 +2,7 @@ using HRMS.API.Models.DTOs.Auth;
 using HRMS.API.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace HRMS.API.Controllers;
 
@@ -25,7 +26,9 @@ public class AuthController : ControllerBase
 
     }
 
+    
     [AllowAnonymous]
+    [EnableRateLimiting("LoginPolicy")]
     [HttpPost("login")]
     public async Task<IActionResult> Login(LoginDto dto)
     {

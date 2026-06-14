@@ -15,6 +15,8 @@ public partial class User
 
     public DateTime? CreatedAt { get; set; }
 
+    public DateTime? LastLoginAt { get; set; }
+
     public virtual Employee? Employee { get; set; }
 
     public virtual ICollection<EmployeeDocument> EmployeeDocuments { get; set; } = new List<EmployeeDocument>();

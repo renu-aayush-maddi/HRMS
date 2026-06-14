@@ -27,16 +27,6 @@ public class AuthRepository : IAuthRepository
             .FirstOrDefaultAsync(x => x.Name == roleName);
     }
 
-    public async Task<string?> GetUserRole(Guid userId)
-    {
-        var user = await _context.Users
-            .Include(x => x.Roles)
-            .FirstOrDefaultAsync(x => x.Id == userId);
-
-        return user?.Roles
-            .FirstOrDefault()?.Name;
-    }
-
     public async Task AddUser(User user)
     {
         await _context.Users.AddAsync(user);

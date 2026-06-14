@@ -23,6 +23,8 @@ using System.Text;
 using Microsoft.OpenApi.Models;
 using Microsoft.Extensions.FileProviders;
 using HRMS.API.Middleware;
+using Microsoft.AspNetCore.RateLimiting;
+using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -192,8 +194,38 @@ builder.Services.AddScoped<IPerformanceBonusRecommendationRepository,Performance
 
 
 builder.Services.AddScoped<IPerformanceCycleRepository,PerformanceCycleRepository>();
-
 builder.Services.AddScoped<IPerformanceCycleService,PerformanceCycleService>();
+
+
+
+
+builder.Services.AddRateLimiter(options =>
+{
+    options.OnRejected = async (context, token) =>
+    {
+        context.HttpContext.Response.StatusCode = 429;
+
+        await context.HttpContext.Response.WriteAsJsonAsync(
+            new
+            {
+                Message =
+                    "Too many login attempts. Please try again later."
+            },
+            token);
+    };
+
+    options.AddFixedWindowLimiter(
+        "LoginPolicy",
+        policy =>
+        {
+            policy.PermitLimit = 5;
+
+            policy.Window =
+                TimeSpan.FromMinutes(1);
+
+            policy.QueueLimit = 0;
+        });
+});
 
 builder.Services.AddAuthentication(options =>
 {
@@ -253,6 +285,8 @@ app.UseSwagger();
 app.UseSwaggerUI();
 
 app.UseHttpsRedirection();
+
+app.UseRateLimiter();
 
 app.UseAuthentication();
 

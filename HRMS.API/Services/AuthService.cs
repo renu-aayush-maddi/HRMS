@@ -22,7 +22,9 @@ public class AuthService : IAuthService
 
     public async Task<string> Register(RegisterDto dto)
     {
-        var existingUser = await _authRepository.GetUserByEmail(dto.Email);
+        var email = dto.Email.Trim().ToLower();
+
+        var existingUser = await _authRepository.GetUserByEmail(email);
 
         if (existingUser != null)
         {
@@ -85,8 +87,10 @@ public class AuthService : IAuthService
 
     public async Task<LoginResponseDto> Login(LoginDto dto)
     {
-        var user =
-            await _authRepository.GetUserByEmail(dto.Email);
+        var email = dto.Email.Trim().ToLower();
+
+        var user = await _authRepository.GetUserByEmail(email);
+
 
         if (user == null)
         {
@@ -97,25 +101,26 @@ public class AuthService : IAuthService
         {
             throw new BusinessException("User account is disabled");
         }
-
-        var validPassword =
-            BCrypt.Net.BCrypt.Verify(
-                dto.Password,
-                user.PasswordHash);
+        var validPassword = BCrypt.Net.BCrypt.Verify(dto.Password,user.PasswordHash);
 
         if (!validPassword)
         {
             throw new BusinessException("Invalid credentials");
         }
 
-        var role =
-            await _authRepository.GetUserRole(user.Id);
+        var role = user.Roles.FirstOrDefault()?.Name;
 
-        var token =
-            _jwtHelper.GenerateToken(
-                user.Id,
-                user.Email,
-                role!);
+
+        if (string.IsNullOrWhiteSpace(role))
+        {
+            throw new BusinessException("User role not assigned");
+        }
+
+        user.LastLoginAt = DateTime.Now;
+
+        await _authRepository.SaveChanges();
+
+        var token = _jwtHelper.GenerateToken(user.Id,user.Email,role);
 
         return new LoginResponseDto
         {

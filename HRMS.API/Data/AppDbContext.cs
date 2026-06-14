@@ -1047,6 +1047,9 @@ public partial class AppDbContext : DbContext
             entity.Property(e => e.IsActive)
                 .HasDefaultValue(true)
                 .HasColumnName("is_active");
+            entity.Property(e => e.LastLoginAt)
+                .HasColumnType("timestamp without time zone")
+                .HasColumnName("last_login_at");
             entity.Property(e => e.PasswordHash).HasColumnName("password_hash");
 
             entity.HasMany(d => d.Roles).WithMany(p => p.Users)

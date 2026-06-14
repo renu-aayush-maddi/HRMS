@@ -8,8 +8,6 @@ public interface IAuthRepository
 
     Task<Role?> GetRoleByName(string roleName);
 
-    Task<string?> GetUserRole(Guid userId);
-
     Task AddUser(User user);
 
     Task AddEmployee(Employee employee);
