@@ -1,20 +1,19 @@
+using HRMS.API.Models.Common;
 using HRMS.API.Models.DTOs.EmployeeDocument;
 
 namespace HRMS.API.Interfaces;
 
 public interface IEmployeeDocumentService
 {
-    Task UploadDocument(
-        AddEmployeeDocumentDto dto);
+    Task<EmployeeDocumentResponseDto> UploadDocumentAsync(AddEmployeeDocumentDto dto, CancellationToken cancellationToken = default);
 
-    List<EmployeeDocumentResponseDto>
-        GetEmployeeDocuments(
-            Guid employeeId);
+    Task<PagedResponse<EmployeeDocumentResponseDto>> GetDocumentsAsync(EmployeeDocumentFilterDto filter, CancellationToken cancellationToken = default);
 
-    void VerifyDocument(
-        Guid documentId,
-        Guid verifiedBy);
+    Task VerifyDocumentAsync(Guid documentId, CancellationToken cancellationToken = default);
 
-    void DeleteDocument(
-        Guid documentId);
+    Task DeleteDocumentAsync(Guid documentId, CancellationToken cancellationToken = default);
+
+    Task<(byte[] FileBytes, string FileName, string ContentType)> DownloadDocumentAsync(Guid documentId, CancellationToken cancellationToken = default);
+
+    Task<byte[]> ExportDocumentsAsync(EmployeeDocumentFilterDto filter, CancellationToken cancellationToken = default);
 }

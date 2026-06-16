@@ -35,7 +35,7 @@ public class DepartmentsController : ControllerBase
 
     [Authorize(Roles = "Admin")]
     [HttpPut("{id}")]
-    public IActionResult UpdateDepartment(Guid id,UpdateDepartmentDto dto)
+    public IActionResult UpdateDepartment(Guid id, UpdateDepartmentDto dto)
     {
         departmentService.UpdateDepartment(id, dto);
 

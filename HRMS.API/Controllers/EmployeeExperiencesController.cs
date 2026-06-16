@@ -1,4 +1,5 @@
 using HRMS.API.Interfaces;
+using HRMS.API.Models.Common;
 using HRMS.API.Models.DTOs.EmployeeExperience;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -8,60 +9,59 @@ namespace HRMS.API.Controllers;
 [Route("api/employee-experiences")]
 [ApiController]
 [Authorize]
-public class EmployeeExperiencesController
-    : ControllerBase
+public class EmployeeExperiencesController : ControllerBase
 {
-    private readonly
-        IEmployeeExperienceService service;
+    private readonly IEmployeeExperienceService service;
 
-    public EmployeeExperiencesController(
-        IEmployeeExperienceService service)
+    public EmployeeExperiencesController(IEmployeeExperienceService service)
     {
         this.service = service;
     }
 
-    [Authorize(Roles = "Admin,HR,Employee")]
     [HttpPost]
-    public IActionResult AddExperience(
-        AddEmployeeExperienceDto dto)
+    public async Task<IActionResult> AddExperience([FromBody] AddEmployeeExperienceDto dto, CancellationToken cancellationToken)
     {
-        service.AddExperience(dto);
-
-        return Ok(
-            "Experience Added Successfully");
+        var result = await service.AddExperienceAsync(dto, cancellationToken);
+        return CreatedAtAction(nameof(GetExperiences), new { employeeId = result.EmployeeId }, result);
     }
 
-    [HttpGet("{employeeId}")]
-    public IActionResult GetExperiences(
-        Guid employeeId)
+    [HttpGet]
+    public async Task<IActionResult> GetExperiences([FromQuery] EmployeeExperienceFilterDto filter, CancellationToken cancellationToken)
     {
-        return Ok(
-            service.GetEmployeeExperiences(
-                employeeId));
+        var result = await service.GetExperiencesAsync(filter, cancellationToken);
+        return Ok(result);
     }
 
-    [Authorize(Roles = "Admin,HR")]
-    [HttpPut("{id}")]
-    public IActionResult UpdateExperience(
-        Guid id,
-        UpdateEmployeeExperienceDto dto)
+    [HttpPut("{id:guid}")]
+    public async Task<IActionResult> UpdateExperience(Guid id, [FromBody] UpdateEmployeeExperienceDto dto, CancellationToken cancellationToken)
     {
-        service.UpdateExperience(
-            id,
-            dto);
+        var result = await service.UpdateExperienceAsync(id, dto, cancellationToken);
+        return Ok(result);
+    }
 
-        return Ok(
-            "Experience Updated Successfully");
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> DeleteExperience(Guid id, CancellationToken cancellationToken)
+    {
+        await service.DeleteExperienceAsync(id, cancellationToken);
+        return Ok(new ApiResponse { Message = "Experience deleted successfully." });
     }
 
     [Authorize(Roles = "Admin,HR")]
-    [HttpDelete("{id}")]
-    public IActionResult DeleteExperience(
-        Guid id)
+    [HttpGet("export")]
+    public async Task<IActionResult> ExportExperiences([FromQuery] EmployeeExperienceFilterDto filter, CancellationToken cancellationToken)
     {
-        service.DeleteExperience(id);
+        var fileBytes = await service.ExportExperiencesAsync(filter, cancellationToken);
+        return File(
+            fileBytes,
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            $"employee-experiences-{DateTime.UtcNow:yyyyMMddHHmmss}.xlsx");
+    }
 
-        return Ok(
-            "Experience Deleted Successfully");
+    [Authorize(Roles = "Admin,HR")]
+    [HttpPost("import")]
+    public async Task<IActionResult> ImportExperiences(IFormFile file, CancellationToken cancellationToken)
+    {
+        var result = await service.ImportExperiencesAsync(file, cancellationToken);
+        return Ok(result);
     }
 }

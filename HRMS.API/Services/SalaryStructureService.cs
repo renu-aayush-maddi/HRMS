@@ -5,8 +5,7 @@ using HRMS.API.Models.Entities;
 
 namespace HRMS.API.Services;
 
-public class SalaryStructureService
-    : ISalaryStructureService
+public class SalaryStructureService: ISalaryStructureService
 {
     private readonly ISalaryStructureRepository salaryStructureRepository;
 

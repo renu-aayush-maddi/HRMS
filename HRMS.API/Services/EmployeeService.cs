@@ -602,9 +602,7 @@ public class EmployeeService : IEmployeeService
         };
     }
 
-    public async Task UpdateEmployeeAsync(
-    Guid id,
-    UpdateEmployeeDto dto)
+    public async Task UpdateEmployeeAsync(Guid id,UpdateEmployeeDto dto)
     {
         await employeeValidator.ValidateUpdateAsync(dto);
 

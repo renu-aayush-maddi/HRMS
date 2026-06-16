@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 [Route("api/users")]
 [ApiController]
 [Authorize(Roles = "Admin")]
+
 public class UsersController : ControllerBase
 {
     private readonly IUserManagementService service;
@@ -44,7 +45,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpPut("{id}/role")]
-    public IActionResult ChangeRole(Guid id,ChangeRoleDto dto)
+    public IActionResult ChangeRole(Guid id, ChangeRoleDto dto)
     {
         service.ChangeRole(id, dto);
 

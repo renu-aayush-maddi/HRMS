@@ -1,19 +1,19 @@
+using HRMS.API.Models.Common;
 using HRMS.API.Models.DTOs.EmployeeEducation;
 
 namespace HRMS.API.Interfaces;
 
 public interface IEmployeeEducationService
 {
-    void AddEducation(
-        AddEmployeeEducationDto dto);
+    Task<EmployeeEducationResponseDto> AddEducationAsync(AddEmployeeEducationDto dto, CancellationToken cancellationToken = default);
 
-    List<EmployeeEducationResponseDto>
-        GetEmployeeEducations(
-            Guid employeeId);
+    Task<PagedResponse<EmployeeEducationResponseDto>> GetEducationsAsync(EmployeeEducationFilterDto filter, CancellationToken cancellationToken = default);
 
-    void UpdateEducation(
-        Guid id,
-        UpdateEmployeeEducationDto dto);
+    Task<EmployeeEducationResponseDto> UpdateEducationAsync(Guid educationId, UpdateEmployeeEducationDto dto, CancellationToken cancellationToken = default);
 
-    void DeleteEducation(Guid id);
+    Task DeleteEducationAsync(Guid educationId, CancellationToken cancellationToken = default);
+
+    Task<byte[]> ExportEducationsAsync(EmployeeEducationFilterDto filter, CancellationToken cancellationToken = default);
+
+    Task<EmployeeEducationImportResultDto> ImportEducationsAsync(IFormFile file, CancellationToken cancellationToken = default);
 }

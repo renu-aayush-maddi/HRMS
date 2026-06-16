@@ -17,7 +17,7 @@ public class ResignationsController : ControllerBase
         this.service = service;
     }
 
-    [Authorize(Roles = "Employee , Admin , HR")]
+    [Authorize(Roles = "Employee,HR, Manager")]
     [HttpPost]
     public IActionResult SubmitResignation(SubmitResignationDto dto)
     {

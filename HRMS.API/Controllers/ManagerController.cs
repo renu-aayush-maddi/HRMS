@@ -2,7 +2,6 @@ using HRMS.API.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
-
 using HRMS.API.Models.DTOs.Manager;
 
 namespace HRMS.API.Controllers;
@@ -10,14 +9,11 @@ namespace HRMS.API.Controllers;
 [Route("api/manager")]
 [ApiController]
 [Authorize(Roles = "Manager")]
-public class ManagerController
-    : ControllerBase
+public class ManagerController : ControllerBase
 {
-    private readonly
-        IManagerService service;
+    private readonly IManagerService service;
 
-    public ManagerController(
-        IManagerService service)
+    public ManagerController(IManagerService service)
     {
         this.service = service;
     }
@@ -25,138 +21,74 @@ public class ManagerController
     [HttpGet("dashboard")]
     public IActionResult GetDashboard()
     {
-        var managerUserId =
-            Guid.Parse(
-                User.FindFirst(
-                    ClaimTypes.NameIdentifier)!
-                    .Value);
+        var managerUserId = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
 
-        return Ok(
-            service.GetDashboard(
-                managerUserId));
+        return Ok(service.GetDashboard(managerUserId));
     }
-
 
     [HttpGet("team")]
     public IActionResult GetTeamMembers()
     {
-        var managerUserId =
-            Guid.Parse(
-                User.FindFirst(
-                    ClaimTypes.NameIdentifier)!
-                    .Value);
+        var managerUserId = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
 
-        return Ok(
-            service.GetTeamMembers(
-                managerUserId));
+        return Ok(service.GetTeamMembers(managerUserId));
     }
 
     [HttpGet("team/{employeeId}")]
-    public IActionResult GetTeamMember(
-        Guid employeeId)
+    public IActionResult GetTeamMember(Guid employeeId)
     {
-        var managerUserId =
-            Guid.Parse(
-                User.FindFirst(
-                    ClaimTypes.NameIdentifier)!
-                    .Value);
+        var managerUserId = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
 
-        return Ok(
-            service.GetTeamMember(
-                managerUserId,
-                employeeId));
+        return Ok(service.GetTeamMember(managerUserId, employeeId));
     }
 
     [HttpGet("team-attendance")]
     public IActionResult GetTeamAttendance()
     {
-        var managerUserId =
-            Guid.Parse(
-                User.FindFirst(
-                    ClaimTypes.NameIdentifier)!
-                    .Value);
+        var managerUserId = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
 
-        return Ok(
-            service.GetTeamAttendance(
-                managerUserId));
+        return Ok(service.GetTeamAttendance(managerUserId));
     }
 
-
     [HttpGet("late-employees")]
-public IActionResult GetLateEmployees()
-{
-    var managerUserId =
-        Guid.Parse(
-            User.FindFirst(
-                ClaimTypes.NameIdentifier)!
-                .Value);
+    public IActionResult GetLateEmployees()
+    {
+        var managerUserId = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
 
-    return Ok(
-        service.GetLateEmployees(
-            managerUserId));
-}
+        return Ok(service.GetLateEmployees(managerUserId));
+    }
 
+    [HttpGet("pending-leaves")]
+    public IActionResult GetPendingLeaveRequests()
+    {
+        var managerUserId = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
 
-[HttpGet("pending-leaves")]
-public IActionResult GetPendingLeaveRequests()
-{
-    var managerUserId =
-        Guid.Parse(
-            User.FindFirst(
-                ClaimTypes.NameIdentifier)!
-                .Value);
+        return Ok(service.GetPendingLeaveRequests(managerUserId));
+    }
 
-    return Ok(
-        service.GetPendingLeaveRequests(
-            managerUserId));
-}
+    [HttpPost("performance-reviews")]
+    public IActionResult AddPerformanceReview(AddPerformanceReviewDto dto)
+    {
+        var managerUserId = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
 
+        service.AddPerformanceReview(managerUserId, dto);
 
-[HttpPost("performance-reviews")]
-public IActionResult AddPerformanceReview(
-    AddPerformanceReviewDto dto)
-{
-    var managerUserId =
-        Guid.Parse(
-            User.FindFirst(
-                ClaimTypes.NameIdentifier)!
-                .Value);
+        return Ok("Performance Review Added");
+    }
 
-    service.AddPerformanceReview(
-        managerUserId,
-        dto);
+    [HttpGet("performance-reviews")]
+    public IActionResult GetPerformanceReviews()
+    {
+        var managerUserId = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
 
-    return Ok(
-        "Performance Review Added");
-}
+        return Ok(service.GetPerformanceReviews(managerUserId));
+    }
 
-[HttpGet("performance-reviews")]
-public IActionResult GetPerformanceReviews()
-{
-    var managerUserId =
-        Guid.Parse(
-            User.FindFirst(
-                ClaimTypes.NameIdentifier)!
-                .Value);
+    [HttpGet("performance-reviews/{employeeId}")]
+    public IActionResult GetEmployeePerformanceReviews(Guid employeeId)
+    {
+        var managerUserId = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
 
-    return Ok(
-        service.GetPerformanceReviews(
-            managerUserId));
-}
-
-[HttpGet("performance-reviews/{employeeId}")]
-public IActionResult GetEmployeePerformanceReviews(
-    Guid employeeId)
-{
-    var managerUserId =
-        Guid.Parse(
-            User.FindFirst(
-                ClaimTypes.NameIdentifier)!
-                .Value);
-
-    return Ok(
-        service.GetEmployeePerformanceReviews(
-            managerUserId,
-            employeeId));
-}
+        return Ok(service.GetEmployeePerformanceReviews(managerUserId, employeeId));
+    }
 }

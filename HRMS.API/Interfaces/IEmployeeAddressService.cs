@@ -1,19 +1,19 @@
+using HRMS.API.Models.Common;
 using HRMS.API.Models.DTOs.EmployeeAddress;
 
 namespace HRMS.API.Interfaces;
 
 public interface IEmployeeAddressService
 {
-    void AddAddress(
-        AddEmployeeAddressDto dto);
+    Task<EmployeeAddressResponseDto> AddAddressAsync(AddEmployeeAddressDto dto, CancellationToken cancellationToken = default);
 
-    List<EmployeeAddressResponseDto>
-        GetEmployeeAddresses(
-            Guid employeeId);
+    Task<PagedResponse<EmployeeAddressResponseDto>> GetAddressesAsync(EmployeeAddressFilterDto filter, CancellationToken cancellationToken = default);
 
-    void UpdateAddress(
-        Guid id,
-        UpdateEmployeeAddressDto dto);
+    Task<EmployeeAddressResponseDto> UpdateAddressAsync(Guid addressId, UpdateEmployeeAddressDto dto, CancellationToken cancellationToken = default);
 
-    void DeleteAddress(Guid id);
+    Task DeleteAddressAsync(Guid addressId, CancellationToken cancellationToken = default);
+
+    Task<byte[]> ExportAddressesAsync(EmployeeAddressFilterDto filter,CancellationToken cancellationToken = default);
+
+    Task<EmployeeAddressImportResultDto> ImportAddressesAsync(IFormFile file,CancellationToken cancellationToken = default);
 }

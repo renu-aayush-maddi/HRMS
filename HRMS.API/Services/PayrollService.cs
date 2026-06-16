@@ -22,8 +22,7 @@ namespace HRMS.API.Services;
 
         if (existingPayroll != null)
         {
-            throw new Exception(
-                "Payroll already generated");
+            throw new Exception("Payroll already generated");
         }
         var employee = payrollRepository.GetEmployee(dto.EmployeeId);
 
@@ -39,8 +38,7 @@ namespace HRMS.API.Services;
 
         if (employeeSalary == null)
         {
-            throw new Exception(
-                "Employee salary not assigned");
+            throw new Exception("Employee salary not assigned");
         }
 
         decimal annualCtc =

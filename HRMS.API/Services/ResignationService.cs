@@ -9,14 +9,12 @@ public class ResignationService
 {
     private readonly IResignationRepository repository;
 
-    public ResignationService(
-        IResignationRepository repository)
+    public ResignationService(IResignationRepository repository)
     {
         this.repository = repository;
     }
 
-    public void SubmitResignation(
-        SubmitResignationDto dto)
+    public void SubmitResignation(SubmitResignationDto dto)
     {
         var employee =
             repository.GetEmployee(
@@ -168,30 +166,23 @@ public class ResignationService
         Guid resignationId,
         ResignationActionDto dto)
     {
-        var resignation =
-            repository.GetResignation(
-                resignationId);
+        var resignation = repository.GetResignation(resignationId);
 
         if(resignation == null)
         {
-            throw new Exception(
-                "Resignation not found");
+            throw new Exception("Resignation not found");
         }
 
-        resignation.Status =
-            "Rejected";
+        resignation.Status = "Rejected";
 
-        resignation.HrComments =
-            dto.HrComments;
+        resignation.HrComments = dto.HrComments;
 
         repository.Update(resignation);
 
         repository.SaveChanges();
     }
 
-    public void UpdateSettlement(
-        Guid resignationId,
-        SettlementDto dto)
+    public void UpdateSettlement(Guid resignationId,SettlementDto dto)
     {
         var resignation =
             repository.GetResignation(
@@ -199,8 +190,7 @@ public class ResignationService
 
         if(resignation == null)
         {
-            throw new Exception(
-                "Resignation not found");
+            throw new Exception("Resignation not found");
         }
 
         resignation.FinalSettlementStatus =

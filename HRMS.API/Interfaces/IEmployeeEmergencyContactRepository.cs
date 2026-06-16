@@ -4,23 +4,24 @@ namespace HRMS.API.Interfaces;
 
 public interface IEmployeeEmergencyContactRepository
 {
-    Employee? GetEmployee(Guid employeeId);
+    Task<Employee?> GetEmployeeAsync(Guid employeeId, CancellationToken cancellationToken = default);
 
-    EmployeeEmergencyContact?
-        GetContact(Guid id);
+    Task<EmployeeEmergencyContact?> GetContactAsync(Guid contactId, CancellationToken cancellationToken = default);
 
-    List<EmployeeEmergencyContact>
-        GetEmployeeContacts(
-            Guid employeeId);
+    IQueryable<EmployeeEmergencyContact> GetContacts();
 
-    void AddContact(
-        EmployeeEmergencyContact contact);
+    Task<int> GetContactCountAsync(Guid employeeId, CancellationToken cancellationToken = default);
 
-    void UpdateContact(
-        EmployeeEmergencyContact contact);
+    Task<bool> PhoneExistsAsync(Guid employeeId, string phone, CancellationToken cancellationToken = default);
 
-    void DeleteContact(
-        EmployeeEmergencyContact contact);
+    Task<bool> PhoneExistsAsync(Guid employeeId, Guid contactId, string phone, CancellationToken cancellationToken = default);
 
-    void SaveChanges();
+    Task AddContactAsync(EmployeeEmergencyContact contact, CancellationToken cancellationToken = default);
+
+    void UpdateContact(EmployeeEmergencyContact contact);
+
+    void DeleteContact(EmployeeEmergencyContact contact);
+
+    Task SaveChangesAsync(CancellationToken cancellationToken = default);
+
 }

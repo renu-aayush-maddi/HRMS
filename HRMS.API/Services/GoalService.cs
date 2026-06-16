@@ -15,23 +15,23 @@ public class GoalService : IGoalService
         this.repository = repository;
     }
 
-    public void AddGoal(Guid managerUserId,AddGoalDto dto)
+    public void AddGoal(Guid managerUserId, AddGoalDto dto)
     {
-        var manager =repository.GetEmployeeByUserId(managerUserId);
+        var manager = repository.GetEmployeeByUserId(managerUserId);
 
         if (manager == null)
         {
             throw new NotFoundException("Manager not found");
         }
 
-        var employee = repository.GetTeamMember(manager.Id,dto.EmployeeId);
+        var employee = repository.GetTeamMember(manager.Id, dto.EmployeeId);
 
         if (employee == null)
         {
             throw new BusinessException("Employee does not belong to your team");
         }
 
-        if(dto.TargetDate <DateOnly.FromDateTime(DateTime.Today))
+        if (dto.TargetDate < DateOnly.FromDateTime(DateTime.Today))
         {
             throw new BusinessException("Target date cannot be in the past");
         }
@@ -58,18 +58,18 @@ public class GoalService : IGoalService
         repository.SaveChanges();
     }
 
-    public PaginatedResponseDto<GoalResponseDto> GetGoals(Guid managerUserId,GoalQueryDto query)
+    public PaginatedResponseDto<GoalResponseDto> GetGoals(Guid managerUserId, GoalQueryDto query)
     {
-        var manager =repository.GetEmployeeByUserId(managerUserId);
+        var manager = repository.GetEmployeeByUserId(managerUserId);
 
         if (manager == null)
         {
             throw new NotFoundException("Manager not found");
         }
 
-        var page = query.Page <= 0? 1: query.Page;
+        var page = query.Page <= 0 ? 1 : query.Page;
 
-        var pageSize = query.PageSize <= 0? 10: query.PageSize;
+        var pageSize = query.PageSize <= 0 ? 10 : query.PageSize;
 
         var skip = (page - 1) * pageSize;
 
@@ -79,7 +79,7 @@ public class GoalService : IGoalService
                 skip,
                 pageSize);
 
-        var totalRecords = repository.GetGoalsCount(manager.Id,query);
+        var totalRecords = repository.GetGoalsCount(manager.Id, query);
 
         var data =
             goals.Select(g =>
@@ -114,7 +114,7 @@ public class GoalService : IGoalService
         };
     }
 
-    public List<GoalResponseDto> GetEmployeeGoals( Guid managerUserId,Guid employeeId)
+    public List<GoalResponseDto> GetEmployeeGoals(Guid managerUserId, Guid employeeId)
     {
         var manager = repository.GetEmployeeByUserId(managerUserId);
 
@@ -148,7 +148,7 @@ public class GoalService : IGoalService
             .ToList();
     }
 
-    public void UpdateGoalStatus(Guid managerUserId,Guid goalId,UpdateGoalStatusDto dto)
+    public void UpdateGoalStatus(Guid managerUserId, Guid goalId, UpdateGoalStatusDto dto)
     {
         var manager = repository.GetEmployeeByUserId(managerUserId);
 
@@ -190,92 +190,89 @@ public class GoalService : IGoalService
     }
 
 
-    public List<GoalResponseDto> GetMyGoals(
-    Guid employeeUserId)
-{
-    var employee =
-        repository
-        .GetEmployeeByUserId(
-            employeeUserId);
-
-    if (employee == null)
+    public List<GoalResponseDto> GetMyGoals(Guid employeeUserId)
     {
-        throw new NotFoundException(
-            "Employee not found");
+        var employee = repository
+            .GetEmployeeByUserId(
+                employeeUserId);
+
+        if (employee == null)
+        {
+            throw new NotFoundException("Employee not found");
+        }
+
+        return repository
+            .GetGoalsByEmployee(
+                employee.Id)
+            .Select(g =>
+                new GoalResponseDto
+                {
+                    Id = g.Id,
+
+                    EmployeeName =
+                        employee.FirstName +
+                        " " +
+                        employee.LastName,
+
+                    Title = g.Title,
+
+                    Description =
+                        g.Description ?? "",
+
+                    TargetDate =
+                        g.TargetDate,
+
+                    Status =
+                        g.Status ?? ""
+                })
+            .ToList();
     }
 
-    return repository
-        .GetGoalsByEmployee(
-            employee.Id)
-        .Select(g =>
-            new GoalResponseDto
-            {
-                Id = g.Id,
-
-                EmployeeName =
-                    employee.FirstName +
-                    " " +
-                    employee.LastName,
-
-                Title = g.Title,
-
-                Description =
-                    g.Description ?? "",
-
-                TargetDate =
-                    g.TargetDate,
-
-                Status =
-                    g.Status ?? ""
-            })
-        .ToList();
-}
-
-public void UpdateMyGoalStatus(
-    Guid employeeUserId,
-    Guid goalId,
-    UpdateGoalStatusDto dto)
-{
-    var employee =
-        repository
-        .GetEmployeeByUserId(
-            employeeUserId);
-
-    if (employee == null)
+    public void UpdateMyGoalStatus(
+        Guid employeeUserId,
+        Guid goalId,
+        UpdateGoalStatusDto dto)
     {
-        throw new NotFoundException(
-            "Employee not found");
-    }
+        var employee =
+            repository
+            .GetEmployeeByUserId(
+                employeeUserId);
 
-    var goal =
-        repository.GetEmployeeGoal(
-            goalId,
-            employee.Id);
+        if (employee == null)
+        {
+            throw new NotFoundException(
+                "Employee not found");
+        }
 
-    if (goal == null)
-    {
-        throw new NotFoundException(
-            "Goal not found");
-    }
+        var goal =
+            repository.GetEmployeeGoal(
+                goalId,
+                employee.Id);
 
-    string[] validStatuses =
-    {
+        if (goal == null)
+        {
+            throw new NotFoundException(
+                "Goal not found");
+        }
+
+        string[] validStatuses =
+        {
         "Assigned",
         "InProgress",
         "Completed"
     };
 
-    if (!validStatuses.Contains(
-        dto.Status))
-    {
-        throw new BusinessException(
-            "Invalid status");
+        if (!validStatuses.Contains(
+            dto.Status))
+        {
+            throw new BusinessException(
+                "Invalid status");
+        }
+
+        goal.Status = dto.Status;
+
+        repository.UpdateGoal(goal);
+
+        repository.SaveChanges();
     }
-
-    goal.Status = dto.Status;
-
-    repository.UpdateGoal(goal);
-
-    repository.SaveChanges();
-}
 }

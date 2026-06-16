@@ -4,21 +4,21 @@ namespace HRMS.API.Interfaces;
 
 public interface IEmployeeExperienceRepository
 {
-    Employee? GetEmployee(Guid employeeId);
+    Task<Employee?> GetEmployeeAsync(Guid employeeId, CancellationToken cancellationToken = default);
 
-    EmployeeExperience? GetExperience(Guid id);
+    Task<EmployeeExperience?> GetExperienceAsync(Guid experienceId, CancellationToken cancellationToken = default);
 
-    List<EmployeeExperience>
-        GetEmployeeExperiences(Guid employeeId);
+    IQueryable<EmployeeExperience> GetExperiences();
 
-    void AddExperience(
-        EmployeeExperience experience);
+    Task<bool> ExperienceExistsAsync(Guid employeeId, string companyName, string designation, DateOnly? startDate, CancellationToken cancellationToken = default);
 
-    void UpdateExperience(
-        EmployeeExperience experience);
+    Task<bool> ExperienceExistsAsync(Guid employeeId, Guid experienceId, string companyName, string designation, DateOnly? startDate, CancellationToken cancellationToken = default);
 
-    void DeleteExperience(
-        EmployeeExperience experience);
+    Task AddExperienceAsync(EmployeeExperience experience, CancellationToken cancellationToken = default);
 
-    void SaveChanges();
+    void UpdateExperience(EmployeeExperience experience);
+
+    void DeleteExperience(EmployeeExperience experience);
+
+    Task SaveChangesAsync(CancellationToken cancellationToken = default);
 }

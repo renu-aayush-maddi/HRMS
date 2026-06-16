@@ -5,65 +5,55 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HRMS.API.Repositories;
 
-public class EmployeeDocumentRepository
-    : IEmployeeDocumentRepository
+public class EmployeeDocumentRepository : IEmployeeDocumentRepository
 {
     private readonly AppDbContext context;
 
-    public EmployeeDocumentRepository(
-        AppDbContext context)
+    public EmployeeDocumentRepository(AppDbContext context)
     {
         this.context = context;
     }
 
-    public Employee? GetEmployee(
-        Guid employeeId)
+    public async Task<Employee?> GetEmployeeAsync(Guid employeeId, CancellationToken cancellationToken = default)
     {
-        return context.Employees
-            .FirstOrDefault(e =>
-                e.Id == employeeId);
+        return await context.Employees
+            .FirstOrDefaultAsync(x => x.Id == employeeId && !x.IsDeleted, cancellationToken);
     }
 
-    public EmployeeDocument? GetDocument(
-        Guid documentId)
+    public async Task<EmployeeDocument?> GetDocumentAsync(Guid documentId, CancellationToken cancellationToken = default)
     {
-        return context.EmployeeDocuments
-            .FirstOrDefault(d =>
-                d.Id == documentId);
+        return await context.EmployeeDocuments
+            .FirstOrDefaultAsync(x => x.Id == documentId, cancellationToken);
     }
 
-    public List<EmployeeDocument>
-        GetEmployeeDocuments(Guid employeeId)
+    public IQueryable<EmployeeDocument> GetDocuments()
     {
-        return context.EmployeeDocuments
-            .Where(d =>
-                d.EmployeeId == employeeId)
-            .ToList();
+        return context.EmployeeDocuments.AsNoTracking();
     }
 
-    public void AddDocument(
-        EmployeeDocument document)
+    public async Task<bool> DocumentExistsAsync(Guid employeeId, string documentType, CancellationToken cancellationToken = default)
     {
-        context.EmployeeDocuments
-            .Add(document);
+        return await context.EmployeeDocuments
+            .AnyAsync(x => x.EmployeeId == employeeId && x.DocumentType == documentType, cancellationToken);
     }
 
-    public void UpdateDocument(
-        EmployeeDocument document)
+    public async Task AddDocumentAsync(EmployeeDocument document, CancellationToken cancellationToken = default)
     {
-        context.EmployeeDocuments
-            .Update(document);
+        await context.EmployeeDocuments.AddAsync(document, cancellationToken);
     }
 
-    public void DeleteDocument(
-        EmployeeDocument document)
+    public void UpdateDocument(EmployeeDocument document)
     {
-        context.EmployeeDocuments
-            .Remove(document);
+        context.EmployeeDocuments.Update(document);
     }
 
-    public void SaveChanges()
+    public void DeleteDocument(EmployeeDocument document)
     {
-        context.SaveChanges();
+        context.EmployeeDocuments.Remove(document);
+    }
+
+    public async Task SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        await context.SaveChangesAsync(cancellationToken);
     }
 }

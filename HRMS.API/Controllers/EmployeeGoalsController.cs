@@ -48,7 +48,6 @@ public class EmployeeGoalsController : ControllerBase
             goalId,
             dto);
 
-        return Ok(
-            "Goal Status Updated");
+        return Ok("Goal Status Updated");
     }
 }

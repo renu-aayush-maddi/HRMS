@@ -12,6 +12,7 @@ public class LeaveTypesController: ControllerBase
 {
     private readonly ILeaveTypeService service;
 
+
     public LeaveTypesController(ILeaveTypeService service)
     {
         this.service = service;

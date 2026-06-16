@@ -16,6 +16,7 @@ public class LeaveBalancesController : ControllerBase
     {
         this.service = service;
     }
+    
 
     [Authorize(Roles = "Admin,HR")]
     [HttpPost("allocate")]

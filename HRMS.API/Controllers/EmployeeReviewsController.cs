@@ -12,8 +12,7 @@ public class EmployeeReviewsController : ControllerBase
 {
     private readonly IReviewService reviewService;
 
-    public EmployeeReviewsController(
-        IReviewService reviewService)
+    public EmployeeReviewsController(IReviewService reviewService)
     {
         this.reviewService = reviewService;
     }

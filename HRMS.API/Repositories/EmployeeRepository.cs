@@ -117,7 +117,7 @@ public class EmployeeRepository : IEmployeeRepository
     {
         employee.IsDeleted = true;
 
-        employee.DeletedAt = DateTime.UtcNow;
+        employee.DeletedAt = DateTime.Now;
 
         employee.DeletedBy = deletedBy;
 

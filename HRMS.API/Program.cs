@@ -27,6 +27,8 @@ using Microsoft.AspNetCore.RateLimiting;
 using System.Threading.RateLimiting;
 
 using HRMS.API.Validators;
+using FluentValidation;
+using FluentValidation.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -198,7 +200,18 @@ builder.Services.AddScoped<IPerformanceBonusRecommendationRepository,Performance
 builder.Services.AddScoped<IPerformanceCycleRepository,PerformanceCycleRepository>();
 builder.Services.AddScoped<IPerformanceCycleService,PerformanceCycleService>();
 
+builder.Services.AddHttpContextAccessor();
 
+builder.Services.AddScoped<IUserContextService,UserContextService>();
+builder.Services.AddScoped<IEmployeeAccessResolver,EmployeeAccessResolver>();
+
+builder.Services.AddScoped<IAuditLogRepository,AuditLogRepository>();
+
+builder.Services.AddScoped<IAuditLogService,AuditLogService>();
+
+
+builder.Services.AddValidatorsFromAssemblyContaining<Program>();
+builder.Services.AddFluentValidationAutoValidation();
 
 
 builder.Services.AddRateLimiter(options =>

@@ -8,7 +8,7 @@ namespace HRMS.API.Controllers;
 [Route("api/holidays")]
 [ApiController]
 [Authorize]
-public class HolidaysController: ControllerBase
+public class HolidaysController : ControllerBase
 {
     private readonly IHolidayService service;
 
@@ -16,6 +16,7 @@ public class HolidaysController: ControllerBase
     {
         this.service = service;
     }
+
 
     [Authorize(Roles = "Admin,HR,Employee,Manager")]
     [HttpGet]
@@ -42,9 +43,9 @@ public class HolidaysController: ControllerBase
 
     [Authorize(Roles = "Admin")]
     [HttpPut("{id}")]
-    public IActionResult UpdateHoliday(Guid id,UpdateHolidayDto dto)
+    public IActionResult UpdateHoliday(Guid id, UpdateHolidayDto dto)
     {
-        service.UpdateHoliday(id,dto);
+        service.UpdateHoliday(id, dto);
 
         return Ok("Holiday Updated Successfully");
     }

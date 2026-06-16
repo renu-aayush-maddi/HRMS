@@ -1,19 +1,19 @@
+using HRMS.API.Models.Common;
 using HRMS.API.Models.DTOs.EmployeeEmergencyContact;
 
 namespace HRMS.API.Interfaces;
 
 public interface IEmployeeEmergencyContactService
 {
-    void AddContact(
-        AddEmployeeEmergencyContactDto dto);
+    Task<EmployeeEmergencyContactResponseDto> AddContactAsync(AddEmployeeEmergencyContactDto dto, CancellationToken cancellationToken = default);
 
-    List<EmployeeEmergencyContactResponseDto>
-        GetEmployeeContacts(
-            Guid employeeId);
+    Task<PagedResponse<EmployeeEmergencyContactResponseDto>> GetContactsAsync(EmployeeEmergencyContactFilterDto filter, CancellationToken cancellationToken = default);
 
-    void UpdateContact(
-        Guid id,
-        UpdateEmployeeEmergencyContactDto dto);
+    Task<EmployeeEmergencyContactResponseDto> UpdateContactAsync(Guid contactId, UpdateEmployeeEmergencyContactDto dto, CancellationToken cancellationToken = default);
 
-    void DeleteContact(Guid id);
+    Task DeleteContactAsync(Guid contactId, CancellationToken cancellationToken = default);
+
+    Task<byte[]> ExportContactsAsync(EmployeeEmergencyContactFilterDto filter, CancellationToken cancellationToken = default);
+
+    Task<EmployeeEmergencyContactImportResultDto> ImportContactsAsync(IFormFile file, CancellationToken cancellationToken = default);
 }

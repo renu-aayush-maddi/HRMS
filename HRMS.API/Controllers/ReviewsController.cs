@@ -13,13 +13,12 @@ public class ReviewsController : ControllerBase
 {
     private readonly IReviewService reviewService;
 
-    public ReviewsController(
-        IReviewService reviewService)
+    public ReviewsController(IReviewService reviewService)
     {
         this.reviewService = reviewService;
     }
 
-    [Authorize(Roles = "Admin,HR,Manager")]
+    [Authorize(Roles = "Manager")]
     [HttpPost]
     public IActionResult AddReview(AddReviewDto dto)
     {
@@ -31,21 +30,17 @@ public class ReviewsController : ControllerBase
     }
 
 
-    [Authorize(Roles = "Admin,HR")]
+    [Authorize(Roles = "Admin,HR,Manager")]
     [HttpGet]
     public IActionResult GetAllReviews()
     {
-        return Ok(
-            reviewService.GetAllReviews());
+        return Ok(reviewService.GetAllReviews());
     }
 
-    [Authorize]
+    [Authorize(Roles = "Admin,HR")]
     [HttpGet("employee/{employeeId}")]
-    public IActionResult GetEmployeeReviews(
-        Guid employeeId)
+    public IActionResult GetEmployeeReviews( Guid employeeId)
     {
-        return Ok(
-            reviewService
-            .GetEmployeeReviews(employeeId));
+        return Ok(reviewService.GetEmployeeReviews(employeeId));
     }
 }

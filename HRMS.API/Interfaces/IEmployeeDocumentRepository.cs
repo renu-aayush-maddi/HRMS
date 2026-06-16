@@ -4,21 +4,19 @@ namespace HRMS.API.Interfaces;
 
 public interface IEmployeeDocumentRepository
 {
-    Employee? GetEmployee(Guid employeeId);
+    Task<Employee?> GetEmployeeAsync(Guid employeeId, CancellationToken cancellationToken = default);
 
-    EmployeeDocument? GetDocument(Guid documentId);
+    Task<EmployeeDocument?> GetDocumentAsync(Guid documentId, CancellationToken cancellationToken = default);
 
-    List<EmployeeDocument>
-        GetEmployeeDocuments(Guid employeeId);
+    IQueryable<EmployeeDocument> GetDocuments();
 
-    void AddDocument(
-        EmployeeDocument document);
+    Task<bool> DocumentExistsAsync(Guid employeeId, string documentType, CancellationToken cancellationToken = default);
 
-    void UpdateDocument(
-        EmployeeDocument document);
+    Task AddDocumentAsync(EmployeeDocument document, CancellationToken cancellationToken = default);
 
-    void DeleteDocument(
-        EmployeeDocument document);
+    void UpdateDocument(EmployeeDocument document);
 
-    void SaveChanges();
+    void DeleteDocument(EmployeeDocument document);
+
+    Task SaveChangesAsync(CancellationToken cancellationToken = default);
 }

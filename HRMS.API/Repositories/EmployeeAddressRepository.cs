@@ -1,66 +1,74 @@
 using HRMS.API.Data;
 using HRMS.API.Interfaces;
 using HRMS.API.Models.Entities;
+using Microsoft.EntityFrameworkCore;
 
 namespace HRMS.API.Repositories;
 
-public class EmployeeAddressRepository
-    : IEmployeeAddressRepository
+public class EmployeeAddressRepository : IEmployeeAddressRepository
 {
     private readonly AppDbContext context;
 
-    public EmployeeAddressRepository(
-        AppDbContext context)
+    public EmployeeAddressRepository(AppDbContext context)
     {
         this.context = context;
     }
 
-    public Employee? GetEmployee(Guid employeeId)
+    public async Task<Employee?> GetEmployeeAsync(Guid employeeId, CancellationToken cancellationToken = default)
     {
-        return context.Employees
-            .FirstOrDefault(e =>
-                e.Id == employeeId);
+        return await context.Employees
+            .FirstOrDefaultAsync(e => e.Id == employeeId && !e.IsDeleted, cancellationToken);
     }
 
-    public EmployeeAddress? GetAddress(Guid id)
+    public async Task<EmployeeAddress?> GetAddressAsync(Guid addressId, CancellationToken cancellationToken = default)
     {
-        return context.EmployeeAddresses
-            .FirstOrDefault(a =>
-                a.Id == id);
+        return await context.EmployeeAddresses
+            .FirstOrDefaultAsync(a => a.Id == addressId, cancellationToken);
     }
 
-    public List<EmployeeAddress>
-        GetEmployeeAddresses(Guid employeeId)
+    public IQueryable<EmployeeAddress> GetAddresses()
     {
-        return context.EmployeeAddresses
-            .Where(a =>
-                a.EmployeeId == employeeId)
-            .ToList();
+        return context.EmployeeAddresses.AsNoTracking();
     }
 
-    public void AddAddress(
-        EmployeeAddress address)
+    public async Task AddAddressAsync(EmployeeAddress address, CancellationToken cancellationToken = default)
     {
-        context.EmployeeAddresses
-            .Add(address);
+        await context.EmployeeAddresses.AddAsync(address, cancellationToken);
     }
 
-    public void UpdateAddress(
-        EmployeeAddress address)
+    public void UpdateAddress(EmployeeAddress address)
     {
-        context.EmployeeAddresses
-            .Update(address);
+        context.EmployeeAddresses.Update(address);
     }
 
-    public void DeleteAddress(
-        EmployeeAddress address)
+    public void DeleteAddress(EmployeeAddress address)
     {
-        context.EmployeeAddresses
-            .Remove(address);
+        context.EmployeeAddresses.Remove(address);
     }
 
-    public void SaveChanges()
+    public async Task SaveChangesAsync(CancellationToken cancellationToken = default)
     {
-        context.SaveChanges();
+        await context.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task<bool> AddressTypeExistsAsync(Guid employeeId,string addressType,CancellationToken cancellationToken = default)
+    {
+        return await context.EmployeeAddresses
+            .AnyAsync(
+                x =>
+                    x.EmployeeId == employeeId &&
+                    x.AddressType == addressType,
+                    cancellationToken);
+    }
+
+    public async Task<bool> AddressTypeExistsAsync(Guid employeeId,Guid addressId,string addressType,CancellationToken cancellationToken = default)
+    {
+        return await context.EmployeeAddresses
+            .AnyAsync(
+                x =>
+                    x.EmployeeId == employeeId &&
+                    x.Id != addressId &&
+                    x.AddressType == addressType,
+                cancellationToken);
     }
 }

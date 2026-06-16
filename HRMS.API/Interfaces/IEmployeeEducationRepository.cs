@@ -4,21 +4,21 @@ namespace HRMS.API.Interfaces;
 
 public interface IEmployeeEducationRepository
 {
-    Employee? GetEmployee(Guid employeeId);
+    Task<Employee?> GetEmployeeAsync(Guid employeeId, CancellationToken cancellationToken = default);
 
-    EmployeeEducation? GetEducation(Guid id);
+    Task<EmployeeEducation?> GetEducationAsync(Guid educationId, CancellationToken cancellationToken = default);
 
-    List<EmployeeEducation>
-        GetEmployeeEducations(Guid employeeId);
+    IQueryable<EmployeeEducation> GetEducations();
 
-    void AddEducation(
-        EmployeeEducation education);
+    Task<bool> EducationExistsAsync(Guid employeeId, string degree, string institutionName, int graduationYear, CancellationToken cancellationToken = default);
 
-    void UpdateEducation(
-        EmployeeEducation education);
+    Task<bool> EducationExistsAsync(Guid employeeId, Guid educationId, string degree, string institutionName, int graduationYear, CancellationToken cancellationToken = default);
 
-    void DeleteEducation(
-        EmployeeEducation education);
+    Task AddEducationAsync(EmployeeEducation education, CancellationToken cancellationToken = default);
 
-    void SaveChanges();
+    void UpdateEducation(EmployeeEducation education);
+
+    void DeleteEducation(EmployeeEducation education);
+
+    Task SaveChangesAsync(CancellationToken cancellationToken = default);
 }

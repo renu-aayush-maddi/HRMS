@@ -2,13 +2,11 @@ namespace HRMS.API.Models.DTOs.EmployeeExperience;
 
 public class AddEmployeeExperienceDto
 {
-    public Guid EmployeeId { get; set; }
+    public Guid? EmployeeId { get; set; }
 
-    public string CompanyName { get; set; }
-        = string.Empty;
+    public string CompanyName { get; set; }= string.Empty;
 
-    public string Designation { get; set; }
-        = string.Empty;
+    public string Designation { get; set; }= string.Empty;
 
     public DateOnly? StartDate { get; set; }
 

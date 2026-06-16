@@ -8,64 +8,48 @@ namespace HRMS.API.Controllers;
 [Route("api/performance-bonus-rules")]
 [ApiController]
 [Authorize(Roles = "Admin,HR")]
-public class PerformanceBonusRulesController
-    : ControllerBase
+public class PerformanceBonusRulesController : ControllerBase
 {
-    private readonly
-        IPerformanceBonusRuleService
-        service;
+    private readonly IPerformanceBonusRuleService service;
 
-    public PerformanceBonusRulesController(
-        IPerformanceBonusRuleService service)
+    public PerformanceBonusRulesController(IPerformanceBonusRuleService service)
     {
         this.service = service;
     }
 
     [HttpPost]
-    public IActionResult AddRule(
-        AddPerformanceBonusRuleDto dto)
+    public IActionResult AddRule(AddPerformanceBonusRuleDto dto)
     {
         service.AddRule(dto);
 
-        return Ok(
-            "Rule Added Successfully");
+        return Ok("Rule Added Successfully");
     }
 
     [HttpGet]
     public IActionResult GetAllRules()
     {
-        return Ok(
-            service.GetAllRules());
+        return Ok(service.GetAllRules());
     }
 
     [HttpGet("{id}")]
-    public IActionResult GetRule(
-        Guid id)
+    public IActionResult GetRule(Guid id)
     {
-        return Ok(
-            service.GetRuleById(id));
+        return Ok(service.GetRuleById(id));
     }
 
     [HttpPut("{id}")]
-    public IActionResult UpdateRule(
-        Guid id,
-        UpdatePerformanceBonusRuleDto dto)
+    public IActionResult UpdateRule(Guid id, UpdatePerformanceBonusRuleDto dto)
     {
-        service.UpdateRule(
-            id,
-            dto);
+        service.UpdateRule(id, dto);
 
-        return Ok(
-            "Rule Updated Successfully");
+        return Ok("Rule Updated Successfully");
     }
 
     [HttpDelete("{id}")]
-    public IActionResult DeleteRule(
-        Guid id)
+    public IActionResult DeleteRule(Guid id)
     {
         service.DeleteRule(id);
 
-        return Ok(
-            "Rule Deleted Successfully");
+        return Ok("Rule Deleted Successfully");
     }
 }

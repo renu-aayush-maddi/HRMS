@@ -4,21 +4,21 @@ namespace HRMS.API.Interfaces;
 
 public interface IEmployeeAddressRepository
 {
-    Employee? GetEmployee(Guid employeeId);
+    Task<Employee?> GetEmployeeAsync(Guid employeeId, CancellationToken cancellationToken = default);
 
-    EmployeeAddress? GetAddress(Guid id);
+    Task<EmployeeAddress?> GetAddressAsync(Guid addressId, CancellationToken cancellationToken = default);
 
-    List<EmployeeAddress>
-        GetEmployeeAddresses(Guid employeeId);
+    IQueryable<EmployeeAddress> GetAddresses();
 
-    void AddAddress(
-        EmployeeAddress address);
+    Task AddAddressAsync(EmployeeAddress address, CancellationToken cancellationToken = default);
 
-    void UpdateAddress(
-        EmployeeAddress address);
+    void UpdateAddress(EmployeeAddress address);
 
-    void DeleteAddress(
-        EmployeeAddress address);
+    void DeleteAddress(EmployeeAddress address);
 
-    void SaveChanges();
+    Task SaveChangesAsync(CancellationToken cancellationToken = default);
+
+    Task<bool> AddressTypeExistsAsync(Guid employeeId, string addressType, CancellationToken cancellationToken = default);
+
+    Task<bool> AddressTypeExistsAsync(Guid employeeId, Guid addressId, string addressType, CancellationToken cancellationToken = default);
 }

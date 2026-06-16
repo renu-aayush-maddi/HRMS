@@ -1,75 +1,67 @@
 using HRMS.API.Interfaces;
+using HRMS.API.Models.Common;
 using HRMS.API.Models.DTOs.EmployeeDocument;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 
 namespace HRMS.API.Controllers;
 
 [Route("api/employee-documents")]
 [ApiController]
 [Authorize]
-public class EmployeeDocumentsController
-    : ControllerBase
+public class EmployeeDocumentsController : ControllerBase
 {
-    private readonly
-        IEmployeeDocumentService service;
+    private readonly IEmployeeDocumentService service;
 
-    public EmployeeDocumentsController(
-        IEmployeeDocumentService service)
+    public EmployeeDocumentsController(IEmployeeDocumentService service)
     {
         this.service = service;
     }
 
-    [Authorize(Roles = "Admin,HR,Employee,Manager")]
     [HttpPost]
-    public async Task<IActionResult> UploadDocument(
-        [FromForm] AddEmployeeDocumentDto dto)
+    public async Task<IActionResult> UploadDocument([FromForm] AddEmployeeDocumentDto dto, CancellationToken cancellationToken)
     {
-        await service.UploadDocument(dto);
-
-        return Ok(
-            "Document Uploaded Successfully");
+        var result = await service.UploadDocumentAsync(dto, cancellationToken);
+        return Ok(result);
     }
 
-    [Authorize(Roles = "Admin,HR,Manager")]
-    [HttpGet("{employeeId}")]
-    public IActionResult GetDocuments(
-        Guid employeeId)
+    [HttpGet]
+    public async Task<IActionResult> GetDocuments([FromQuery] EmployeeDocumentFilterDto filter, CancellationToken cancellationToken)
     {
-        return Ok(
-            service.GetEmployeeDocuments(
-                employeeId));
+        var result = await service.GetDocumentsAsync(filter, cancellationToken);
+        return Ok(result);
     }
 
     [Authorize(Roles = "Admin,HR")]
-    [HttpPut("{documentId}/verify")]
-    public IActionResult VerifyDocument(
-        Guid documentId)
+    [HttpPut("{documentId:guid}/verify")]
+    public async Task<IActionResult> VerifyDocument(Guid documentId, CancellationToken cancellationToken)
     {
-        var userId =
-            Guid.Parse(
-                User.FindFirst(
-                    ClaimTypes.NameIdentifier)!
-                .Value);
+        await service.VerifyDocumentAsync(documentId, cancellationToken);
+        return Ok(new ApiResponse { Message = "Document verified successfully." });
+    }
 
-        service.VerifyDocument(
-            documentId,
-            userId);
+    [HttpGet("{documentId:guid}/download")]
+    public async Task<IActionResult> DownloadDocument(Guid documentId, CancellationToken cancellationToken)
+    {
+        var result = await service.DownloadDocumentAsync(documentId, cancellationToken);
+        return File(result.FileBytes, result.ContentType, result.FileName);
+    }
 
-        return Ok(
-            "Document Verified");
+    [HttpDelete("{documentId:guid}")]
+    public async Task<IActionResult> DeleteDocument(Guid documentId, CancellationToken cancellationToken)
+    {
+        await service.DeleteDocumentAsync(documentId, cancellationToken);
+        return Ok(new ApiResponse { Message = "Document deleted successfully." });
     }
 
     [Authorize(Roles = "Admin,HR")]
-    [HttpDelete("{documentId}")]
-    public IActionResult DeleteDocument(
-        Guid documentId)
+    [HttpGet("export")]
+    public async Task<IActionResult> ExportDocuments([FromQuery] EmployeeDocumentFilterDto filter, CancellationToken cancellationToken)
     {
-        service.DeleteDocument(
-            documentId);
-
-        return Ok(
-            "Document Deleted");
+        var file = await service.ExportDocumentsAsync(filter, cancellationToken);
+        return File(
+            file, 
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", 
+            $"employee-documents-{DateTime.UtcNow:yyyyMMddHHmmss}.xlsx");
     }
 }

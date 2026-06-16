@@ -11,74 +11,52 @@ namespace HRMS.API.Controllers;
 [Authorize]
 public class BonusController : ControllerBase
 {
-    private readonly IBonusService
-        bonusService;
+    private readonly IBonusService bonusService;
 
-    public BonusController(
-        IBonusService bonusService)
+    public BonusController(IBonusService bonusService)
     {
-        this.bonusService =
-            bonusService;
+        this.bonusService = bonusService;
     }
 
     [Authorize(Roles = "Admin,HR")]
     [HttpPost]
-    public IActionResult CreateBonus(
-        CreateBonusDto dto)
+    public IActionResult CreateBonus(CreateBonusDto dto)
     {
         bonusService.CreateBonus(dto);
 
-        return Ok(
-            "Bonus Created Successfully");
+        return Ok("Bonus Created Successfully");
     }
 
     [Authorize(Roles = "Admin,HR")]
     [HttpGet]
     public IActionResult GetAll()
     {
-        return Ok(
-            bonusService
-            .GetAllBonuses());
+        return Ok(bonusService.GetAllBonuses());
     }
 
     [Authorize(Roles = "Admin,HR")]
     [HttpPut("{bonusId}/approve")]
-    public IActionResult ApproveBonus(
-        Guid bonusId)
+    public IActionResult ApproveBonus(Guid bonusId)
     {
-        bonusService
-            .ApproveBonus(
-                bonusId);
+        bonusService.ApproveBonus(bonusId);
 
-        return Ok(
-            "Bonus Approved");
+        return Ok("Bonus Approved");
     }
 
     [Authorize(Roles = "Admin,HR")]
     [HttpPut("{bonusId}/reject")]
-    public IActionResult RejectBonus(
-        Guid bonusId)
+    public IActionResult RejectBonus(Guid bonusId)
     {
-        bonusService
-            .RejectBonus(
-                bonusId);
+        bonusService.RejectBonus(bonusId);
 
-        return Ok(
-            "Bonus Rejected");
+        return Ok("Bonus Rejected");
     }
 
     [HttpGet("my-bonuses")]
     public IActionResult MyBonuses()
     {
-        var userId =
-            Guid.Parse(
-                User.FindFirst(
-                    ClaimTypes.NameIdentifier)!
-                    .Value);
+        var userId = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
 
-        return Ok(
-            bonusService
-            .GetMyBonuses(
-                userId));
+        return Ok(bonusService.GetMyBonuses(userId));
     }
 }

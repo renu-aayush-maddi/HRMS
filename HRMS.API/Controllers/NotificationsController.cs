@@ -32,7 +32,6 @@ public class NotificationsController
     {
         service.MarkAsRead(notificationId);
 
-        return Ok(
-            "Notification marked as read");
+        return Ok("Notification marked as read");
     }
 }

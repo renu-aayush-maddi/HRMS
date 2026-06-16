@@ -1,66 +1,72 @@
 using HRMS.API.Data;
 using HRMS.API.Interfaces;
 using HRMS.API.Models.Entities;
+using Microsoft.EntityFrameworkCore;
 
 namespace HRMS.API.Repositories;
 
-public class EmployeeExperienceRepository
-    : IEmployeeExperienceRepository
+public class EmployeeExperienceRepository : IEmployeeExperienceRepository
 {
     private readonly AppDbContext context;
 
-    public EmployeeExperienceRepository(
-        AppDbContext context)
+    public EmployeeExperienceRepository(AppDbContext context)
     {
         this.context = context;
     }
 
-    public Employee? GetEmployee(Guid employeeId)
+    public async Task<Employee?> GetEmployeeAsync(Guid employeeId, CancellationToken cancellationToken = default)
     {
-        return context.Employees
-            .FirstOrDefault(e =>
-                e.Id == employeeId);
+        return await context.Employees
+            .FirstOrDefaultAsync(x => x.Id == employeeId && !x.IsDeleted, cancellationToken);
     }
 
-    public EmployeeExperience? GetExperience(Guid id)
+    public async Task<EmployeeExperience?> GetExperienceAsync(Guid experienceId, CancellationToken cancellationToken = default)
     {
-        return context.EmployeeExperiences
-            .FirstOrDefault(x =>
-                x.Id == id);
+        return await context.EmployeeExperiences
+            .FirstOrDefaultAsync(x => x.Id == experienceId, cancellationToken);
     }
 
-    public List<EmployeeExperience>
-        GetEmployeeExperiences(Guid employeeId)
+    public IQueryable<EmployeeExperience> GetExperiences()
     {
-        return context.EmployeeExperiences
-            .Where(x =>
-                x.EmployeeId == employeeId)
-            .ToList();
+        return context.EmployeeExperiences.AsNoTracking();
     }
 
-    public void AddExperience(
-        EmployeeExperience experience)
+    public async Task<bool> ExperienceExistsAsync(Guid employeeId, string companyName, string designation, DateOnly? startDate, CancellationToken cancellationToken = default)
     {
-        context.EmployeeExperiences
-            .Add(experience);
+        return await context.EmployeeExperiences
+            .AnyAsync(x => x.EmployeeId == employeeId && 
+                           x.CompanyName == companyName && 
+                           x.Designation == designation && 
+                           x.StartDate == startDate, cancellationToken);
     }
 
-    public void UpdateExperience(
-        EmployeeExperience experience)
+    public async Task<bool> ExperienceExistsAsync(Guid employeeId, Guid experienceId, string companyName, string designation, DateOnly? startDate, CancellationToken cancellationToken = default)
     {
-        context.EmployeeExperiences
-            .Update(experience);
+        return await context.EmployeeExperiences
+            .AnyAsync(x => x.EmployeeId == employeeId && 
+                           x.Id != experienceId && 
+                           x.CompanyName == companyName && 
+                           x.Designation == designation && 
+                           x.StartDate == startDate, cancellationToken);
     }
 
-    public void DeleteExperience(
-        EmployeeExperience experience)
+    public async Task AddExperienceAsync(EmployeeExperience experience, CancellationToken cancellationToken = default)
     {
-        context.EmployeeExperiences
-            .Remove(experience);
+        await context.EmployeeExperiences.AddAsync(experience, cancellationToken);
     }
 
-    public void SaveChanges()
+    public void UpdateExperience(EmployeeExperience experience)
     {
-        context.SaveChanges();
+        context.EmployeeExperiences.Update(experience);
+    }
+
+    public void DeleteExperience(EmployeeExperience experience)
+    {
+        context.EmployeeExperiences.Remove(experience);
+    }
+
+    public async Task SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        await context.SaveChangesAsync(cancellationToken);
     }
 }

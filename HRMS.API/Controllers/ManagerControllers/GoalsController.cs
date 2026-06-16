@@ -40,7 +40,7 @@ public class GoalsController: ControllerBase
     [HttpGet("{employeeId}")]
     public IActionResult GetEmployeeGoals(Guid employeeId)
     {
-        var managerUserId =Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+     var managerUserId =Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
 
         return Ok(service.GetEmployeeGoals(managerUserId,employeeId));
     }

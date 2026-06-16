@@ -8,8 +8,7 @@ public interface IReviewRepository
 
     List<PerformanceReview> GetAllReviews();
 
-    List<PerformanceReview> GetEmployeeReviews(
-        Guid employeeId);
+    List<PerformanceReview> GetEmployeeReviews(Guid employeeId);
 
     void AddReview(PerformanceReview review);
 

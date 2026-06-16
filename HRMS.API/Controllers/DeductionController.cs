@@ -9,78 +9,54 @@ namespace HRMS.API.Controllers;
 [Route("api/deductions")]
 [ApiController]
 [Authorize]
-public class DeductionController
-    : ControllerBase
+public class DeductionController : ControllerBase
 {
-    private readonly IDeductionService
-        deductionService;
+    private readonly IDeductionService deductionService;
 
-    public DeductionController(
-        IDeductionService deductionService)
+    public DeductionController(IDeductionService deductionService)
     {
-        this.deductionService =
-            deductionService;
+        this.deductionService = deductionService;
     }
 
     [Authorize(Roles = "Admin,HR")]
     [HttpPost]
-    public IActionResult CreateDeduction(
-        CreateDeductionDto dto)
+    public IActionResult CreateDeduction(CreateDeductionDto dto)
     {
-        deductionService
-            .CreateDeduction(dto);
+        deductionService.CreateDeduction(dto);
 
-        return Ok(
-            "Deduction Created Successfully");
+        return Ok("Deduction Created Successfully");
     }
 
     [Authorize(Roles = "Admin,HR")]
     [HttpGet]
     public IActionResult GetAll()
     {
-        return Ok(
-            deductionService
-                .GetAllDeductions());
+        return Ok(deductionService.GetAllDeductions());
     }
 
     [Authorize(Roles = "Admin,HR")]
     [HttpPut("{deductionId}/approve")]
-    public IActionResult ApproveDeduction(
-        Guid deductionId)
+    public IActionResult ApproveDeduction(Guid deductionId)
     {
-        deductionService
-            .ApproveDeduction(
-                deductionId);
+        deductionService.ApproveDeduction(deductionId);
 
-        return Ok(
-            "Deduction Approved");
+        return Ok("Deduction Approved");
     }
 
     [Authorize(Roles = "Admin,HR")]
     [HttpPut("{deductionId}/reject")]
-    public IActionResult RejectDeduction(
-        Guid deductionId)
+    public IActionResult RejectDeduction(Guid deductionId)
     {
-        deductionService
-            .RejectDeduction(
-                deductionId);
+        deductionService.RejectDeduction(deductionId);
 
-        return Ok(
-            "Deduction Rejected");
+        return Ok("Deduction Rejected");
     }
 
     [HttpGet("my-deductions")]
     public IActionResult GetMyDeductions()
     {
-        var userId =
-            Guid.Parse(
-                User.FindFirst(
-                    ClaimTypes.NameIdentifier)!
-                    .Value);
+        var userId = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
 
-        return Ok(
-            deductionService
-                .GetMyDeductions(
-                    userId));
+        return Ok(deductionService.GetMyDeductions(userId));
     }
 }

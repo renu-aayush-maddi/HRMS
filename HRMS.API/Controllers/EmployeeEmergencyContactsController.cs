@@ -1,4 +1,5 @@
 using HRMS.API.Interfaces;
+using HRMS.API.Models.Common;
 using HRMS.API.Models.DTOs.EmployeeEmergencyContact;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -8,60 +9,59 @@ namespace HRMS.API.Controllers;
 [Route("api/employee-emergency-contacts")]
 [ApiController]
 [Authorize]
-public class EmployeeEmergencyContactsController
-    : ControllerBase
+public class EmployeeEmergencyContactsController : ControllerBase
 {
-    private readonly
-        IEmployeeEmergencyContactService service;
+    private readonly IEmployeeEmergencyContactService service;
 
-    public EmployeeEmergencyContactsController(
-        IEmployeeEmergencyContactService service)
+    public EmployeeEmergencyContactsController(IEmployeeEmergencyContactService service)
     {
         this.service = service;
     }
 
-    [Authorize(Roles = "Admin,HR")]
     [HttpPost]
-    public IActionResult AddContact(
-        AddEmployeeEmergencyContactDto dto)
+    public async Task<IActionResult> AddContact([FromBody] AddEmployeeEmergencyContactDto dto, CancellationToken cancellationToken)
     {
-        service.AddContact(dto);
-
-        return Ok(
-            "Emergency Contact Added Successfully");
+        var result = await service.AddContactAsync(dto, cancellationToken);
+        return Ok(result);
     }
 
-    [HttpGet("{employeeId}")]
-    public IActionResult GetContacts(
-        Guid employeeId)
+    [HttpGet]
+    public async Task<IActionResult> GetContacts([FromQuery] EmployeeEmergencyContactFilterDto filter, CancellationToken cancellationToken)
     {
-        return Ok(
-            service.GetEmployeeContacts(
-                employeeId));
+        var result = await service.GetContactsAsync(filter, cancellationToken);
+        return Ok(result);
     }
 
-    [Authorize(Roles = "Admin,HR")]
-    [HttpPut("{id}")]
-    public IActionResult UpdateContact(
-        Guid id,
-        UpdateEmployeeEmergencyContactDto dto)
+    [HttpPut("{id:guid}")]
+    public async Task<IActionResult> UpdateContact(Guid id, [FromBody] UpdateEmployeeEmergencyContactDto dto, CancellationToken cancellationToken)
     {
-        service.UpdateContact(
-            id,
-            dto);
+        var result = await service.UpdateContactAsync(id, dto, cancellationToken);
+        return Ok(result);
+    }
 
-        return Ok(
-            "Emergency Contact Updated Successfully");
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> DeleteContact(Guid id, CancellationToken cancellationToken)
+    {
+        await service.DeleteContactAsync(id, cancellationToken);
+        return Ok(new ApiResponse { Message = "Emergency contact deleted successfully." });
     }
 
     [Authorize(Roles = "Admin,HR")]
-    [HttpDelete("{id}")]
-    public IActionResult DeleteContact(
-        Guid id)
+    [HttpGet("export")]
+    public async Task<IActionResult> ExportContacts([FromQuery] EmployeeEmergencyContactFilterDto filter, CancellationToken cancellationToken)
     {
-        service.DeleteContact(id);
+        var file = await service.ExportContactsAsync(filter, cancellationToken);
+        return File(
+            file, 
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", 
+            $"employee-emergency-contacts-{DateTime.Now:yyyyMMddHHmmss}.xlsx");
+    }
 
-        return Ok(
-            "Emergency Contact Deleted Successfully");
+    [Authorize(Roles = "Admin,HR")]
+    [HttpPost("import")]
+    public async Task<IActionResult> ImportContacts(IFormFile file, CancellationToken cancellationToken)
+    {
+        var result = await service.ImportContactsAsync(file, cancellationToken);
+        return Ok(result);
     }
 }

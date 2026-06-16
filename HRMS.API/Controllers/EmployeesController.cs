@@ -24,7 +24,7 @@ public class EmployeesController : ControllerBase
         int page = 1,
         int pageSize = 5)
     {
-        var employees = await employeeService.GetAllEmployeesAsync(search,page,pageSize);
+        var employees = await employeeService.GetAllEmployeesAsync(search, page, pageSize);
 
         return Ok(employees);
     }
@@ -51,7 +51,7 @@ public class EmployeesController : ControllerBase
 
     [Authorize(Roles = "Admin,HR")]
     [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateEmployee(Guid id,UpdateEmployeeDto dto)
+    public async Task<IActionResult> UpdateEmployee(Guid id, UpdateEmployeeDto dto)
     {
         await employeeService.UpdateEmployeeAsync(id, dto);
 
@@ -69,9 +69,9 @@ public class EmployeesController : ControllerBase
 
     [Authorize(Roles = "Admin,HR")]
     [HttpPut("{id}/status")]
-    public async Task<IActionResult> UpdateStatus(Guid id,UpdateEmployeeStatusDto dto)
+    public async Task<IActionResult> UpdateStatus(Guid id, UpdateEmployeeStatusDto dto)
     {
-        await employeeService.UpdateEmployeeStatusAsync(id,dto);
+        await employeeService.UpdateEmployeeStatusAsync(id, dto);
 
         return Ok("Employee Status Updated Successfully");
     }

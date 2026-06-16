@@ -13,16 +13,14 @@ public class PayrollController : ControllerBase
 {
     private readonly IPayrollService payrollService;
 
-    public PayrollController(
-        IPayrollService payrollService)
+    public PayrollController(IPayrollService payrollService)
     {
         this.payrollService = payrollService;
     }
 
     [Authorize(Roles = "Admin,HR")]
     [HttpPost("generate")]
-    public IActionResult GeneratePayroll(
-        GeneratePayrollDto dto)
+    public IActionResult GeneratePayroll(GeneratePayrollDto dto)
     {
         payrollService.GeneratePayroll(dto);
 
@@ -33,71 +31,47 @@ public class PayrollController : ControllerBase
     [HttpGet]
     public IActionResult GetAllPayrolls()
     {
-        return Ok(
-            payrollService.GetAllPayrolls());
+        return Ok(payrollService.GetAllPayrolls());
     }
 
     [Authorize(Roles = "Admin,HR")]
     [HttpGet("employee/{employeeId}")]
-    public IActionResult GetEmployeePayrolls(
-        Guid employeeId)
+    public IActionResult GetEmployeePayrolls(Guid employeeId)
     {
-        return Ok(
-            payrollService
-            .GetEmployeePayrolls(employeeId));
+        return Ok(payrollService.GetEmployeePayrolls(employeeId));
     }
 
     [Authorize(Roles = "Admin,HR")]
     [HttpPut("{payrollId}/approve")]
-    public IActionResult ApprovePayroll(
-        Guid payrollId)
+    public IActionResult ApprovePayroll(Guid payrollId)
     {
-        payrollService.ApprovePayroll(
-            payrollId);
+        payrollService.ApprovePayroll(payrollId);
 
-        return Ok(
-            "Payroll Approved Successfully");
+        return Ok("Payroll Approved Successfully");
     }
 
     [Authorize(Roles = "Admin,HR")]
     [HttpPut("{payrollId}/mark-paid")]
-    public IActionResult MarkPayrollPaid(
-        Guid payrollId)
+    public IActionResult MarkPayrollPaid(Guid payrollId)
     {
-        payrollService.MarkPayrollPaid(
-            payrollId);
+        payrollService.MarkPayrollPaid(payrollId);
 
-        return Ok(
-            "Payroll Marked As Paid");
+        return Ok("Payroll Marked As Paid");
     }
 
-    [Authorize(Roles = "Employee,Manager")]
+    [Authorize(Roles = "Employee,Manager,HR")]
     [HttpGet("my-payrolls")]
     public IActionResult GetMyPayrolls()
     {
-        var userId =
-            Guid.Parse(
-                User.FindFirst(
-                    ClaimTypes.NameIdentifier)!
-                .Value);
+        var userId = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
 
-        return Ok(
-            payrollService
-                .GetMyPayrolls(userId));
+        return Ok(payrollService.GetMyPayrolls(userId));
     }
-
 
     [Authorize(Roles = "Admin,HR")]
     [HttpPost("generate-monthly")]
-    public IActionResult GenerateMonthlyPayroll(
-        GenerateMonthlyPayrollDto dto)
+    public IActionResult GenerateMonthlyPayroll(GenerateMonthlyPayrollDto dto)
     {
-        return Ok(
-            payrollService
-                .GenerateMonthlyPayroll(
-                    dto));
+        return Ok(payrollService.GenerateMonthlyPayroll(dto));
     }
-
-
-    
 }

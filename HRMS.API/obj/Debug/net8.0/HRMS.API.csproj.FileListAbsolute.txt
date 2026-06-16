@@ -263,3 +263,14 @@ C:\Users\renua\OneDrive\Desktop\HRMS\HRMS.API\bin\Debug\net8.0\runtimes\win-x64\
 C:\Users\renua\OneDrive\Desktop\HRMS\HRMS.API\bin\Debug\net8.0\runtimes\win-x64\native\qpdf.dll
 C:\Users\renua\OneDrive\Desktop\HRMS\HRMS.API\bin\Debug\net8.0\runtimes\win-x86\native\QuestPdfSkia.dll
 C:\Users\renua\OneDrive\Desktop\HRMS\HRMS.API\bin\Debug\net8.0\runtimes\win-x86\native\qpdf.dll
+C:\Users\renua\OneDrive\Desktop\HRMS\HRMS.API\bin\Debug\net8.0\FluentValidation.dll
+C:\Users\renua\OneDrive\Desktop\HRMS\HRMS.API\bin\Debug\net8.0\FluentValidation.AspNetCore.dll
+C:\Users\renua\OneDrive\Desktop\HRMS\HRMS.API\bin\Debug\net8.0\FluentValidation.DependencyInjectionExtensions.dll
+C:\Users\renua\OneDrive\Desktop\HRMS\HRMS.API\bin\Debug\net8.0\ClosedXML.dll
+C:\Users\renua\OneDrive\Desktop\HRMS\HRMS.API\bin\Debug\net8.0\ClosedXML.Parser.dll
+C:\Users\renua\OneDrive\Desktop\HRMS\HRMS.API\bin\Debug\net8.0\DocumentFormat.OpenXml.dll
+C:\Users\renua\OneDrive\Desktop\HRMS\HRMS.API\bin\Debug\net8.0\DocumentFormat.OpenXml.Framework.dll
+C:\Users\renua\OneDrive\Desktop\HRMS\HRMS.API\bin\Debug\net8.0\ExcelNumberFormat.dll
+C:\Users\renua\OneDrive\Desktop\HRMS\HRMS.API\bin\Debug\net8.0\RBush.dll
+C:\Users\renua\OneDrive\Desktop\HRMS\HRMS.API\bin\Debug\net8.0\SixLabors.Fonts.dll
+C:\Users\renua\OneDrive\Desktop\HRMS\HRMS.API\bin\Debug\net8.0\System.IO.Packaging.dll

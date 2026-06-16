@@ -30,7 +30,7 @@ public class LeaveController : ControllerBase
         return Ok("Leave Applied Successfully");
     }
 
-    [Authorize(Roles = "Employee,Manager")]
+    [Authorize(Roles = "Employee,Manager,HR")]
     [HttpGet("my-leaves")]
     public async Task<IActionResult> GetMyLeaves()
     {

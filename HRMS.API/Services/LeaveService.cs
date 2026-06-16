@@ -374,7 +374,7 @@ public class LeaveService : ILeaveService
             ToDate = dto.ToDate,
             Reason = dto.Reason,
             Status = "Pending",
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.Now
         };
 
         await leaveRepository.AddLeaveAsync(leave);

@@ -8,8 +8,7 @@ namespace HRMS.API.Controllers;
 [Route("api/performance-cycles")]
 [ApiController]
 [Authorize(Roles = "Admin")]
-public class PerformanceCyclesController
-    : ControllerBase
+public class PerformanceCyclesController : ControllerBase
 {
     private readonly
         IPerformanceCycleService

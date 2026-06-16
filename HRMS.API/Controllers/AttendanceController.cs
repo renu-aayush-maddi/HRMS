@@ -53,6 +53,7 @@ public class AttendanceController : ControllerBase
     [HttpGet("employee/{employeeId}")]
     public async Task<IActionResult> GetEmployeeAttendance(Guid employeeId)
     {
+    
         var result = await attendanceService.GetEmployeeAttendanceAsync(employeeId);
 
         return Ok(result);

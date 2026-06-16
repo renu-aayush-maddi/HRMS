@@ -1,4 +1,5 @@
 using HRMS.API.Interfaces;
+using HRMS.API.Models.Common;
 using HRMS.API.Models.DTOs.EmployeeEducation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -8,60 +9,68 @@ namespace HRMS.API.Controllers;
 [Route("api/employee-educations")]
 [ApiController]
 [Authorize]
-public class EmployeeEducationsController
-    : ControllerBase
+public class EmployeeEducationsController : ControllerBase
 {
-    private readonly
-        IEmployeeEducationService service;
+    private readonly IEmployeeEducationService service;
 
-    public EmployeeEducationsController(
-        IEmployeeEducationService service)
+    public EmployeeEducationsController(IEmployeeEducationService service)
     {
         this.service = service;
     }
 
-    [Authorize(Roles = "Admin,HR,Employee")]
     [HttpPost]
-    public IActionResult AddEducation(
-        AddEmployeeEducationDto dto)
+    public async Task<IActionResult> AddEducation([FromBody] AddEmployeeEducationDto dto, CancellationToken cancellationToken)
     {
-        service.AddEducation(dto);
+        var result = await service.AddEducationAsync(dto, cancellationToken);
 
-        return Ok(
-            "Education Added Successfully");
+        return CreatedAtAction(nameof(GetEducations), new { employeeId = result.EmployeeId }, result);
     }
 
-    [HttpGet("{employeeId}")]
-    public IActionResult GetEducations(
-        Guid employeeId)
+    [HttpGet]
+    public async Task<IActionResult> GetEducations([FromQuery] EmployeeEducationFilterDto filter, CancellationToken cancellationToken)
     {
-        return Ok(
-            service.GetEmployeeEducations(
-                employeeId));
+        var result = await service.GetEducationsAsync(filter, cancellationToken);
+
+        return Ok(result);
+    }
+
+    [HttpPut("{id:guid}")]
+    public async Task<IActionResult> UpdateEducation(Guid id, [FromBody] UpdateEmployeeEducationDto dto, CancellationToken cancellationToken)
+    {
+        var result = await service.UpdateEducationAsync(id, dto, cancellationToken);
+
+        return Ok(result);
+    }
+
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> DeleteEducation(Guid id, CancellationToken cancellationToken)
+    {
+        await service.DeleteEducationAsync(id, cancellationToken);
+
+        return Ok(new ApiResponse
+        {
+            Message = "Education deleted successfully."
+        });
     }
 
     [Authorize(Roles = "Admin,HR")]
-    [HttpPut("{id}")]
-    public IActionResult UpdateEducation(
-        Guid id,
-        UpdateEmployeeEducationDto dto)
+    [HttpGet("export")]
+    public async Task<IActionResult> ExportEducations([FromQuery] EmployeeEducationFilterDto filter, CancellationToken cancellationToken)
     {
-        service.UpdateEducation(
-            id,
-            dto);
+        var fileBytes = await service.ExportEducationsAsync(filter, cancellationToken);
 
-        return Ok(
-            "Education Updated Successfully");
+        return File(
+            fileBytes,
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            $"employee-educations-{DateTime.Now:yyyyMMddHHmmss}.xlsx");
     }
 
     [Authorize(Roles = "Admin,HR")]
-    [HttpDelete("{id}")]
-    public IActionResult DeleteEducation(
-        Guid id)
+    [HttpPost("import")]
+    public async Task<IActionResult> ImportEducations(IFormFile file, CancellationToken cancellationToken)
     {
-        service.DeleteEducation(id);
+        var result = await service.ImportEducationsAsync(file, cancellationToken);
 
-        return Ok(
-            "Education Deleted Successfully");
+        return Ok(result);
     }
 }
