@@ -1,25 +1,22 @@
-using HRMS.API.Models.DTOs.Attendance;
 using HRMS.API.Models.Entities;
 
 namespace HRMS.API.Interfaces;
 
 public interface IAttendanceRepository
 {
-    Task<AttendanceLog?> GetTodayAttendanceAsync(Guid employeeId);
+    Task<Employee?> GetEmployeeAsync(Guid employeeId, CancellationToken cancellationToken = default);
 
-    Task<List<AttendanceLog>> GetAttendanceAsync(AttendanceQueryDto query, int skip, int take);
+    Task<Employee?> GetEmployeeByUserIdAsync(Guid userId, CancellationToken cancellationToken = default);
 
-    Task<int> GetAttendanceCountAsync(AttendanceQueryDto query);
+    Task<AttendanceLog?> GetAttendanceAsync(Guid attendanceId, CancellationToken cancellationToken = default);
 
-    Task<List<AttendanceLog>> GetEmployeeAttendanceAsync(Guid employeeId);
+    Task<AttendanceLog?> GetTodayAttendanceAsync(Guid employeeId, CancellationToken cancellationToken = default);
 
-    Task AddAttendanceAsync(AttendanceLog attendance);
+    IQueryable<AttendanceLog> GetAttendances();
+
+    Task AddAttendanceAsync(AttendanceLog attendance, CancellationToken cancellationToken = default);
 
     void UpdateAttendance(AttendanceLog attendance);
 
-    Task<Employee?> GetEmployeeAsync(Guid employeeId);
-
-    Task<Employee?> GetEmployeeByUserIdAsync(Guid userId);
-
-    Task SaveChangesAsync();
+    Task SaveChangesAsync(CancellationToken cancellationToken = default);
 }

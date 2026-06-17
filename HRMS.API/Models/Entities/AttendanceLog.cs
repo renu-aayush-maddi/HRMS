@@ -19,5 +19,15 @@ public partial class AttendanceLog
 
     public DateTime? CreatedAt { get; set; }
 
+    public decimal? WorkingHours { get; set; }
+
+    public string? Remarks { get; set; }
+
+    public DateTime? UpdatedAt { get; set; }
+
+    public Guid? CreatedBy { get; set; }
+
+    public Guid? UpdatedBy { get; set; }
+
     public virtual Employee? Employee { get; set; }
 }

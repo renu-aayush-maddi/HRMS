@@ -1,8 +1,9 @@
 using HRMS.API.Models.Common;
 
-namespace HRMS.API.Models.DTOs.Attendance;
+namespace HRMS.API.Models.DTOs.AttendanceRegularization;
 
-public class AttendanceFilterDto : PaginationRequestDto
+public class AttendanceRegularizationFilterDto
+    : PaginationRequestDto
 {
     public Guid? EmployeeId { get; set; }
 

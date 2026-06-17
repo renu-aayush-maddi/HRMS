@@ -106,11 +106,22 @@ public partial class AppDbContext : DbContext
                 .HasDefaultValueSql("CURRENT_TIMESTAMP")
                 .HasColumnType("timestamp without time zone")
                 .HasColumnName("created_at");
+            entity.Property(e => e.CreatedBy).HasColumnName("created_by");
             entity.Property(e => e.EmployeeId).HasColumnName("employee_id");
+            entity.Property(e => e.Remarks)
+                .HasMaxLength(500)
+                .HasColumnName("remarks");
             entity.Property(e => e.Status)
                 .HasMaxLength(20)
                 .HasDefaultValueSql("'Present'::character varying")
                 .HasColumnName("status");
+            entity.Property(e => e.UpdatedAt)
+                .HasColumnType("timestamp without time zone")
+                .HasColumnName("updated_at");
+            entity.Property(e => e.UpdatedBy).HasColumnName("updated_by");
+            entity.Property(e => e.WorkingHours)
+                .HasPrecision(5, 2)
+                .HasColumnName("working_hours");
 
             entity.HasOne(d => d.Employee).WithMany(p => p.AttendanceLogs)
                 .HasForeignKey(d => d.EmployeeId)
@@ -123,6 +134,10 @@ public partial class AppDbContext : DbContext
             entity.HasKey(e => e.Id).HasName("attendance_regularizations_pkey");
 
             entity.ToTable("attendance_regularizations");
+
+            entity.HasIndex(e => new { e.EmployeeId, e.AttendanceDate }, "ux_attendance_regularization_pending")
+                .IsUnique()
+                .HasFilter("((status)::text = 'Pending'::text)");
 
             entity.Property(e => e.Id)
                 .HasDefaultValueSql("uuid_generate_v4()")
@@ -141,14 +156,22 @@ public partial class AppDbContext : DbContext
             entity.Property(e => e.RequestedCheckOut)
                 .HasColumnType("timestamp without time zone")
                 .HasColumnName("requested_check_out");
+            entity.Property(e => e.ReviewedAt)
+                .HasColumnType("timestamp without time zone")
+                .HasColumnName("reviewed_at");
+            entity.Property(e => e.ReviewedBy).HasColumnName("reviewed_by");
             entity.Property(e => e.Status)
                 .HasMaxLength(30)
                 .HasDefaultValueSql("'Pending'::character varying")
                 .HasColumnName("status");
 
-            entity.HasOne(d => d.Employee).WithMany(p => p.AttendanceRegularizations)
+            entity.HasOne(d => d.Employee).WithMany(p => p.AttendanceRegularizationEmployees)
                 .HasForeignKey(d => d.EmployeeId)
                 .HasConstraintName("attendance_regularizations_employee_id_fkey");
+
+            entity.HasOne(d => d.ReviewedByNavigation).WithMany(p => p.AttendanceRegularizationReviewedByNavigations)
+                .HasForeignKey(d => d.ReviewedBy)
+                .HasConstraintName("fk_attendance_regularization_reviewed_by");
         });
 
         modelBuilder.Entity<AuditLog>(entity =>

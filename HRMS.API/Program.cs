@@ -210,6 +210,10 @@ builder.Services.AddScoped<IAuditLogRepository,AuditLogRepository>();
 builder.Services.AddScoped<IAuditLogService,AuditLogService>();
 
 
+builder.Services.AddScoped<IAttendanceRegularizationRepository,AttendanceRegularizationRepository>();
+builder.Services.AddScoped<IAttendanceRegularizationService,AttendanceRegularizationService>();
+
+
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 builder.Services.AddFluentValidationAutoValidation();
 

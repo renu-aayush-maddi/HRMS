@@ -23,5 +23,11 @@ public partial class AttendanceRegularization
 
     public DateTime? CreatedAt { get; set; }
 
+    public Guid? ReviewedBy { get; set; }
+
+    public DateTime? ReviewedAt { get; set; }
+
     public virtual Employee Employee { get; set; } = null!;
+
+    public virtual Employee? ReviewedByNavigation { get; set; }
 }

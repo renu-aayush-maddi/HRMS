@@ -1,15 +1,17 @@
+using HRMS.API.Models.Common;
 using HRMS.API.Models.DTOs.Attendance;
-using HRMS.API.Models.DTOs.Common;
 
 namespace HRMS.API.Interfaces;
 
 public interface IAttendanceService
 {
-    Task CheckInAsync(Guid userId);
+    Task CheckInAsync(CancellationToken cancellationToken = default);
 
-    Task CheckOutAsync(Guid userId);
+    Task CheckOutAsync(CancellationToken cancellationToken = default);
 
-    Task<PaginatedResponseDto<AttendanceResponseDto>> GetAttendanceAsync(AttendanceQueryDto query);
+    Task<PagedResponse<AttendanceResponseDto>> GetAttendanceAsync(AttendanceFilterDto filter, CancellationToken cancellationToken = default);
 
-    Task<List<AttendanceResponseDto>>GetEmployeeAttendanceAsync(Guid employeeId);
+    Task<PagedResponse<AttendanceResponseDto>> GetEmployeeAttendanceAsync(AttendanceFilterDto filter, CancellationToken cancellationToken = default);
+
+    Task<byte[]> ExportAttendanceAsync(AttendanceFilterDto filter, CancellationToken cancellationToken = default);
 }

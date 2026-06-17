@@ -1,11 +1,7 @@
 namespace HRMS.API.Models.DTOs.Attendance;
 
-public class AttendanceResponseDto
+public class AttendanceExportDto
 {
-    public Guid Id { get; set; }
-
-    public Guid EmployeeId { get; set; }
-
     public string EmployeeCode { get; set; }
         = string.Empty;
 
@@ -22,6 +18,4 @@ public class AttendanceResponseDto
 
     public string Status { get; set; }
         = string.Empty;
-
-    public string? Remarks { get; set; }
 }

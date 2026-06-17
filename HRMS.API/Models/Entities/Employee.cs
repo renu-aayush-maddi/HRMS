@@ -49,7 +49,9 @@ public partial class Employee
 
     public virtual ICollection<AttendanceLog> AttendanceLogs { get; set; } = new List<AttendanceLog>();
 
-    public virtual ICollection<AttendanceRegularization> AttendanceRegularizations { get; set; } = new List<AttendanceRegularization>();
+    public virtual ICollection<AttendanceRegularization> AttendanceRegularizationEmployees { get; set; } = new List<AttendanceRegularization>();
+
+    public virtual ICollection<AttendanceRegularization> AttendanceRegularizationReviewedByNavigations { get; set; } = new List<AttendanceRegularization>();
 
     public virtual ICollection<Bonuse> Bonuses { get; set; } = new List<Bonuse>();
 
