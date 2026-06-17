@@ -1,28 +1,23 @@
+using HRMS.API.Models.Common;
 using HRMS.API.Models.DTOs.Resignation;
 
 namespace HRMS.API.Interfaces;
 
-public interface IResignationService
+public interface IEmployeeResignationService
 {
-    void SubmitResignation(
-        SubmitResignationDto dto);
+    Task<EmployeeResignationDto> CreateAsync(CreateResignationDto dto, CancellationToken cancellationToken = default);
 
-    List<ResignationResponseDto>
-        GetAll();
+    Task<EmployeeResignationDto> GetByIdAsync(Guid resignationId, CancellationToken cancellationToken = default);
 
-    List<ResignationResponseDto>
-        GetEmployeeResignations(
-            Guid employeeId);
+    Task<PagedResult<EmployeeResignationDto>> GetAllAsync(ResignationFilterDto filter, CancellationToken cancellationToken = default);
 
-    void Approve(
-        Guid resignationId,
-        ResignationActionDto dto);
+    Task ApproveAsync(Guid resignationId, CancellationToken cancellationToken = default);
 
-    void Reject(
-        Guid resignationId,
-        ResignationActionDto dto);
+    Task RejectAsync(Guid resignationId, RejectResignationDto dto, CancellationToken cancellationToken = default);
 
-    void UpdateSettlement(
-        Guid resignationId,
-        SettlementDto dto);
+    Task WithdrawAsync(Guid resignationId, CancellationToken cancellationToken = default);
+
+    Task UpdateSettlementStatusAsync(Guid resignationId, UpdateSettlementStatusDto dto, CancellationToken cancellationToken = default);
+
+    Task<byte[]> ExportAsync(ResignationFilterDto filter, CancellationToken cancellationToken = default);
 }

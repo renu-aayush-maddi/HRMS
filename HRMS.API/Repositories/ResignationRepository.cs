@@ -5,66 +5,67 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HRMS.API.Repositories;
 
-public class ResignationRepository
-    : IResignationRepository
+public class EmployeeResignationRepository : IEmployeeResignationRepository
 {
     private readonly AppDbContext context;
 
-    public ResignationRepository(
-        AppDbContext context)
+    public EmployeeResignationRepository(AppDbContext context)
     {
         this.context = context;
     }
 
-    public Employee? GetEmployee(Guid employeeId)
+    public async Task<EmployeeResignation?> GetByIdAsync(Guid resignationId, CancellationToken cancellationToken = default)
     {
-        return context.Employees
-            .FirstOrDefault(e =>
-                e.Id == employeeId);
+        return await context.EmployeeResignations
+            .FirstOrDefaultAsync(x => x.Id == resignationId, cancellationToken);
     }
 
-    public EmployeeResignation? GetResignation(Guid id)
+    public async Task<EmployeeResignation?> GetByIdWithEmployeeAsync(Guid resignationId, CancellationToken cancellationToken = default)
+    {
+        return await context.EmployeeResignations
+            .Include(x => x.Employee)
+            .FirstOrDefaultAsync(x => x.Id == resignationId, cancellationToken);
+    }
+
+    public async Task<EmployeeResignation?> GetActiveResignationAsync(Guid employeeId, CancellationToken cancellationToken = default)
+    {
+        return await context.EmployeeResignations
+            .FirstOrDefaultAsync(x => x.EmployeeId == employeeId && (x.Status == "Pending" || x.Status == "Approved"), cancellationToken);
+    }
+
+    public async Task<Employee?> GetEmployeeAsync(Guid employeeId, CancellationToken cancellationToken = default)
+    {
+        return await context.Employees
+            .FirstOrDefaultAsync(x => x.Id == employeeId, cancellationToken);
+    }
+
+    public IQueryable<EmployeeResignation> GetQueryable()
     {
         return context.EmployeeResignations
-            .Include(r => r.Employee)
-            .FirstOrDefault(r =>
-                r.Id == id);
+            .Include(x => x.Employee)
+            .AsQueryable();
     }
 
-    public List<EmployeeResignation> GetAll()
+    public async Task AddAsync(EmployeeResignation resignation, CancellationToken cancellationToken = default)
     {
-        return context.EmployeeResignations
-            .Include(r => r.Employee)
-            .ToList();
+        await context.EmployeeResignations.AddAsync(resignation, cancellationToken);
     }
 
-    public List<EmployeeResignation>
-        GetEmployeeResignations(
-            Guid employeeId)
+    public Task UpdateAsync(EmployeeResignation resignation, CancellationToken cancellationToken = default)
     {
-        return context.EmployeeResignations
-            .Include(r => r.Employee)
-            .Where(r =>
-                r.EmployeeId == employeeId)
-            .ToList();
+        context.EmployeeResignations.Update(resignation);
+        return Task.CompletedTask;
     }
 
-    public void Add(
-        EmployeeResignation resignation)
+    public async Task SaveChangesAsync(CancellationToken cancellationToken = default)
     {
-        context.EmployeeResignations
-            .Add(resignation);
+        await context.SaveChangesAsync(cancellationToken);
     }
 
-    public void Update(
-        EmployeeResignation resignation)
+    public Task UpdateEmployeeAsync(Employee employee,CancellationToken cancellationToken = default)
     {
-        context.EmployeeResignations
-            .Update(resignation);
-    }
+        context.Employees.Update(employee);
 
-    public void SaveChanges()
-    {
-        context.SaveChanges();
+        return Task.CompletedTask;
     }
 }

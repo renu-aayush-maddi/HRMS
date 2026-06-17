@@ -160,8 +160,9 @@ builder.Services.AddScoped<IEmployeeEmergencyContactService,EmployeeEmergencyCon
 builder.Services.AddScoped<IEmployeeAddressRepository,EmployeeAddressRepository>();
 builder.Services.AddScoped<IEmployeeAddressService,EmployeeAddressService>();
 
-builder.Services.AddScoped<IResignationRepository,ResignationRepository>();
-builder.Services.AddScoped<IResignationService,ResignationService>();
+builder.Services.AddScoped<IEmployeeResignationRepository,EmployeeResignationRepository>();
+
+builder.Services.AddScoped<IEmployeeResignationService,EmployeeResignationService>();
 
 builder.Services.AddScoped<IManagerRepository,ManagerRepository>();
 builder.Services.AddScoped<IManagerService,ManagerService>();

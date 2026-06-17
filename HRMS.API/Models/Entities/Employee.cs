@@ -75,7 +75,11 @@ public partial class Employee
 
     public virtual ICollection<EmployeeLeaveBalance> EmployeeLeaveBalances { get; set; } = new List<EmployeeLeaveBalance>();
 
-    public virtual ICollection<EmployeeResignation> EmployeeResignations { get; set; } = new List<EmployeeResignation>();
+    public virtual ICollection<EmployeeResignation> EmployeeResignationApprovedByNavigations { get; set; } = new List<EmployeeResignation>();
+
+    public virtual ICollection<EmployeeResignation> EmployeeResignationEmployees { get; set; } = new List<EmployeeResignation>();
+
+    public virtual ICollection<EmployeeResignation> EmployeeResignationRejectedByNavigations { get; set; } = new List<EmployeeResignation>();
 
     public virtual ICollection<EmployeeSalary> EmployeeSalaries { get; set; } = new List<EmployeeSalary>();
 

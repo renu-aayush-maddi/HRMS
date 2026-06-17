@@ -2,23 +2,23 @@ using HRMS.API.Models.Entities;
 
 namespace HRMS.API.Interfaces;
 
-public interface IResignationRepository
+public interface IEmployeeResignationRepository
 {
-    Employee? GetEmployee(Guid employeeId);
+    Task<EmployeeResignation?> GetByIdAsync(Guid resignationId, CancellationToken cancellationToken = default);
 
-    EmployeeResignation? GetResignation(Guid id);
+    Task<EmployeeResignation?> GetByIdWithEmployeeAsync(Guid resignationId, CancellationToken cancellationToken = default);
 
-    List<EmployeeResignation> GetAll();
+    Task<EmployeeResignation?> GetActiveResignationAsync(Guid employeeId, CancellationToken cancellationToken = default);
 
-    List<EmployeeResignation>
-        GetEmployeeResignations(
-            Guid employeeId);
+    Task<Employee?> GetEmployeeAsync(Guid employeeId, CancellationToken cancellationToken = default);
 
-    void Add(
-        EmployeeResignation resignation);
+    IQueryable<EmployeeResignation> GetQueryable();
 
-    void Update(
-        EmployeeResignation resignation);
+    Task AddAsync(EmployeeResignation resignation, CancellationToken cancellationToken = default);
 
-    void SaveChanges();
+    Task UpdateAsync(EmployeeResignation resignation, CancellationToken cancellationToken = default);
+
+    Task SaveChangesAsync(CancellationToken cancellationToken = default);
+
+    Task UpdateEmployeeAsync(Employee employee,CancellationToken cancellationToken = default);
 }

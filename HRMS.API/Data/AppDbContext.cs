@@ -615,9 +615,19 @@ public partial class AppDbContext : DbContext
 
             entity.ToTable("employee_resignations");
 
+            entity.HasIndex(e => e.ResignationDate, "idx_resignation_date");
+
+            entity.HasIndex(e => e.EmployeeId, "idx_resignation_employee");
+
+            entity.HasIndex(e => e.Status, "idx_resignation_status");
+
             entity.Property(e => e.Id)
                 .HasDefaultValueSql("uuid_generate_v4()")
                 .HasColumnName("id");
+            entity.Property(e => e.ApprovedAt)
+                .HasColumnType("timestamp without time zone")
+                .HasColumnName("approved_at");
+            entity.Property(e => e.ApprovedBy).HasColumnName("approved_by");
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("CURRENT_TIMESTAMP")
                 .HasColumnType("timestamp without time zone")
@@ -630,15 +640,33 @@ public partial class AppDbContext : DbContext
             entity.Property(e => e.HrComments).HasColumnName("hr_comments");
             entity.Property(e => e.LastWorkingDate).HasColumnName("last_working_date");
             entity.Property(e => e.Reason).HasColumnName("reason");
+            entity.Property(e => e.RejectedAt)
+                .HasColumnType("timestamp without time zone")
+                .HasColumnName("rejected_at");
+            entity.Property(e => e.RejectedBy).HasColumnName("rejected_by");
             entity.Property(e => e.ResignationDate).HasColumnName("resignation_date");
             entity.Property(e => e.Status)
                 .HasMaxLength(50)
                 .HasDefaultValueSql("'Pending'::character varying")
                 .HasColumnName("status");
+            entity.Property(e => e.UpdatedAt)
+                .HasColumnType("timestamp without time zone")
+                .HasColumnName("updated_at");
+            entity.Property(e => e.WithdrawnAt)
+                .HasColumnType("timestamp without time zone")
+                .HasColumnName("withdrawn_at");
 
-            entity.HasOne(d => d.Employee).WithMany(p => p.EmployeeResignations)
+            entity.HasOne(d => d.ApprovedByNavigation).WithMany(p => p.EmployeeResignationApprovedByNavigations)
+                .HasForeignKey(d => d.ApprovedBy)
+                .HasConstraintName("fk_employee_resignations_approved_by");
+
+            entity.HasOne(d => d.Employee).WithMany(p => p.EmployeeResignationEmployees)
                 .HasForeignKey(d => d.EmployeeId)
                 .HasConstraintName("employee_resignations_employee_id_fkey");
+
+            entity.HasOne(d => d.RejectedByNavigation).WithMany(p => p.EmployeeResignationRejectedByNavigations)
+                .HasForeignKey(d => d.RejectedBy)
+                .HasConstraintName("fk_employee_resignations_rejected_by");
         });
 
         modelBuilder.Entity<EmployeeSalary>(entity =>
