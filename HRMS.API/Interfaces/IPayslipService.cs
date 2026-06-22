@@ -2,10 +2,11 @@ namespace HRMS.API.Interfaces;
 
 public interface IPayslipService
 {
-    byte[] GeneratePayslip(
-        Guid payrollId);
-
-    byte[] GenerateMyPayslip(
+    Task<byte[]> GeneratePayslipAsync(
         Guid payrollId,
-        Guid userId);
+        CancellationToken cancellationToken = default);
+
+    Task<byte[]> GenerateMyPayslipAsync(
+        Guid payrollId,
+        CancellationToken cancellationToken = default);
 }

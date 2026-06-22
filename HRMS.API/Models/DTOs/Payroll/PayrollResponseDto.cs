@@ -27,4 +27,8 @@ public class PayrollResponseDto
     public decimal? MedicalAllowanceComponent { get; set; }
 
     public decimal? TravelAllowanceComponent { get; set; }
+
+
+    public string Status { get; set; }
+    public DateTime? GeneratedAt { get; set; }
 }

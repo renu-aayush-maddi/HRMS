@@ -34,7 +34,7 @@ public class LeaveBalancesController : ControllerBase
         return Ok(await service.GetAllBalancesAsync());
     }
 
-    
+    [Authorize(Roles = "Admin,HR")]
     [HttpGet("{employeeId}")]
     public async Task<IActionResult> GetEmployeeBalances(Guid employeeId)
     {

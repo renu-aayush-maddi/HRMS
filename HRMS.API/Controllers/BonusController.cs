@@ -2,7 +2,6 @@ using HRMS.API.Interfaces;
 using HRMS.API.Models.DTOs.Bonus;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 
 namespace HRMS.API.Controllers;
 
@@ -20,43 +19,57 @@ public class BonusController : ControllerBase
 
     [Authorize(Roles = "Admin,HR")]
     [HttpPost]
-    public IActionResult CreateBonus(CreateBonusDto dto)
+    public async Task<IActionResult> CreateBonus([FromBody] CreateBonusDto dto, CancellationToken cancellationToken)
     {
-        bonusService.CreateBonus(dto);
-
-        return Ok("Bonus Created Successfully");
+        var result = await bonusService.CreateBonusAsync(dto, cancellationToken);
+        return CreatedAtAction(nameof(GetBonus), new { bonusId = result.Id }, result);
     }
 
-    [Authorize(Roles = "Admin,HR")]
     [HttpGet]
-    public IActionResult GetAll()
+    public async Task<IActionResult> GetBonuses([FromQuery] BonusFilterDto filter, CancellationToken cancellationToken)
     {
-        return Ok(bonusService.GetAllBonuses());
+        var result = await bonusService.GetBonusesAsync(filter, cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpGet("{bonusId:guid}")]
+    public async Task<IActionResult> GetBonus(Guid bonusId, CancellationToken cancellationToken)
+    {
+        var result = await bonusService.GetBonusAsync(bonusId, cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpGet("my")]
+    public async Task<IActionResult> GetMyBonuses([FromQuery] BonusFilterDto filter, CancellationToken cancellationToken)
+    {
+        var result = await bonusService.GetMyBonusesAsync(filter, cancellationToken);
+        return Ok(result);
     }
 
     [Authorize(Roles = "Admin,HR")]
-    [HttpPut("{bonusId}/approve")]
-    public IActionResult ApproveBonus(Guid bonusId)
+    [HttpPut("{bonusId:guid}/approve")]
+    public async Task<IActionResult> ApproveBonus(Guid bonusId, CancellationToken cancellationToken)
     {
-        bonusService.ApproveBonus(bonusId);
-
-        return Ok("Bonus Approved");
+        await bonusService.ApproveBonusAsync(bonusId, cancellationToken);
+        return Ok(new { Message = "Bonus approved successfully." });
     }
 
     [Authorize(Roles = "Admin,HR")]
-    [HttpPut("{bonusId}/reject")]
-    public IActionResult RejectBonus(Guid bonusId)
+    [HttpPut("{bonusId:guid}/reject")]
+    public async Task<IActionResult> RejectBonus(Guid bonusId, CancellationToken cancellationToken)
     {
-        bonusService.RejectBonus(bonusId);
-
-        return Ok("Bonus Rejected");
+        await bonusService.RejectBonusAsync(bonusId, cancellationToken);
+        return Ok(new { Message = "Bonus rejected successfully." });
     }
 
-    [HttpGet("my-bonuses")]
-    public IActionResult MyBonuses()
+    [Authorize(Roles = "Admin,HR")]
+    [HttpGet("export")]
+    public async Task<IActionResult> ExportBonuses([FromQuery] BonusFilterDto filter, CancellationToken cancellationToken)
     {
-        var userId = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
-
-        return Ok(bonusService.GetMyBonuses(userId));
+        var fileBytes = await bonusService.ExportBonusesAsync(filter, cancellationToken);
+        return File(
+            fileBytes,
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            $"bonuses-{DateTime.UtcNow:yyyyMMddHHmmss}.xlsx");
     }
 }

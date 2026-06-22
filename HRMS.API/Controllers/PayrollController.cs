@@ -2,11 +2,10 @@ using HRMS.API.Interfaces;
 using HRMS.API.Models.DTOs.Payroll;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 
 namespace HRMS.API.Controllers;
 
-[Route("api/[controller]")]
+[Route("api/payroll")]
 [ApiController]
 [Authorize]
 public class PayrollController : ControllerBase
@@ -20,58 +19,74 @@ public class PayrollController : ControllerBase
 
     [Authorize(Roles = "Admin,HR")]
     [HttpPost("generate")]
-    public IActionResult GeneratePayroll(GeneratePayrollDto dto)
+    public async Task<IActionResult> GeneratePayroll([FromBody] GeneratePayrollDto dto, CancellationToken cancellationToken)
     {
-        payrollService.GeneratePayroll(dto);
-
-        return Ok("Payroll Generated Successfully");
-    }
-
-    [Authorize(Roles = "Admin,HR")]
-    [HttpGet]
-    public IActionResult GetAllPayrolls()
-    {
-        return Ok(payrollService.GetAllPayrolls());
-    }
-
-    [Authorize(Roles = "Admin,HR")]
-    [HttpGet("employee/{employeeId}")]
-    public IActionResult GetEmployeePayrolls(Guid employeeId)
-    {
-        return Ok(payrollService.GetEmployeePayrolls(employeeId));
-    }
-
-    [Authorize(Roles = "Admin,HR")]
-    [HttpPut("{payrollId}/approve")]
-    public IActionResult ApprovePayroll(Guid payrollId)
-    {
-        payrollService.ApprovePayroll(payrollId);
-
-        return Ok("Payroll Approved Successfully");
-    }
-
-    [Authorize(Roles = "Admin,HR")]
-    [HttpPut("{payrollId}/mark-paid")]
-    public IActionResult MarkPayrollPaid(Guid payrollId)
-    {
-        payrollService.MarkPayrollPaid(payrollId);
-
-        return Ok("Payroll Marked As Paid");
-    }
-
-    [Authorize(Roles = "Employee,Manager,HR")]
-    [HttpGet("my-payrolls")]
-    public IActionResult GetMyPayrolls()
-    {
-        var userId = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
-
-        return Ok(payrollService.GetMyPayrolls(userId));
+        var result = await payrollService.GeneratePayrollAsync(dto, cancellationToken);
+        return Ok(result);
     }
 
     [Authorize(Roles = "Admin,HR")]
     [HttpPost("generate-monthly")]
-    public IActionResult GenerateMonthlyPayroll(GenerateMonthlyPayrollDto dto)
+    public async Task<IActionResult> GenerateMonthlyPayroll([FromBody] GenerateMonthlyPayrollDto dto, CancellationToken cancellationToken)
     {
-        return Ok(payrollService.GenerateMonthlyPayroll(dto));
+        var result = await payrollService.GenerateMonthlyPayrollAsync(dto, cancellationToken);
+        return Ok(result);
+    }
+
+    [Authorize(Roles = "Admin,HR")]
+    [HttpGet]
+    public async Task<IActionResult> GetPayrolls([FromQuery] PayrollFilterDto filter, CancellationToken cancellationToken)
+    {
+        var result = await payrollService.GetPayrollsAsync(filter, cancellationToken);
+        return Ok(result);
+    }
+
+    [Authorize(Roles = "Admin,HR")]
+    [HttpGet("employee/{employeeId:guid}")]
+    public async Task<IActionResult> GetEmployeePayrolls(Guid employeeId, [FromQuery] PayrollFilterDto filter, CancellationToken cancellationToken)
+    {
+        var result = await payrollService.GetEmployeePayrollsAsync(employeeId, filter, cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpGet("my")]
+    public async Task<IActionResult> GetMyPayrolls([FromQuery] PayrollFilterDto filter, CancellationToken cancellationToken)
+    {
+        var result = await payrollService.GetMyPayrollsAsync(filter, cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpGet("{payrollId:guid}")]
+    public async Task<IActionResult> GetPayroll(Guid payrollId, CancellationToken cancellationToken)
+    {
+        var result = await payrollService.GetPayrollAsync(payrollId, cancellationToken);
+        return Ok(result);
+    }
+
+    [Authorize(Roles = "Admin,HR")]
+    [HttpPut("{payrollId:guid}/approve")]
+    public async Task<IActionResult> ApprovePayroll(Guid payrollId, CancellationToken cancellationToken)
+    {
+        await payrollService.ApprovePayrollAsync(payrollId, cancellationToken);
+        return Ok(new { Message = "Payroll approved successfully." });
+    }
+
+    [Authorize(Roles = "Admin,HR")]
+    [HttpPut("{payrollId:guid}/mark-paid")]
+    public async Task<IActionResult> MarkPayrollPaid(Guid payrollId, CancellationToken cancellationToken)
+    {
+        await payrollService.MarkPayrollPaidAsync(payrollId, cancellationToken);
+        return Ok(new { Message = "Payroll marked as paid successfully." });
+    }
+
+    [Authorize(Roles = "Admin,HR")]
+    [HttpGet("export")]
+    public async Task<IActionResult> ExportPayrolls([FromQuery] PayrollFilterDto filter, CancellationToken cancellationToken)
+    {
+        var fileBytes = await payrollService.ExportPayrollsAsync(filter, cancellationToken);
+        return File(
+            fileBytes,
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            $"payrolls-{DateTime.UtcNow:yyyyMMddHHmmss}.xlsx");
     }
 }

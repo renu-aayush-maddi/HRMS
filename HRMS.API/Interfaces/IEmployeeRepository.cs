@@ -1,30 +1,41 @@
 using HRMS.API.Models.Entities;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace HRMS.API.Interfaces;
 
 public interface IEmployeeRepository
 {
-    Task<(List<Employee> Employees, int TotalCount)> GetAllEmployeesAsync(string? search,int page,int pageSize);
+    IQueryable<Employee> GetEmployees();
 
-    Task<Employee?> GetEmployeeByIdAsync(Guid id);
+    Task<Employee?> GetEmployeeByIdAsync(Guid id, CancellationToken cancellationToken = default);
 
-    Task<Employee?> GetEmployeeFullProfileAsync(Guid employeeId);
+    Task<Employee?> GetEmployeeFullProfileAsync(Guid employeeId, CancellationToken cancellationToken = default);
 
-    Task<bool> EmployeeExistsAsync(string email);
+    Task<Employee?> GetEmployeeByEmailAsync(string email, CancellationToken cancellationToken = default);
 
-    Task<bool> DepartmentExistsAsync(Guid departmentId);
+    Task<Employee?> GetEmployeeByCodeAsync(string employeeCode, CancellationToken cancellationToken = default);
 
-    Task<Role?> GetRoleByNameAsync(string roleName);
+    Task<bool> EmployeeExistsAsync(string email, CancellationToken cancellationToken = default);
 
-    Task AddEmployeeAsync(Employee employee);
+    Task<bool> DepartmentExistsAsync(Guid departmentId, CancellationToken cancellationToken = default);
 
-    Task AddUserAsync(User user);
+    Task<bool> ManagerExistsAsync(Guid managerId, CancellationToken cancellationToken = default);
+
+    Task<Role?> GetRoleByNameAsync(string roleName, CancellationToken cancellationToken = default);
+
+    Task<List<Employee>> GetManagersAsync(CancellationToken cancellationToken = default);
+
+    Task<long> GetNextEmployeeNumberAsync(CancellationToken cancellationToken = default);
+
+    Task AddEmployeeAsync(Employee employee, CancellationToken cancellationToken = default);
+
+    Task AddUserAsync(User user, CancellationToken cancellationToken = default);
 
     void UpdateEmployee(Employee employee);
 
-    void SoftDeleteEmployee(Employee employee,Guid deletedBy);
+    void SoftDeleteEmployee(Employee employee, Guid deletedBy);
 
-    Task AddAuditLogAsync(AuditLog auditLog);
+    Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default);
 
-    Task SaveChangesAsync();
+    Task SaveChangesAsync(CancellationToken cancellationToken = default);
 }

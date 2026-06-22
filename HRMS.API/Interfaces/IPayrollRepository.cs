@@ -4,45 +4,39 @@ namespace HRMS.API.Interfaces;
 
 public interface IPayrollRepository
 {
-    Employee? GetEmployee(Guid employeeId);
+    Task<Employee?> GetEmployeeAsync(Guid employeeId, CancellationToken cancellationToken = default);
 
-    List<Payroll> GetAllPayrolls();
+    Task<Employee?> GetEmployeeByUserIdAsync(Guid userId, CancellationToken cancellationToken = default);
 
-    List<Payroll> GetEmployeePayrolls(Guid employeeId);
+    Task<Payroll?> GetPayrollByIdAsync(Guid payrollId, CancellationToken cancellationToken = default);
 
-    void AddPayroll(Payroll payroll);
+    Task<Payroll?> GetPayrollAsync(Guid employeeId, int month, int year, CancellationToken cancellationToken = default);
 
-    void SaveChanges();
+    IQueryable<Payroll> GetPayrolls();
 
-
-    int GetPresentDays(Guid employeeId,int month,int year);
-
-    int GetWorkingDays(int month,int year);
-
-
-    int GetApprovedPaidLeaveDays(Guid employeeId,int month,int year);
-
-    int GetApprovedLopLeaveDays(Guid employeeId,int month,int year);
-
-    Payroll? GetPayrollById(Guid payrollId);
+    Task AddPayrollAsync(Payroll payroll, CancellationToken cancellationToken = default);
 
     void UpdatePayroll(Payroll payroll);
 
-    Employee? GetEmployeeByUserId(Guid userId);
+    Task SaveChangesAsync(CancellationToken cancellationToken = default);
 
-    EmployeeSalary? GetActiveEmployeeSalary(Guid employeeId);
+    Task<int> GetPresentDaysAsync(Guid employeeId, int month, int year, CancellationToken cancellationToken = default);
 
-    decimal GetApprovedBonusAmount(Guid employeeId,int month,int year);
+    Task<int> GetWorkingDaysAsync(int month, int year, CancellationToken cancellationToken = default);
 
-    decimal GetApprovedDeductionAmount(Guid employeeId,int month,int year);
+    Task<int> GetApprovedPaidLeaveDaysAsync(Guid employeeId, int month, int year, CancellationToken cancellationToken = default);
 
-    List<Employee> GetActiveEmployees();
+    Task<int> GetApprovedLopLeaveDaysAsync(Guid employeeId, int month, int year, CancellationToken cancellationToken = default);
 
-    Payroll? GetPayroll(Guid employeeId,int month,int year);
+    Task<EmployeeSalary?> GetActiveEmployeeSalaryAsync(Guid employeeId, CancellationToken cancellationToken = default);
 
+    Task<decimal> GetApprovedBonusAmountAsync(Guid employeeId, int month, int year, CancellationToken cancellationToken = default);
 
-    List<Bonuse> GetApprovedBonuses(Guid employeeId,int month,int year);
+    Task<decimal> GetApprovedDeductionAmountAsync(Guid employeeId, int month, int year, CancellationToken cancellationToken = default);
 
-    List<Deduction> GetApprovedDeductions(Guid employeeId,int month,int year);
+    Task<List<Employee>> GetActiveEmployeesAsync(CancellationToken cancellationToken = default);
 
+    Task<List<Bonuse>> GetApprovedBonusesAsync(Guid employeeId, int month, int year, CancellationToken cancellationToken = default);
+
+    Task<List<Deduction>> GetApprovedDeductionsAsync(Guid employeeId, int month, int year, CancellationToken cancellationToken = default);
 }

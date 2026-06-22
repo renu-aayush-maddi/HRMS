@@ -6,34 +6,21 @@ public interface IPerformanceCycleRepository
 {
     List<PerformanceCycle> GetAll();
 
-    PerformanceCycle? GetById(
-        Guid id);
+    PerformanceCycle? GetById(Guid id);
 
-    void Add(
-        PerformanceCycle cycle);
+    void Add(PerformanceCycle cycle);
 
-    void Update(
-        PerformanceCycle cycle);
+    void Update(PerformanceCycle cycle);
 
-    void Delete(
-        PerformanceCycle cycle);
+    void Delete(PerformanceCycle cycle);
 
-    bool HasOverlappingCycle(
-        DateOnly startDate,
-        DateOnly endDate,
-        Guid? excludeId = null);
+    bool HasOverlappingCycle(DateOnly startDate, DateOnly endDate, Guid? excludeId = null);
+
+    bool CycleNameExists(string name, Guid? excludeId = null);
+
+    bool HasReviews(Guid cycleId);
+
+    bool HasRecommendations(Guid cycleId);
 
     void SaveChanges();
-
-
-
-    bool CycleNameExists(
-    string name,
-    Guid? excludeId = null);
-
-    bool HasReviews(
-        Guid cycleId);
-
-    bool HasRecommendations(
-        Guid cycleId);
 }

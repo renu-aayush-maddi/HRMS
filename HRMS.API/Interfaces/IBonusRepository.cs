@@ -4,19 +4,21 @@ namespace HRMS.API.Interfaces;
 
 public interface IBonusRepository
 {
-    Employee? GetEmployee(Guid employeeId);
+    Task<Employee?> GetEmployeeAsync(Guid employeeId, CancellationToken cancellationToken = default);
 
-    Employee? GetEmployeeByUserId(Guid userId);
+    Task<Employee?> GetEmployeeByUserIdAsync(Guid userId, CancellationToken cancellationToken = default);
 
-    Bonuse? GetBonus(Guid bonusId);
+    Task<Bonuse?> GetBonusAsync(Guid bonusId, CancellationToken cancellationToken = default);
 
-    List<Bonuse> GetAllBonuses();
+    IQueryable<Bonuse> GetBonuses();
 
-    List<Bonuse> GetEmployeeBonuses(Guid employeeId);
+    Task<bool> BonusExistsAsync(Guid employeeId, string reason, int bonusMonth, int bonusYear, CancellationToken cancellationToken = default);
 
-    void AddBonus(Bonuse bonus);
+    Task AddBonusAsync(Bonuse bonus, CancellationToken cancellationToken = default);
 
     void UpdateBonus(Bonuse bonus);
 
-    void SaveChanges();
+    void DeleteBonus(Bonuse bonus);
+
+    Task SaveChangesAsync(CancellationToken cancellationToken = default);
 }

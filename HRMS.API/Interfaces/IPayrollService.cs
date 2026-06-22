@@ -1,21 +1,25 @@
+using HRMS.API.Models.Common;
 using HRMS.API.Models.DTOs.Payroll;
 
 namespace HRMS.API.Interfaces;
 
 public interface IPayrollService
 {
-    void GeneratePayroll(GeneratePayrollDto dto);
+    Task<PayrollDetailDto> GeneratePayrollAsync(GeneratePayrollDto dto, CancellationToken cancellationToken = default);
 
-    List<PayrollResponseDto> GetAllPayrolls();
+    Task<BulkPayrollResponseDto> GenerateMonthlyPayrollAsync(GenerateMonthlyPayrollDto dto, CancellationToken cancellationToken = default);
 
-    List<PayrollResponseDto> GetEmployeePayrolls(Guid employeeId);
+    Task<PagedResponse<PayrollResponseDto>> GetPayrollsAsync(PayrollFilterDto filter, CancellationToken cancellationToken = default);
 
-    void ApprovePayroll(Guid payrollId);
+    Task<PagedResponse<PayrollResponseDto>> GetEmployeePayrollsAsync(Guid employeeId, PayrollFilterDto filter, CancellationToken cancellationToken = default);
 
-    void MarkPayrollPaid(Guid payrollId);
+    Task<PagedResponse<PayrollResponseDto>> GetMyPayrollsAsync(PayrollFilterDto filter, CancellationToken cancellationToken = default);
 
-    List<PayrollResponseDto> GetMyPayrolls(Guid userId);
+    Task<PayrollDetailDto> GetPayrollAsync(Guid payrollId, CancellationToken cancellationToken = default);
 
-    BulkPayrollResponseDto GenerateMonthlyPayroll(GenerateMonthlyPayrollDto dto);
+    Task ApprovePayrollAsync(Guid payrollId, CancellationToken cancellationToken = default);
 
+    Task MarkPayrollPaidAsync(Guid payrollId, CancellationToken cancellationToken = default);
+
+    Task<byte[]> ExportPayrollsAsync(PayrollFilterDto filter, CancellationToken cancellationToken = default);
 }

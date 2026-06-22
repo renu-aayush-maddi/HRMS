@@ -2,6 +2,7 @@ using HRMS.API.Data;
 using HRMS.API.Interfaces;
 using HRMS.API.Models.Entities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace HRMS.API.Repositories;
 
@@ -9,103 +10,122 @@ public class EmployeeRepository : IEmployeeRepository
 {
     private readonly AppDbContext context;
 
-
     public EmployeeRepository(AppDbContext context)
     {
         this.context = context;
     }
 
-    public async Task<(List<Employee> Employees, int TotalCount)>
-        GetAllEmployeesAsync(string? search, int page, int pageSize)
+    public IQueryable<Employee> GetEmployees()
     {
-        var query = context.Employees
-            .Include(e => e.Department)
-            .Where(e => e.IsDeleted == false)
-            .AsQueryable();
+        return context.Employees
+            .AsNoTracking()
+            .Include(x => x.Department)
+            .Include(x => x.Manager)
+            .Where(x => !x.IsDeleted);
+    }
 
-        if (!string.IsNullOrWhiteSpace(search))
+    public async Task<Employee?> GetEmployeeByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        return await context.Employees
+            .Include(x => x.Department)
+            .Include(x => x.Manager)
+            .FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted, cancellationToken);
+    }
+
+    public async Task<Employee?> GetEmployeeFullProfileAsync(Guid employeeId, CancellationToken cancellationToken = default)
+    {
+        return await context.Employees
+            .Include(x => x.Department)
+            .Include(x => x.Manager)
+            .Include(x => x.EmployeeAddresses)
+            .Include(x => x.EmployeeEducations)
+            .Include(x => x.EmployeeExperiences)
+            .Include(x => x.EmployeeEmergencyContacts)
+            .Include(x => x.EmployeeDocuments)
+            .FirstOrDefaultAsync(x => x.Id == employeeId && !x.IsDeleted, cancellationToken);
+    }
+
+    public async Task<Employee?> GetEmployeeByEmailAsync(string email, CancellationToken cancellationToken = default)
+    {
+        return await context.Employees
+            .FirstOrDefaultAsync(x => x.Email == email && !x.IsDeleted, cancellationToken);
+    }
+
+    public async Task<Employee?> GetEmployeeByCodeAsync(string employeeCode, CancellationToken cancellationToken = default)
+    {
+        return await context.Employees
+            .FirstOrDefaultAsync(x => x.EmployeeCode == employeeCode && !x.IsDeleted, cancellationToken);
+    }
+
+    public async Task<bool> EmployeeExistsAsync(string email, CancellationToken cancellationToken = default)
+    {
+        return await context.Employees
+            .AnyAsync(x => x.Email == email && !x.IsDeleted, cancellationToken);
+    }
+
+    public async Task<bool> DepartmentExistsAsync(Guid departmentId, CancellationToken cancellationToken = default)
+    {
+        return await context.Departments.AnyAsync(x => x.Id == departmentId, cancellationToken);
+    }
+
+    public async Task<bool> ManagerExistsAsync(Guid managerId, CancellationToken cancellationToken = default)
+    {
+        return await context.Employees
+            .AnyAsync(x => x.Id == managerId && !x.IsDeleted && x.EmploymentStatus == "Active", cancellationToken);
+    }
+
+    public async Task<Role?> GetRoleByNameAsync(string roleName, CancellationToken cancellationToken = default)
+    {
+        return await context.Roles.FirstOrDefaultAsync(x => x.Name == roleName, cancellationToken);
+    }
+
+    public async Task<List<Employee>> GetManagersAsync(
+        CancellationToken cancellationToken = default)
+    {
+        return await context.Employees
+            .Include(x => x.User)
+            .ThenInclude(x => x.Roles)
+            .Where(x =>
+                !x.IsDeleted &&
+                x.EmploymentStatus == "Active" &&
+                x.User != null &&
+                x.User.Roles.Any(r => r.Name == "Manager"))
+            .OrderBy(x => x.FirstName)
+            .ThenBy(x => x.LastName)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<long> GetNextEmployeeNumberAsync(CancellationToken cancellationToken = default)
+    {
+        var employeeCodes = await context.Employees
+            .Where(x => !x.IsDeleted && !string.IsNullOrWhiteSpace(x.EmployeeCode))
+            .Select(x => x.EmployeeCode)
+            .ToListAsync(cancellationToken);
+
+        if (!employeeCodes.Any())
         {
-            search = search.ToLower();
-
-            query = query.Where(e =>
-                e.FirstName.ToLower().Contains(search)
-                ||
-                e.LastName.ToLower().Contains(search)
-                ||
-                e.Email.ToLower().Contains(search));
+            return 1001;
         }
 
-        var totalCount = await query.CountAsync();
+        var maxNumber = employeeCodes
+            .Select(code =>
+            {
+                var numeric = new string(code.Where(char.IsDigit).ToArray());
+                return long.TryParse(numeric, out var result) ? result : 1000;
+            })
+            .Max();
 
-        var employees =
-            await query
-            .OrderBy(e => e.FirstName)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .ToListAsync();
-
-        return (employees, totalCount);
+        return maxNumber + 1;
     }
 
-    public async Task<Employee?> GetEmployeeByIdAsync(Guid id)
+    public async Task AddEmployeeAsync(Employee employee, CancellationToken cancellationToken = default)
     {
-        return await context.Employees
-            .Include(e => e.Department)
-            .FirstOrDefaultAsync(e =>
-            e.Id == id &&
-                e.IsDeleted == false);
+        await context.Employees.AddAsync(employee, cancellationToken);
     }
 
-    public async Task<Employee?> GetEmployeeFullProfileAsync(Guid employeeId)
+    public async Task AddUserAsync(User user, CancellationToken cancellationToken = default)
     {
-        return await context.Employees
-            .Include(e => e.Department)
-
-            .Include(e => e.Manager)
-
-            .Include(e => e.EmployeeEducations)
-
-            .Include(e => e.EmployeeExperiences)
-
-            .Include(e => e.EmployeeEmergencyContacts)
-
-            .Include(e => e.EmployeeAddresses)
-
-            .Include(e => e.EmployeeDocuments)
-
-            .AsSplitQuery()
-
-            .FirstOrDefaultAsync(e =>
-                e.Id == employeeId &&
-                e.IsDeleted == false);
-    }
-
-    public async Task<bool> EmployeeExistsAsync(string email)
-    {
-        return await context.Employees
-            .AnyAsync(e =>
-                e.Email == email &&
-                e.IsDeleted == false);
-    }
-
-    public async Task<bool> DepartmentExistsAsync(Guid departmentId)
-    {
-        return await context.Departments.AnyAsync(d =>d.Id == departmentId);
-    }
-
-    public async Task<Role?> GetRoleByNameAsync(string roleName)
-    {
-        return await context.Roles.FirstOrDefaultAsync(r =>r.Name == roleName);
-    }
-
-    public async Task AddEmployeeAsync(Employee employee)
-    {
-        await context.Employees.AddAsync(employee);
-    }
-
-    public async Task AddUserAsync(User user)
-    {
-        await context.Users.AddAsync(user);
+        await context.Users.AddAsync(user, cancellationToken);
     }
 
     public void UpdateEmployee(Employee employee)
@@ -113,26 +133,21 @@ public class EmployeeRepository : IEmployeeRepository
         context.Employees.Update(employee);
     }
 
-    public void SoftDeleteEmployee(Employee employee,Guid deletedBy)
+    public void SoftDeleteEmployee(Employee employee, Guid deletedBy)
     {
         employee.IsDeleted = true;
-
-        employee.DeletedAt = DateTime.Now;
-
+        employee.DeletedAt = DateTime.UtcNow;
         employee.DeletedBy = deletedBy;
-
         context.Employees.Update(employee);
     }
 
-    public async Task AddAuditLogAsync(AuditLog auditLog)
+    public async Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default)
     {
-        await context.AuditLogs.AddAsync(auditLog);
+        return await context.Database.BeginTransactionAsync(cancellationToken);
     }
 
-    public async Task SaveChangesAsync()
+    public async Task SaveChangesAsync(CancellationToken cancellationToken = default)
     {
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(cancellationToken);
     }
-
-
 }

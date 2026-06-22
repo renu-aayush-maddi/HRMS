@@ -34,14 +34,24 @@ public class EmployeeResignationService : IEmployeeResignationService
 
     public async Task<EmployeeResignationDto> CreateAsync(CreateResignationDto dto, CancellationToken cancellationToken = default)
     {
-        var employeeId = await accessResolver.ResolveEmployeeIdAsync(dto.EmployeeId, cancellationToken);
-        var employee = await repository.GetEmployeeAsync(employeeId, cancellationToken);
+        var employeeId =
+    await userContextService.GetEmployeeIdAsync(
+        cancellationToken);
+
+        if (employeeId == null)
+        {
+            throw new NotFoundException(
+                "Employee not found.");
+        }
+        var employee = await repository.GetEmployeeAsync(employeeId.Value, cancellationToken);
 
         if (employee is null) throw new NotFoundException("Employee not found.");
         if (employee.EmploymentStatus != EmployeeStatus.Active.ToString())
             throw new BusinessException("Only active employees can submit resignations.");
 
-        var existingResignation = await repository.GetActiveResignationAsync(employeeId, cancellationToken);
+        var existingResignation =await repository.GetActiveResignationAsync(
+        employeeId.Value,
+        cancellationToken);
         if (existingResignation is not null) throw new BusinessException("An active resignation already exists.");
 
         if (dto.LastWorkingDate < DateOnly.FromDateTime(DateTime.Now).AddDays(30))
@@ -50,7 +60,7 @@ public class EmployeeResignationService : IEmployeeResignationService
         var resignation = new EmployeeResignation
         {
             Id = Guid.NewGuid(),
-            EmployeeId = employeeId,
+            EmployeeId = employeeId.Value,
             ResignationDate = DateOnly.FromDateTime(DateTime.Now),
             LastWorkingDate = dto.LastWorkingDate,
             Reason = dto.Reason,

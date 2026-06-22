@@ -4,19 +4,21 @@ namespace HRMS.API.Interfaces;
 
 public interface IDeductionRepository
 {
-    Employee? GetEmployee(Guid employeeId);
+    Task<Employee?> GetEmployeeAsync(Guid employeeId, CancellationToken cancellationToken = default);
 
-    Employee? GetEmployeeByUserId(Guid userId);
+    Task<Employee?> GetEmployeeByUserIdAsync(Guid userId, CancellationToken cancellationToken = default);
 
-    Deduction? GetDeduction(Guid deductionId);
+    Task<Deduction?> GetDeductionAsync(Guid deductionId, CancellationToken cancellationToken = default);
 
-    List<Deduction> GetAllDeductions();
+    IQueryable<Deduction> GetDeductions();
 
-    List<Deduction> GetEmployeeDeductions(Guid employeeId);
+    Task<bool> DeductionExistsAsync(Guid employeeId, string reason, int deductionMonth, int deductionYear, CancellationToken cancellationToken = default);
 
-    void AddDeduction(Deduction deduction);
+    Task AddDeductionAsync(Deduction deduction, CancellationToken cancellationToken = default);
 
     void UpdateDeduction(Deduction deduction);
 
-    void SaveChanges();
+    void DeleteDeduction(Deduction deduction);
+
+    Task SaveChangesAsync(CancellationToken cancellationToken = default);
 }

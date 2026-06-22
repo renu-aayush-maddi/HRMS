@@ -1,18 +1,25 @@
+using HRMS.API.Models.Common;
 using HRMS.API.Models.DTOs.Leave;
 
 namespace HRMS.API.Interfaces;
 
 public interface ILeaveService
 {
-    Task ApplyLeaveAsync(ApplyLeaveDto dto, Guid userId, string role);
+    Task ApplyLeaveAsync(ApplyLeaveDto dto, CancellationToken cancellationToken = default);
 
-    Task<List<LeaveResponseDto>> GetMyLeavesAsync(Guid userId);
+    Task<PagedResponse<LeaveResponseDto>> GetLeavesAsync(LeaveFilterDto filter, CancellationToken cancellationToken = default);
 
-    Task<List<LeaveResponseDto>> GetEmployeeLeavesAsync(Guid employeeId);
+    Task<PagedResponse<LeaveResponseDto>> GetMyLeavesAsync(LeaveFilterDto filter, CancellationToken cancellationToken = default);
 
-    Task ApproveLeaveAsync(Guid leaveId, Guid userId, string role, LeaveActionDto dto);
+    Task<LeaveDetailsDto> GetLeaveAsync(Guid leaveId, CancellationToken cancellationToken = default);
 
-    Task RejectLeaveAsync(Guid leaveId, Guid userId, string role, LeaveActionDto dto);
+    Task ApproveLeaveAsync(Guid leaveId, LeaveActionDto dto, CancellationToken cancellationToken = default);
 
-    Task<List<LeaveResponseDto>> GetAllLeavesAsync();
+    Task RejectLeaveAsync(Guid leaveId, LeaveActionDto dto, CancellationToken cancellationToken = default);
+
+    Task WithdrawLeaveAsync(Guid leaveId, CancellationToken cancellationToken = default);
+
+    Task CancelLeaveAsync(Guid leaveId, CancellationToken cancellationToken = default);
+
+    Task<List<LeaveBalanceDto>> GetMyLeaveBalancesAsync(CancellationToken cancellationToken = default);
 }

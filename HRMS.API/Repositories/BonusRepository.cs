@@ -5,79 +5,67 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HRMS.API.Repositories;
 
-public class BonusRepository
-    : IBonusRepository
+public class BonusRepository : IBonusRepository
 {
     private readonly AppDbContext context;
 
-    public BonusRepository(
-        AppDbContext context)
+    public BonusRepository(AppDbContext context)
     {
         this.context = context;
     }
 
-    public Employee? GetEmployee(
-        Guid employeeId)
+    public async Task<Employee?> GetEmployeeAsync(Guid employeeId, CancellationToken cancellationToken = default)
     {
-        return context.Employees
-            .FirstOrDefault(x =>
-                x.Id == employeeId);
+        return await context.Employees
+            .FirstOrDefaultAsync(x => x.Id == employeeId && !x.IsDeleted, cancellationToken);
     }
 
-    public Employee? GetEmployeeByUserId(
-        Guid userId)
+    public async Task<Employee?> GetEmployeeByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
     {
-        return context.Employees
-            .FirstOrDefault(x =>
-                x.UserId == userId);
+        return await context.Employees
+            .FirstOrDefaultAsync(x => x.UserId == userId && !x.IsDeleted, cancellationToken);
     }
 
-    public Bonuse? GetBonus(
-        Guid bonusId)
+    public async Task<Bonuse?> GetBonusAsync(Guid bonusId, CancellationToken cancellationToken = default)
+    {
+        return await context.Bonuses
+            .Include(x => x.Employee)
+            .FirstOrDefaultAsync(x => x.Id == bonusId, cancellationToken);
+    }
+
+    public IQueryable<Bonuse> GetBonuses()
     {
         return context.Bonuses
-            .Include(x => x.Employee)
-            .FirstOrDefault(x =>
-                x.Id == bonusId);
+            .AsNoTracking()
+            .Include(x => x.Employee);
     }
 
-    public List<Bonuse> GetAllBonuses()
+    public async Task<bool> BonusExistsAsync(Guid employeeId, string reason, int bonusMonth, int bonusYear, CancellationToken cancellationToken = default)
     {
-        return context.Bonuses
-            .Include(x => x.Employee)
-            .OrderByDescending(x =>
-                x.CreatedAt)
-            .ToList();
+        return await context.Bonuses
+            .AnyAsync(x => x.EmployeeId == employeeId &&
+                           x.BonusMonth == bonusMonth &&
+                           x.BonusYear == bonusYear &&
+                           x.Reason.ToLower() == reason.ToLower(), cancellationToken);
     }
 
-    public List<Bonuse> GetEmployeeBonuses(
-        Guid employeeId)
+    public async Task AddBonusAsync(Bonuse bonus, CancellationToken cancellationToken = default)
     {
-        return context.Bonuses
-            .Include(x => x.Employee)
-            .Where(x =>
-                x.EmployeeId == employeeId)
-            .OrderByDescending(x =>
-                x.CreatedAt)
-            .ToList();
+        await context.Bonuses.AddAsync(bonus, cancellationToken);
     }
 
-    public void AddBonus(
-        Bonuse bonus)
+    public void UpdateBonus(Bonuse bonus)
     {
-        context.Bonuses.Add(
-            bonus);
+        context.Bonuses.Update(bonus);
     }
 
-    public void UpdateBonus(
-        Bonuse bonus)
+    public void DeleteBonus(Bonuse bonus)
     {
-        context.Bonuses.Update(
-            bonus);
+        context.Bonuses.Remove(bonus);
     }
 
-    public void SaveChanges()
+    public async Task SaveChangesAsync(CancellationToken cancellationToken = default)
     {
-        context.SaveChanges();
+        await context.SaveChangesAsync(cancellationToken);
     }
 }

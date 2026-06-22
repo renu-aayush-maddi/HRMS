@@ -21,8 +21,7 @@ public static class AttendanceConstants
         WorkFromHome
     ];
 
-    public static readonly TimeOnly LateThreshold =
-        new(9, 30);
+    public static readonly TimeOnly LateThreshold = new(9, 30);
 
     public const decimal HalfDayThresholdHours = 4m;
 }

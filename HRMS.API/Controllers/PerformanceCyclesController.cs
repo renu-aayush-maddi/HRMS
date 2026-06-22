@@ -10,61 +10,43 @@ namespace HRMS.API.Controllers;
 [Authorize(Roles = "Admin")]
 public class PerformanceCyclesController : ControllerBase
 {
-    private readonly
-        IPerformanceCycleService
-        service;
+    private readonly IPerformanceCycleService service;
 
-    public PerformanceCyclesController(
-        IPerformanceCycleService service)
+    public PerformanceCyclesController(IPerformanceCycleService service)
     {
         this.service = service;
     }
 
     [HttpPost]
-    public IActionResult AddCycle(
-        AddPerformanceCycleDto dto)
+    public IActionResult AddCycle(AddPerformanceCycleDto dto)
     {
         service.AddCycle(dto);
-
-        return Ok(
-            "Cycle Added Successfully");
+        return Ok("Cycle Added Successfully");
     }
 
     [HttpGet]
     public IActionResult GetAllCycles()
     {
-        return Ok(
-            service.GetAllCycles());
+        return Ok(service.GetAllCycles());
     }
 
     [HttpGet("{id}")]
-    public IActionResult GetCycle(
-        Guid id)
+    public IActionResult GetCycle(Guid id)
     {
-        return Ok(
-            service.GetCycleById(id));
+        return Ok(service.GetCycleById(id));
     }
 
     [HttpPut("{id}")]
-    public IActionResult UpdateCycle(
-        Guid id,
-        UpdatePerformanceCycleDto dto)
+    public IActionResult UpdateCycle(Guid id, UpdatePerformanceCycleDto dto)
     {
-        service.UpdateCycle(
-            id,
-            dto);
-
-        return Ok(
-            "Cycle Updated Successfully");
+        service.UpdateCycle(id, dto);
+        return Ok("Cycle Updated Successfully");
     }
 
     [HttpDelete("{id}")]
-    public IActionResult DeleteCycle(
-        Guid id)
+    public IActionResult DeleteCycle(Guid id)
     {
         service.DeleteCycle(id);
-
-        return Ok(
-            "Cycle Deleted Successfully");
+        return Ok("Cycle Deleted Successfully");
     }
 }

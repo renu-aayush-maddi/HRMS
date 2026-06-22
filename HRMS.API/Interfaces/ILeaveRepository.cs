@@ -4,31 +4,29 @@ namespace HRMS.API.Interfaces;
 
 public interface ILeaveRepository
 {
-    Task<Employee?> GetEmployeeAsync(Guid employeeId);
+    Task<Employee?> GetEmployeeAsync(Guid employeeId, CancellationToken cancellationToken = default);
 
-    Task<Employee?> GetEmployeeByUserIdAsync(Guid userId);
+    Task<Employee?> GetEmployeeByUserIdAsync(Guid userId, CancellationToken cancellationToken = default);
 
-    Task<LeaveRequest?> GetLeaveByIdAsync(Guid leaveId);
+    Task<LeaveRequest?> GetLeaveByIdAsync(Guid leaveId, CancellationToken cancellationToken = default);
 
-    Task<List<LeaveRequest>> GetAllLeavesAsync();
+    IQueryable<LeaveRequest> GetLeaves();
 
-    Task<List<LeaveRequest>> GetEmployeeLeavesAsync(
-        Guid employeeId);
+    Task<EmployeeLeaveBalance?> GetLeaveBalanceAsync(Guid employeeId, Guid leaveTypeId, CancellationToken cancellationToken = default);
 
-    Task AddLeaveAsync(LeaveRequest leave);
+    Task<List<EmployeeLeaveBalance>> GetEmployeeLeaveBalancesAsync(Guid employeeId, CancellationToken cancellationToken = default);
+
+    Task<LeaveType?> GetLeaveTypeAsync(Guid leaveTypeId, CancellationToken cancellationToken = default);
+
+    Task<bool> HasOverlappingLeaveAsync(Guid employeeId, DateOnly fromDate, DateOnly toDate, CancellationToken cancellationToken = default);
+
+    Task<bool> IsManagerOfEmployeeAsync(Guid managerEmployeeId, Guid employeeId, CancellationToken cancellationToken = default);
+
+    Task AddLeaveAsync(LeaveRequest leave, CancellationToken cancellationToken = default);
 
     void UpdateLeave(LeaveRequest leave);
 
-    Task<EmployeeLeaveBalance?> GetLeaveBalanceAsync(Guid employeeId,Guid leaveTypeId);
-
-    Task<LeaveType?> GetLeaveTypeAsync(Guid leaveTypeId);
-
     void UpdateLeaveBalance(EmployeeLeaveBalance balance);
 
-    Task<bool> HasOverlappingLeaveAsync(
-        Guid employeeId,
-        DateOnly fromDate,
-        DateOnly toDate);
-
-    Task SaveChangesAsync();
+    Task SaveChangesAsync(CancellationToken cancellationToken = default);
 }

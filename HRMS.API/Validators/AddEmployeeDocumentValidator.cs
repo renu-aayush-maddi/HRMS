@@ -19,15 +19,18 @@ public class AddEmployeeDocumentValidator : AbstractValidator<AddEmployeeDocumen
             .WithMessage($"DocumentType must be one of: {string.Join(", ", DocumentTypes.All)}");
 
         RuleFor(x => x.File)
-            .NotNull();
+     .NotNull()
+     .WithMessage("File is required.")
+     .DependentRules(() =>
+     {
+         RuleFor(x => x.File.Length)
+             .LessThanOrEqualTo(MaxFileSize)
+             .WithMessage("File size cannot exceed 10 MB.");
 
-        RuleFor(x => x.File.Length)
-            .LessThanOrEqualTo(MaxFileSize)
-            .WithMessage("File size cannot exceed 10 MB.");
-
-        RuleFor(x => x.File.FileName)
-            .Must(HaveAllowedExtension)
-            .WithMessage("Invalid file type.");
+         RuleFor(x => x.File.FileName)
+             .Must(HaveAllowedExtension)
+             .WithMessage("Invalid file type.");
+     });
     }
 
     private bool HaveAllowedExtension(string fileName)

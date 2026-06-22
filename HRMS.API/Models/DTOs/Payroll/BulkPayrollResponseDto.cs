@@ -8,6 +8,9 @@ public class BulkPayrollResponseDto
 
     public int FailedCount { get; set; }
 
-    public List<string> Errors { get; set; }
-        = new();
+    public int SkippedCount { get; set; }
+
+    public List<string> Errors { get; set; } = [];
+
+    public List<string> SkippedEmployees { get; set; } = [];
 }

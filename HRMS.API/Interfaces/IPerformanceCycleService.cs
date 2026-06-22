@@ -4,20 +4,13 @@ namespace HRMS.API.Interfaces;
 
 public interface IPerformanceCycleService
 {
-    void AddCycle(
-        AddPerformanceCycleDto dto);
+    void AddCycle(AddPerformanceCycleDto dto);
 
-    void UpdateCycle(
-        Guid id,
-        UpdatePerformanceCycleDto dto);
+    void UpdateCycle(Guid id, UpdatePerformanceCycleDto dto);
 
-    void DeleteCycle(
-        Guid id);
+    void DeleteCycle(Guid id);
 
-    List<PerformanceCycleResponseDto>
-        GetAllCycles();
+    List<PerformanceCycleResponseDto> GetAllCycles();
 
-    PerformanceCycleResponseDto
-        GetCycleById(
-            Guid id);
+    PerformanceCycleResponseDto GetCycleById(Guid id);
 }

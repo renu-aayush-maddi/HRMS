@@ -7,6 +7,7 @@ using System.Security.Claims;
 
 namespace HRMS.API.Controllers;
 
+
 [Route("api/[controller]")]
 [ApiController]
 public class AuthController : ControllerBase

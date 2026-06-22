@@ -1,21 +1,21 @@
+using HRMS.API.Models.Common;
 using HRMS.API.Models.DTOs.Deduction;
 
 namespace HRMS.API.Interfaces;
 
 public interface IDeductionService
 {
-    void CreateDeduction(
-        CreateDeductionDto dto);
+    Task<DeductionResponseDto> CreateDeductionAsync(CreateDeductionDto dto, CancellationToken cancellationToken = default);
 
-    void ApproveDeduction(
-        Guid deductionId);
+    Task ApproveDeductionAsync(Guid deductionId, CancellationToken cancellationToken = default);
 
-    void RejectDeduction(
-        Guid deductionId);
+    Task RejectDeductionAsync(Guid deductionId, CancellationToken cancellationToken = default);
 
-    List<DeductionResponseDto>
-        GetAllDeductions();
+    Task<PagedResponse<DeductionResponseDto>> GetDeductionsAsync(DeductionFilterDto filter, CancellationToken cancellationToken = default);
 
-    List<DeductionResponseDto>
-        GetMyDeductions(Guid userId);
+    Task<PagedResponse<DeductionResponseDto>> GetMyDeductionsAsync(DeductionFilterDto filter, CancellationToken cancellationToken = default);
+
+    Task<DeductionResponseDto> GetDeductionAsync(Guid deductionId, CancellationToken cancellationToken = default);
+
+    Task<byte[]> ExportDeductionsAsync(DeductionFilterDto filter, CancellationToken cancellationToken = default);
 }

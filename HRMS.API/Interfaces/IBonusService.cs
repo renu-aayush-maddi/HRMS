@@ -1,21 +1,21 @@
+using HRMS.API.Models.Common;
 using HRMS.API.Models.DTOs.Bonus;
 
 namespace HRMS.API.Interfaces;
 
 public interface IBonusService
 {
-    void CreateBonus(
-        CreateBonusDto dto);
+    Task<BonusResponseDto> CreateBonusAsync(CreateBonusDto dto, CancellationToken cancellationToken = default);
 
-    void ApproveBonus(
-        Guid bonusId);
+    Task ApproveBonusAsync(Guid bonusId, CancellationToken cancellationToken = default);
 
-    void RejectBonus(
-        Guid bonusId);
+    Task RejectBonusAsync(Guid bonusId, CancellationToken cancellationToken = default);
 
-    List<BonusResponseDto>
-        GetAllBonuses();
+    Task<PagedResponse<BonusResponseDto>> GetBonusesAsync(BonusFilterDto filter, CancellationToken cancellationToken = default);
 
-    List<BonusResponseDto>
-        GetMyBonuses(Guid userId);
+    Task<PagedResponse<BonusResponseDto>> GetMyBonusesAsync(BonusFilterDto filter, CancellationToken cancellationToken = default);
+
+    Task<BonusResponseDto> GetBonusAsync(Guid bonusId, CancellationToken cancellationToken = default);
+
+    Task<byte[]> ExportBonusesAsync(BonusFilterDto filter, CancellationToken cancellationToken = default);
 }

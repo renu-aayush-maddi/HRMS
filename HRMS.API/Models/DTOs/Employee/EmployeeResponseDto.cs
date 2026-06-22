@@ -21,4 +21,8 @@ public class EmployeeResponseDto
     public decimal? Salary { get; set; }
 
     public string? EmploymentStatus { get; set; }
+
+    public Guid? ManagerId { get; set; }
+
+    public string? ManagerName { get; set; }
 }

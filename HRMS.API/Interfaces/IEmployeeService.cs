@@ -1,21 +1,30 @@
 using HRMS.API.Models.Common;
 using HRMS.API.Models.DTOs.Employee;
+using Microsoft.AspNetCore.Http;
 
 namespace HRMS.API.Interfaces;
 
 public interface IEmployeeService
 {
-    Task<PagedResult<EmployeeResponseDto>> GetAllEmployeesAsync(string? search,int page,int pageSize);
+    Task<EmployeeCreatedDto> AddEmployeeAsync(AddEmployeeDto dto, CancellationToken cancellationToken = default);
 
-    Task<EmployeeResponseDto?> GetEmployeeByIdAsync(Guid id);
+    Task<EmployeeResponseDto> UpdateEmployeeAsync(Guid employeeId, UpdateEmployeeDto dto, CancellationToken cancellationToken = default);
 
-    Task<EmployeeCreatedDto> AddEmployeeAsync(AddEmployeeDto dto);
+    Task DeleteEmployeeAsync(Guid employeeId, CancellationToken cancellationToken = default);
 
-    Task UpdateEmployeeAsync(Guid id, UpdateEmployeeDto dto);
+    Task<EmployeeResponseDto> GetEmployeeByIdAsync(Guid employeeId, CancellationToken cancellationToken = default);
 
-    Task DeleteEmployeeAsync(Guid id);
+    Task<PagedResponse<EmployeeResponseDto>> GetEmployeesAsync(EmployeeFilterDto filter, CancellationToken cancellationToken = default);
 
-    Task UpdateEmployeeStatusAsync(Guid employeeId,UpdateEmployeeStatusDto dto);
+    Task<EmployeeFullProfileDto> GetEmployeeFullProfileAsync(Guid employeeId, CancellationToken cancellationToken = default);
 
-    Task<EmployeeFullProfileDto?> GetFullProfileAsync(Guid employeeId);
+    Task<EmployeeFullProfileDto> GetMyProfileAsync(CancellationToken cancellationToken = default);
+
+    Task UpdateEmployeeStatusAsync(Guid employeeId, UpdateEmployeeStatusDto dto, CancellationToken cancellationToken = default);
+
+    Task<List<ManagerLookupDto>> GetManagersAsync(CancellationToken cancellationToken = default);
+
+    Task<byte[]> ExportEmployeesAsync(EmployeeFilterDto filter, CancellationToken cancellationToken = default);
+
+    Task<EmployeeImportResultDto> ImportEmployeesAsync(IFormFile file, CancellationToken cancellationToken = default);
 }

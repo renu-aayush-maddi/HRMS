@@ -9,15 +9,24 @@ namespace HRMS.API.Services;
 public class PayslipService : IPayslipService
 {
     private readonly IPayrollRepository payrollRepository;
+    private readonly IUserContextService userContextService;
 
-    public PayslipService(IPayrollRepository payrollRepository)
+    public PayslipService(
+        IPayrollRepository payrollRepository,
+        IUserContextService userContextService)
     {
         this.payrollRepository = payrollRepository;
+        this.userContextService = userContextService;
     }
 
-    public byte[] GeneratePayslip(Guid payrollId)
+    public async Task<byte[]> GeneratePayslipAsync(
+    Guid payrollId,
+    CancellationToken cancellationToken = default)
     {
-        var payroll = payrollRepository.GetPayrollById(payrollId);
+        var payroll =
+            await payrollRepository.GetPayrollByIdAsync(
+                payrollId,
+                cancellationToken);
 
         if (payroll == null)
         {
@@ -27,18 +36,35 @@ public class PayslipService : IPayslipService
         return BuildPayslip(payroll);
     }
 
-    public byte[] GenerateMyPayslip(Guid payrollId, Guid userId)
+    public async Task<byte[]> GenerateMyPayslipAsync(
+        Guid payrollId,
+        CancellationToken cancellationToken = default)
     {
-        var payroll = payrollRepository.GetPayrollById(payrollId);
+        var payroll =
+            await payrollRepository.GetPayrollByIdAsync(
+                payrollId,
+                cancellationToken);
 
         if (payroll == null)
         {
-            throw new NotFoundException("Payroll not found");
+            throw new NotFoundException(
+                "Payroll not found");
         }
 
-        if (payroll.Employee?.UserId != userId)
+        var employeeId =
+            await userContextService.GetEmployeeIdAsync(
+                cancellationToken);
+
+        if (employeeId == null)
         {
-            throw new BusinessException("Unauthorized");
+            throw new NotFoundException(
+                "Employee profile not found");
+        }
+
+        if (payroll.EmployeeId != employeeId)
+        {
+            throw new BusinessException(
+                "You can only access your own payslip");
         }
 
         return BuildPayslip(payroll);
@@ -47,11 +73,11 @@ public class PayslipService : IPayslipService
     private byte[] BuildPayslip(Models.Entities.Payroll payroll)
     {
         // Calculate Total Earnings for the summary
-        var totalEarnings = payroll.BasicComponent 
-                            + payroll.HraComponent 
-                            + payroll.SpecialAllowanceComponent 
-                            + payroll.MedicalAllowanceComponent 
-                            + payroll.TravelAllowanceComponent 
+        var totalEarnings = payroll.BasicComponent
+                            + payroll.HraComponent
+                            + payroll.SpecialAllowanceComponent
+                            + payroll.MedicalAllowanceComponent
+                            + payroll.TravelAllowanceComponent
                             + payroll.Bonus;
 
         return Document.Create(container =>
@@ -77,7 +103,7 @@ public class PayslipService : IPayslipService
                     });
 
                     col.Item().PaddingTop(10).LineHorizontal(1).LineColor(Colors.Grey.Lighten2);
-                    
+
                     col.Item().PaddingTop(10).AlignCenter()
                        .Text($"Payslip for the month of {payroll.PayMonth:D2} / {payroll.PayYear}")
                        .FontSize(12).Bold();
@@ -190,7 +216,7 @@ public class PayslipService : IPayslipService
                 });
 
                 // 3. FOOTER SECTION
-                page.Footer().Column(col => 
+                page.Footer().Column(col =>
                 {
                     col.Item().LineHorizontal(1).LineColor(Colors.Grey.Lighten2);
                     col.Item().PaddingTop(5).AlignCenter()

@@ -9,6 +9,7 @@ namespace HRMS.API.Controllers;
 [Route("api/employee-emergency-contacts")]
 [ApiController]
 [Authorize]
+
 public class EmployeeEmergencyContactsController : ControllerBase
 {
     private readonly IEmployeeEmergencyContactService service;

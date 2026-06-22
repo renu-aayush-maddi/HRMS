@@ -274,3 +274,8 @@ C:\Users\renua\OneDrive\Desktop\HRMS\HRMS.API\bin\Debug\net8.0\ExcelNumberFormat
 C:\Users\renua\OneDrive\Desktop\HRMS\HRMS.API\bin\Debug\net8.0\RBush.dll
 C:\Users\renua\OneDrive\Desktop\HRMS\HRMS.API\bin\Debug\net8.0\SixLabors.Fonts.dll
 C:\Users\renua\OneDrive\Desktop\HRMS\HRMS.API\bin\Debug\net8.0\System.IO.Packaging.dll
+C:\Users\renua\OneDrive\Desktop\HRMS\HRMS.API\bin\Debug\net8.0\BouncyCastle.Cryptography.dll
+C:\Users\renua\OneDrive\Desktop\HRMS\HRMS.API\bin\Debug\net8.0\MailKit.dll
+C:\Users\renua\OneDrive\Desktop\HRMS\HRMS.API\bin\Debug\net8.0\MimeKit.dll
+C:\Users\renua\OneDrive\Desktop\HRMS\HRMS.API\bin\Debug\net8.0\System.Security.Cryptography.Pkcs.dll
+C:\Users\renua\OneDrive\Desktop\HRMS\HRMS.API\bin\Debug\net8.0\runtimes\win\lib\net8.0\System.Security.Cryptography.Pkcs.dll

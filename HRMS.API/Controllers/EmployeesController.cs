@@ -8,81 +8,104 @@ namespace HRMS.API.Controllers;
 [Route("api/[controller]")]
 [ApiController]
 [Authorize]
-public class EmployeesController : ControllerBase
+public class EmployeeController : ControllerBase
 {
     private readonly IEmployeeService employeeService;
 
-    public EmployeesController(IEmployeeService employeeService)
+    public EmployeeController(IEmployeeService employeeService)
     {
         this.employeeService = employeeService;
     }
 
     [Authorize(Roles = "Admin,HR")]
-    [HttpGet]
-    public async Task<IActionResult> GetAllEmployees(
-        string? search = null,
-        int page = 1,
-        int pageSize = 5)
-    {
-        var employees = await employeeService.GetAllEmployeesAsync(search, page, pageSize);
-
-        return Ok(employees);
-    }
-
-    [Authorize(Roles = "Admin,HR")]
-    [HttpGet("{id}")]
-    public async Task<IActionResult> GetEmployeeById(Guid id)
-    {
-        var employee =
-            await employeeService.GetEmployeeByIdAsync(id);
-
-        return Ok(employee);
-    }
-
-    [Authorize(Roles = "Admin,HR")]
     [HttpPost]
-    public async Task<IActionResult> AddEmployee(AddEmployeeDto dto)
+    public async Task<IActionResult> AddEmployee([FromBody] AddEmployeeDto dto, CancellationToken cancellationToken)
     {
-        var result =
-            await employeeService.AddEmployeeAsync(dto);
-
+        var result = await employeeService.AddEmployeeAsync(dto, cancellationToken);
         return Ok(result);
     }
 
     [Authorize(Roles = "Admin,HR")]
-    [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateEmployee(Guid id, UpdateEmployeeDto dto)
+    [HttpPut("{employeeId:guid}")]
+    public async Task<IActionResult> UpdateEmployee(Guid employeeId, [FromBody] UpdateEmployeeDto dto, CancellationToken cancellationToken)
     {
-        await employeeService.UpdateEmployeeAsync(id, dto);
-
-        return Ok("Employee Updated Successfully");
-    }
-
-    [Authorize(Roles = "Admin")]
-    [HttpDelete("{id}")]
-    public async Task<IActionResult> DeleteEmployee(Guid id)
-    {
-        await employeeService.DeleteEmployeeAsync(id);
-
-        return Ok("Employee Deleted Successfully");
+        var result = await employeeService.UpdateEmployeeAsync(employeeId, dto, cancellationToken);
+        return Ok(result);
     }
 
     [Authorize(Roles = "Admin,HR")]
-    [HttpPut("{id}/status")]
-    public async Task<IActionResult> UpdateStatus(Guid id, UpdateEmployeeStatusDto dto)
+    [HttpDelete("{employeeId:guid}")]
+    public async Task<IActionResult> DeleteEmployee(Guid employeeId, CancellationToken cancellationToken)
     {
-        await employeeService.UpdateEmployeeStatusAsync(id, dto);
+        await employeeService.DeleteEmployeeAsync(employeeId, cancellationToken);
+        return Ok("Employee deleted successfully.");
+    }
 
-        return Ok("Employee Status Updated Successfully");
+    [Authorize(Roles = "Admin,HR,Manager")]
+    [HttpGet("{employeeId:guid}")]
+    public async Task<IActionResult> GetEmployeeById(Guid employeeId, CancellationToken cancellationToken)
+    {
+        var result = await employeeService.GetEmployeeByIdAsync(employeeId, cancellationToken);
+        return Ok(result);
+    }
+
+    [Authorize(Roles = "Admin,HR,Manager")]
+    [HttpGet]
+    public async Task<IActionResult> GetEmployees([FromQuery] EmployeeFilterDto filter, CancellationToken cancellationToken)
+    {
+        var result = await employeeService.GetEmployeesAsync(filter, cancellationToken);
+        return Ok(result);
+    }
+
+    [Authorize(Roles = "Admin,HR,Manager")]
+    [HttpGet("{employeeId:guid}/profile")]
+    public async Task<IActionResult> GetEmployeeProfile(Guid employeeId, CancellationToken cancellationToken)
+    {
+        var result = await employeeService.GetEmployeeFullProfileAsync(employeeId, cancellationToken);
+        return Ok(result);
+    }
+
+    [Authorize]
+    [HttpGet("my-profile")]
+    public async Task<IActionResult> GetMyProfile(CancellationToken cancellationToken)
+    {
+        var result = await employeeService.GetMyProfileAsync(cancellationToken);
+        return Ok(result);
     }
 
     [Authorize(Roles = "Admin,HR")]
-    [HttpGet("{employeeId}/full-profile")]
-    public async Task<IActionResult> GetFullProfile(Guid employeeId)
+    [HttpPut("{employeeId:guid}/status")]
+    public async Task<IActionResult> UpdateStatus(Guid employeeId, [FromBody] UpdateEmployeeStatusDto dto, CancellationToken cancellationToken)
     {
-        var result =
-            await employeeService.GetFullProfileAsync(employeeId);
+        await employeeService.UpdateEmployeeStatusAsync(employeeId, dto, cancellationToken);
+        return Ok("Employee status updated successfully.");
+    }
 
+    [Authorize(Roles = "Admin,HR")]
+    [HttpGet("managers")]
+    public async Task<IActionResult> GetManagers(CancellationToken cancellationToken)
+    {
+        var result = await employeeService.GetManagersAsync(cancellationToken);
+        return Ok(result);
+    }
+
+    [Authorize(Roles = "Admin,HR")]
+    [HttpGet("export")]
+    public async Task<IActionResult> ExportEmployees([FromQuery] EmployeeFilterDto filter, CancellationToken cancellationToken)
+    {
+        var file = await employeeService.ExportEmployeesAsync(filter, cancellationToken);
+        return File(
+            file,
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            $"employees-{DateTime.UtcNow:yyyyMMddHHmmss}.xlsx");
+    }
+
+    [Authorize(Roles = "Admin,HR")]
+    [HttpPost("import")]
+    [Consumes("multipart/form-data")]
+    public async Task<IActionResult> ImportEmployees(IFormFile file, CancellationToken cancellationToken)
+    {
+        var result = await employeeService.ImportEmployeesAsync(file, cancellationToken);
         return Ok(result);
     }
 }

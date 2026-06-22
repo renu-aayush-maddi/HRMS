@@ -14,80 +14,82 @@ public class PayrollRepository : IPayrollRepository
         this.context = context;
     }
 
-    public Employee? GetEmployee(Guid employeeId)
+    public async Task<Employee?> GetEmployeeAsync(Guid employeeId, CancellationToken cancellationToken = default)
     {
-        return context.Employees
-            .FirstOrDefault(e => e.Id == employeeId);
+        return await context.Employees
+            .FirstOrDefaultAsync(x => x.Id == employeeId && !x.IsDeleted, cancellationToken);
     }
 
-    public List<Payroll> GetAllPayrolls()
+    public async Task<Employee?> GetEmployeeByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        return await context.Employees
+            .FirstOrDefaultAsync(x => x.UserId == userId && !x.IsDeleted, cancellationToken);
+    }
+
+    public IQueryable<Payroll> GetPayrolls()
     {
         return context.Payrolls
-            .Include(p => p.Employee)
-            .ToList();
+            .AsNoTracking()
+            .Include(x => x.Employee)
+            .ThenInclude(x => x.Department);
     }
 
-    public List<Payroll> GetEmployeePayrolls(Guid employeeId)
+    public async Task<Payroll?> GetPayrollByIdAsync(Guid payrollId, CancellationToken cancellationToken = default)
     {
-        return context.Payrolls
-            .Include(p => p.Employee)
-            .Where(p => p.EmployeeId == employeeId)
-            .ToList();
+        return await context.Payrolls
+            .Include(x => x.Employee)
+            .ThenInclude(x => x.Department)
+            .FirstOrDefaultAsync(x => x.Id == payrollId, cancellationToken);
     }
 
-    public void AddPayroll(Payroll payroll)
+    public async Task<Payroll?> GetPayrollAsync(Guid employeeId, int month, int year, CancellationToken cancellationToken = default)
     {
-        context.Payrolls.Add(payroll);
+        return await context.Payrolls
+            .FirstOrDefaultAsync(x => x.EmployeeId == employeeId && 
+                                      x.PayMonth == month && 
+                                      x.PayYear == year, cancellationToken);
     }
 
-    public void SaveChanges()
+    public async Task AddPayrollAsync(Payroll payroll, CancellationToken cancellationToken = default)
     {
-        context.SaveChanges();
+        await context.Payrolls.AddAsync(payroll, cancellationToken);
     }
 
-
-    public int GetPresentDays(Guid employeeId,int month,int year)
+    public void UpdatePayroll(Payroll payroll)
     {
-        return context.AttendanceLogs
-            .Count(a =>
-                a.EmployeeId == employeeId &&
-                a.AttendanceDate.Month == month &&
-                a.AttendanceDate.Year == year &&
-                a.Status == "Present");
+        context.Payrolls.Update(payroll);
     }
 
-    public int GetWorkingDays(
-        int month,
-        int year)
+    public async Task SaveChangesAsync(CancellationToken cancellationToken = default)
     {
-        var holidays = context.Holidays
-            .Where(h =>
-                h.HolidayDate.Month == month &&
-                h.HolidayDate.Year == year)
-            .Select(h => h.HolidayDate)
-            .ToHashSet();
+        await context.SaveChangesAsync(cancellationToken);
+    }
 
-        int workingDays = 0;
+    public async Task<int> GetPresentDaysAsync(Guid employeeId, int month, int year, CancellationToken cancellationToken = default)
+    {
+        return await context.AttendanceLogs
+            .CountAsync(x => x.EmployeeId == employeeId && 
+                             x.AttendanceDate.Month == month && 
+                             x.AttendanceDate.Year == year && 
+                             x.Status == "Present", cancellationToken);
+    }
 
-        int totalDays =
-            DateTime.DaysInMonth(
-                year,
-                month);
+    public async Task<int> GetWorkingDaysAsync(int month, int year, CancellationToken cancellationToken = default)
+    {
+        var holidays = await context.Holidays
+            .Where(x => x.HolidayDate.Month == month && x.HolidayDate.Year == year)
+            .Select(x => x.HolidayDate)
+            .ToListAsync(cancellationToken);
 
-        for (int day = 1; day <= totalDays; day++)
+        var holidaySet = holidays.ToHashSet();
+        var totalDays = DateTime.DaysInMonth(year, month);
+        var workingDays = 0;
+
+        for (var day = 1; day <= totalDays; day++)
         {
-            var date =
-                new DateOnly(
-                    year,
-                    month,
-                    day);
-
-            bool isWeekend =
-                date.DayOfWeek == DayOfWeek.Saturday ||
-                date.DayOfWeek == DayOfWeek.Sunday;
-
-            bool isHoliday =
-                holidays.Contains(date);
+            var date = new DateOnly(year, month, day);
+            var isWeekend = date.DayOfWeek == DayOfWeek.Saturday || date.DayOfWeek == DayOfWeek.Sunday;
+            var isHoliday = holidaySet.Contains(date);
 
             if (!isWeekend && !isHoliday)
             {
@@ -98,175 +100,109 @@ public class PayrollRepository : IPayrollRepository
         return workingDays;
     }
 
-
-    public int GetApprovedPaidLeaveDays(Guid employeeId,int month,int year)
+    public async Task<int> GetApprovedPaidLeaveDaysAsync(Guid employeeId, int month, int year, CancellationToken cancellationToken = default)
     {
-        return context.LeaveRequests
+        var leaves = await context.LeaveRequests
             .Include(x => x.LeaveType)
-            .Where(l =>
-                l.EmployeeId == employeeId &&
-                l.Status == "Approved" &&
-                l.LeaveType!.Name != "LOP")
-            .AsEnumerable()
-            .Sum(l =>
+            .Where(x => x.EmployeeId == employeeId && 
+                        x.Status == "Approved" && 
+                        x.LeaveType != null && 
+                        x.LeaveType.Name != "LOP")
+            .ToListAsync(cancellationToken);
+
+        return leaves.Sum(leave =>
+        {
+            var days = 0;
+            for (var date = leave.FromDate; date <= leave.ToDate; date = date.AddDays(1))
             {
-                var start =
-                    l.FromDate;
-
-                var end =
-                    l.ToDate;
-
-                int days = 0;
-
-                for (var date = start;
-                    date <= end;
-                    date = date.AddDays(1))
+                if (date.Month == month && date.Year == year)
                 {
-                    if (date.Month == month &&
-                        date.Year == year)
-                    {
-                        days++;
-                    }
+                    days++;
                 }
-
-                return days;
-            });
+            }
+            return days;
+        });
     }
 
-
-    public int GetApprovedLopLeaveDays(Guid employeeId,int month,int year)
+    public async Task<int> GetApprovedLopLeaveDaysAsync(Guid employeeId, int month, int year, CancellationToken cancellationToken = default)
     {
-        return context.LeaveRequests
+        var leaves = await context.LeaveRequests
             .Include(x => x.LeaveType)
-            .Where(l =>
-                l.EmployeeId == employeeId &&
-                l.Status == "Approved" &&
-                l.LeaveType!.Name == "LOP")
-            .AsEnumerable()
-            .Sum(l =>
+            .Where(x => x.EmployeeId == employeeId && 
+                        x.Status == "Approved" && 
+                        x.LeaveType != null && 
+                        x.LeaveType.Name == "LOP")
+            .ToListAsync(cancellationToken);
+
+        return leaves.Sum(leave =>
+        {
+            var days = 0;
+            for (var date = leave.FromDate; date <= leave.ToDate; date = date.AddDays(1))
             {
-                var start =
-                    l.FromDate;
-
-                var end =
-                    l.ToDate;
-
-                int days = 0;
-
-                for (var date = start;
-                    date <= end;
-                    date = date.AddDays(1))
+                if (date.Month == month && date.Year == year)
                 {
-                    if (date.Month == month &&
-                        date.Year == year)
-                    {
-                        days++;
-                    }
+                    days++;
                 }
-
-                return days;
-            });
+            }
+            return days;
+        });
     }
 
-    public Payroll? GetPayrollById(Guid payrollId)
+    public async Task<EmployeeSalary?> GetActiveEmployeeSalaryAsync(Guid employeeId, CancellationToken cancellationToken = default)
     {
-        return context.Payrolls
-            .Include(p => p.Employee)
-            .ThenInclude(e => e.Department)
-            .FirstOrDefault(p => p.Id == payrollId);
-    }
-
-    public void UpdatePayroll(Payroll payroll)
-    {
-        context.Payrolls.Update(payroll);
-    }
-
-    public Employee? GetEmployeeByUserId(Guid userId)
-    {
-        return context.Employees
-            .FirstOrDefault(e =>
-                e.UserId == userId);
-    }
-
-
-    public EmployeeSalary? GetActiveEmployeeSalary(
-        Guid employeeId)
-    {
-        return context.EmployeeSalaries
+        return await context.EmployeeSalaries
             .Include(x => x.SalaryStructure)
-            .FirstOrDefault(x =>
-                x.EmployeeId == employeeId
-                &&
-                x.IsActive == true);
+            .FirstOrDefaultAsync(x => x.EmployeeId == employeeId && x.IsActive == true, cancellationToken);
     }
 
-
-    public decimal GetApprovedBonusAmount(Guid employeeId,int month,int year)
+    public async Task<decimal> GetApprovedBonusAmountAsync(Guid employeeId, int month, int year, CancellationToken cancellationToken = default)
     {
-        return context.Bonuses
-            .Where(x =>
-                x.EmployeeId == employeeId &&
-                x.BonusMonth == month &&
-                x.BonusYear == year &&
-                x.Status == "Approved"
-                && x.IsProcessed == false)
-            .Sum(x => (decimal?)x.Amount) ?? 0;
+        return await context.Bonuses
+            .Where(x => x.EmployeeId == employeeId && 
+                        x.BonusMonth == month && 
+                        x.BonusYear == year && 
+                        x.Status == "Approved" && 
+                        x.IsProcessed == false)
+            .SumAsync(x => (decimal?)x.Amount, cancellationToken) ?? 0;
     }
 
-
-    public decimal GetApprovedDeductionAmount(Guid employeeId,int month,int year)
+    public async Task<decimal> GetApprovedDeductionAmountAsync(Guid employeeId, int month, int year, CancellationToken cancellationToken = default)
     {
-        return context.Deductions
-            .Where(x =>
-                x.EmployeeId == employeeId &&
-                x.DeductionMonth == month &&
-                x.DeductionYear == year &&
-                x.Status == "Approved"&&
-                x.IsProcessed == false)
-            .Sum(x => (decimal?)x.Amount) ?? 0;
+        return await context.Deductions
+            .Where(x => x.EmployeeId == employeeId && 
+                        x.DeductionMonth == month && 
+                        x.DeductionYear == year && 
+                        x.Status == "Approved" && 
+                        x.IsProcessed == false)
+            .SumAsync(x => (decimal?)x.Amount, cancellationToken) ?? 0;
     }
 
-
-    public List<Employee> GetActiveEmployees()
+    public async Task<List<Employee>> GetActiveEmployeesAsync(CancellationToken cancellationToken = default)
     {
-        return context.Employees
-            .Where(x =>
-                x.EmploymentStatus == "Active")
-            .ToList();
+        return await context.Employees
+            .Where(x => !x.IsDeleted && x.EmploymentStatus == "Active")
+            .ToListAsync(cancellationToken);
     }
 
-    public Payroll? GetPayroll(Guid employeeId,int month,int year)
+    public async Task<List<Bonuse>> GetApprovedBonusesAsync(Guid employeeId, int month, int year, CancellationToken cancellationToken = default)
     {
-        return context.Payrolls
-            .FirstOrDefault(x =>
-                x.EmployeeId == employeeId &&
-                x.PayMonth == month &&
-                x.PayYear == year);
+        return await context.Bonuses
+            .Where(x => x.EmployeeId == employeeId && 
+                        x.BonusMonth == month && 
+                        x.BonusYear == year && 
+                        x.Status == "Approved" && 
+                        x.IsProcessed == false)
+            .ToListAsync(cancellationToken);
     }
 
-    public List<Bonuse> GetApprovedBonuses(Guid employeeId,int month,int year)
+    public async Task<List<Deduction>> GetApprovedDeductionsAsync(Guid employeeId, int month, int year, CancellationToken cancellationToken = default)
     {
-        return context.Bonuses
-            .Where(x =>
-                x.EmployeeId == employeeId &&
-                x.BonusMonth == month &&
-                x.BonusYear == year &&
-                x.Status == "Approved" &&
-                x.IsProcessed == false)
-            .ToList();
+        return await context.Deductions
+            .Where(x => x.EmployeeId == employeeId && 
+                        x.DeductionMonth == month && 
+                        x.DeductionYear == year && 
+                        x.Status == "Approved" && 
+                        x.IsProcessed == false)
+            .ToListAsync(cancellationToken);
     }
-
-    public List<Deduction> GetApprovedDeductions(Guid employeeId,int month,int year)
-    {
-        return context.Deductions
-            .Where(x =>
-                x.EmployeeId == employeeId &&
-                x.DeductionMonth == month &&
-                x.DeductionYear == year &&
-                x.Status == "Approved" &&
-                x.IsProcessed == false)
-            .ToList();
-    }
-
-
 }

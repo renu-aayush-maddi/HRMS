@@ -4,19 +4,27 @@ namespace HRMS.API.Interfaces;
 
 public interface IReviewRepository
 {
-    Employee? GetEmployee(Guid employeeId);
+    Task<Employee?> GetEmployeeAsync(Guid employeeId, CancellationToken cancellationToken = default);
 
-    List<PerformanceReview> GetAllReviews();
+    Task<Employee?> GetEmployeeByUserIdAsync(Guid userId, CancellationToken cancellationToken = default);
 
-    List<PerformanceReview> GetEmployeeReviews(Guid employeeId);
+    Task<Employee?> GetReviewerAsync(Guid reviewerId, CancellationToken cancellationToken = default);
 
-    void AddReview(PerformanceReview review);
+    Task<PerformanceCycle?> GetCycleAsync(Guid cycleId, CancellationToken cancellationToken = default);
 
-    void SaveChanges();
+    Task<PerformanceReview?> GetReviewAsync(Guid reviewId, CancellationToken cancellationToken = default);
 
-    Employee? GetEmployeeByUserId(Guid userId);
+    IQueryable<PerformanceReview> GetReviews();
 
-    PerformanceCycle? GetCycle(Guid cycleId);
+    Task<bool> ReviewExistsAsync(Guid employeeId, Guid reviewerId, Guid performanceCycleId, CancellationToken cancellationToken = default);
 
-    
+    Task<bool> ReviewExistsAsync(Guid employeeId, Guid reviewerId, Guid performanceCycleId, Guid reviewId, CancellationToken cancellationToken = default);
+
+    Task AddReviewAsync(PerformanceReview review, CancellationToken cancellationToken = default);
+
+    void UpdateReview(PerformanceReview review);
+
+    void DeleteReview(PerformanceReview review);
+
+    Task SaveChangesAsync(CancellationToken cancellationToken = default);
 }

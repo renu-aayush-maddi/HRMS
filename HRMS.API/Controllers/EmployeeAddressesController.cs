@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace HRMS.API.Controllers;
 
+
 [Route("api/employee-addresses")]
 [ApiController]
 [Authorize]

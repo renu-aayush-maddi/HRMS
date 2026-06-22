@@ -15,6 +15,8 @@ public class EmployeeEducationService : IEmployeeEducationService
     private readonly IAuditLogService auditLogService;
     private readonly ILogger<EmployeeEducationService> logger;
 
+    // private readonly IUserContextService userContextService;
+
     public EmployeeEducationService(
         IEmployeeEducationRepository repository,
         IEmployeeAccessResolver accessResolver,
@@ -25,6 +27,8 @@ public class EmployeeEducationService : IEmployeeEducationService
         this.accessResolver = accessResolver;
         this.auditLogService = auditLogService;
         this.logger = logger;
+        // this.userContextService = userContextService;
+
     }
 
     public async Task<EmployeeEducationResponseDto> AddEducationAsync(AddEmployeeEducationDto dto, CancellationToken cancellationToken = default)
@@ -132,13 +136,15 @@ public class EmployeeEducationService : IEmployeeEducationService
 
     public async Task<byte[]> ExportEducationsAsync(EmployeeEducationFilterDto filter, CancellationToken cancellationToken = default)
     {
-        var employeeId = await accessResolver.ResolveEmployeeIdAsync(filter.EmployeeId, cancellationToken);
-        await accessResolver.ValidateEmployeeOwnershipAsync(employeeId, cancellationToken);
+        // var employeeId = await accessResolver.ResolveEmployeeIdAsync(filter.EmployeeId, cancellationToken);
+        // await accessResolver.ValidateEmployeeOwnershipAsync(employeeId, cancellationToken);
 
         var educations = await repository.GetEducations()
-                                         .Where(x => x.EmployeeId == employeeId)
-                                         .OrderByDescending(x => x.GraduationYear)
+                                        .OrderByDescending(x => x.GraduationYear)
                                          .ToListAsync(cancellationToken);
+                                        //  .Where(x => x.EmployeeId == employeeId)
+                                        //  .OrderByDescending(x => x.GraduationYear)
+                                        //  .ToListAsync(cancellationToken);
 
         using var workbook = new XLWorkbook();
         var worksheet = workbook.Worksheets.Add("Educations");
@@ -164,7 +170,7 @@ public class EmployeeEducationService : IEmployeeEducationService
         using var stream = new MemoryStream();
         workbook.SaveAs(stream);
 
-        await auditLogService.LogAsync("Export", nameof(EmployeeEducation), employeeId, "Education records exported", cancellationToken);
+        // await auditLogService.LogAsync("Export", nameof(EmployeeEducation), employeeId, "Education records exported", cancellationToken);
         return stream.ToArray();
     }
 

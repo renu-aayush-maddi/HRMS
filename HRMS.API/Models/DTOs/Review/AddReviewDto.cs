@@ -1,5 +1,3 @@
-using System.ComponentModel.DataAnnotations;
-
 namespace HRMS.API.Models.DTOs.Review;
 
 public class AddReviewDto
@@ -8,7 +6,6 @@ public class AddReviewDto
 
     public Guid PerformanceCycleId { get; set; }
 
-    [Range(1,5)]
     public decimal Rating { get; set; }
 
     public string? Comments { get; set; }

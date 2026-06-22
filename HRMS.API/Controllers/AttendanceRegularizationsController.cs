@@ -47,4 +47,5 @@ public class AttendanceRegularizationsController : ControllerBase
         var result = await service.RejectAsync(id, dto, cancellationToken);
         return Ok(result);
     }
+    
 }

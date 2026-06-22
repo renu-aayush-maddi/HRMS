@@ -30,4 +30,6 @@ public class AddEmployeeDto
 
     [Required]
     public string Role { get; set; } = string.Empty;
+
+    public Guid? ManagerId { get; set; }
 }

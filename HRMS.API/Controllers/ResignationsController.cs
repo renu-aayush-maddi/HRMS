@@ -18,10 +18,20 @@ public class EmployeeResignationsController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> Create(CreateResignationDto dto, CancellationToken cancellationToken)
+    [Authorize(Roles = "Employee,Manager,HR")]
+    public async Task<IActionResult> Create(
+    CreateResignationDto dto,
+    CancellationToken cancellationToken)
     {
-        var result = await resignationService.CreateAsync(dto, cancellationToken);
-        return CreatedAtAction(nameof(GetById), new { resignationId = result.Id }, result);
+        var result =
+            await resignationService.CreateAsync(
+                dto,
+                cancellationToken);
+
+        return CreatedAtAction(
+            nameof(GetById),
+            new { resignationId = result.Id },
+            result);
     }
 
     [HttpGet("{resignationId:guid}")]
@@ -68,6 +78,7 @@ public class EmployeeResignationsController : ControllerBase
         await resignationService.UpdateSettlementStatusAsync(resignationId, dto, cancellationToken);
         return NoContent();
     }
+
 
     [HttpGet("export")]
     [Authorize(Roles = "Admin,HR")]

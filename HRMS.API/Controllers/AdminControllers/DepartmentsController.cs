@@ -12,6 +12,7 @@ public class DepartmentsController : ControllerBase
 {
     private readonly IDepartmentService departmentService;
 
+
     public DepartmentsController(IDepartmentService departmentService)
     {
         this.departmentService = departmentService;

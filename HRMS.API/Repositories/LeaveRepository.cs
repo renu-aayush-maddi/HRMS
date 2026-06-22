@@ -14,46 +14,73 @@ public class LeaveRepository : ILeaveRepository
         this.context = context;
     }
 
-    public async Task<Employee?> GetEmployeeAsync(Guid employeeId)
+    public async Task<Employee?> GetEmployeeAsync(Guid employeeId, CancellationToken cancellationToken = default)
     {
         return await context.Employees
-            .FirstOrDefaultAsync(e => e.Id == employeeId);
+            .FirstOrDefaultAsync(x => x.Id == employeeId && !x.IsDeleted, cancellationToken);
     }
 
-    public async Task<Employee?> GetEmployeeByUserIdAsync(Guid userId)
+    public async Task<Employee?> GetEmployeeByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         return await context.Employees
-            .FirstOrDefaultAsync(e => e.UserId == userId);
+            .FirstOrDefaultAsync(x => x.UserId == userId && !x.IsDeleted, cancellationToken);
     }
 
-    public async Task<LeaveRequest?> GetLeaveByIdAsync(Guid leaveId)
+    public async Task<LeaveRequest?> GetLeaveByIdAsync(Guid leaveId, CancellationToken cancellationToken = default)
     {
         return await context.LeaveRequests
-            .Include(l => l.Employee)
-            .Include(l => l.LeaveType)
-            .FirstOrDefaultAsync(l => l.Id == leaveId);
+            .Include(x => x.Employee)
+            .Include(x => x.LeaveType)
+            .FirstOrDefaultAsync(x => x.Id == leaveId, cancellationToken);
     }
 
-    public async Task<List<LeaveRequest>> GetAllLeavesAsync()
+    public IQueryable<LeaveRequest> GetLeaves()
+    {
+        return context.LeaveRequests
+            .AsNoTracking()
+            .Include(x => x.Employee)
+            .Include(x => x.LeaveType);
+    }
+
+    public async Task<EmployeeLeaveBalance?> GetLeaveBalanceAsync(Guid employeeId, Guid leaveTypeId, CancellationToken cancellationToken = default)
+    {
+        return await context.EmployeeLeaveBalances
+            .Include(x => x.LeaveType)
+            .FirstOrDefaultAsync(x => x.EmployeeId == employeeId && x.LeaveTypeId == leaveTypeId, cancellationToken);
+    }
+
+    public async Task<List<EmployeeLeaveBalance>> GetEmployeeLeaveBalancesAsync(Guid employeeId, CancellationToken cancellationToken = default)
+    {
+        return await context.EmployeeLeaveBalances
+            .Include(x => x.LeaveType)
+            .Where(x => x.EmployeeId == employeeId)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<LeaveType?> GetLeaveTypeAsync(Guid leaveTypeId, CancellationToken cancellationToken = default)
+    {
+        return await context.LeaveTypes
+            .FirstOrDefaultAsync(x => x.Id == leaveTypeId && x.IsActive == true, cancellationToken);
+    }
+
+    public async Task<bool> HasOverlappingLeaveAsync(Guid employeeId, DateOnly fromDate, DateOnly toDate, CancellationToken cancellationToken = default)
     {
         return await context.LeaveRequests
-            .Include(l => l.Employee)
-            .Include(l => l.LeaveType)
-            .ToListAsync();
+            .AnyAsync(x => x.EmployeeId == employeeId &&
+                           (x.Status == "Pending" || x.Status == "Approved") &&
+                           fromDate <= x.ToDate &&
+                           toDate >= x.FromDate, cancellationToken);
     }
 
-    public async Task<List<LeaveRequest>> GetEmployeeLeavesAsync(Guid employeeId)
+    public async Task<bool> IsManagerOfEmployeeAsync(Guid managerEmployeeId, Guid employeeId, CancellationToken cancellationToken = default)
     {
-        return await context.LeaveRequests
-            .Include(l => l.Employee)
-            .Include(l => l.LeaveType)
-            .Where(l => l.EmployeeId == employeeId)
-            .ToListAsync();
+        return await context.Employees
+            .AnyAsync(x => x.Id == employeeId && x.ManagerId == managerEmployeeId, cancellationToken);
     }
 
-    public async Task AddLeaveAsync(LeaveRequest leave)
+    public async Task AddLeaveAsync(LeaveRequest leave, CancellationToken cancellationToken = default)
     {
-        await context.LeaveRequests.AddAsync(leave);
+        await context.LeaveRequests.AddAsync(leave, cancellationToken);
     }
 
     public void UpdateLeave(LeaveRequest leave)
@@ -61,34 +88,13 @@ public class LeaveRepository : ILeaveRepository
         context.LeaveRequests.Update(leave);
     }
 
-    public async Task<EmployeeLeaveBalance?> GetLeaveBalanceAsync(Guid employeeId, Guid leaveTypeId)
-    {
-        return await context.EmployeeLeaveBalances
-            .FirstOrDefaultAsync(x => x.EmployeeId == employeeId && x.LeaveTypeId == leaveTypeId);
-    }
-
-    public async Task<LeaveType?> GetLeaveTypeAsync(Guid leaveTypeId)
-    {
-        return await context.LeaveTypes
-            .FirstOrDefaultAsync(x => x.Id == leaveTypeId);
-    }
-
     public void UpdateLeaveBalance(EmployeeLeaveBalance balance)
     {
         context.EmployeeLeaveBalances.Update(balance);
     }
 
-    public async Task<bool> HasOverlappingLeaveAsync(Guid employeeId, DateOnly fromDate, DateOnly toDate)
+    public async Task SaveChangesAsync(CancellationToken cancellationToken = default)
     {
-        return await context.LeaveRequests
-            .AnyAsync(l => l.EmployeeId == employeeId && 
-                          (l.Status == "Pending" || l.Status == "Approved") && 
-                           fromDate <= l.ToDate && 
-                           toDate >= l.FromDate);
-    }
-
-    public async Task SaveChangesAsync()
-    {
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(cancellationToken);
     }
 }

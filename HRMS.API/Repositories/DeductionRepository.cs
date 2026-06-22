@@ -5,77 +5,67 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HRMS.API.Repositories;
 
-public class DeductionRepository
-    : IDeductionRepository
+public class DeductionRepository : IDeductionRepository
 {
     private readonly AppDbContext context;
 
-    public DeductionRepository(
-        AppDbContext context)
+    public DeductionRepository(AppDbContext context)
     {
         this.context = context;
     }
 
-    public Employee? GetEmployee(
-        Guid employeeId)
+    public async Task<Employee?> GetEmployeeAsync(Guid employeeId, CancellationToken cancellationToken = default)
     {
-        return context.Employees
-            .FirstOrDefault(x =>
-                x.Id == employeeId);
+        return await context.Employees
+            .FirstOrDefaultAsync(x => x.Id == employeeId && !x.IsDeleted, cancellationToken);
     }
 
-    public Employee? GetEmployeeByUserId(
-        Guid userId)
+    public async Task<Employee?> GetEmployeeByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
     {
-        return context.Employees
-            .FirstOrDefault(x =>
-                x.UserId == userId);
+        return await context.Employees
+            .FirstOrDefaultAsync(x => x.UserId == userId && !x.IsDeleted, cancellationToken);
     }
 
-    public Deduction? GetDeduction(
-        Guid deductionId)
+    public async Task<Deduction?> GetDeductionAsync(Guid deductionId, CancellationToken cancellationToken = default)
+    {
+        return await context.Deductions
+            .Include(x => x.Employee)
+            .FirstOrDefaultAsync(x => x.Id == deductionId, cancellationToken);
+    }
+
+    public IQueryable<Deduction> GetDeductions()
     {
         return context.Deductions
-            .Include(x => x.Employee)
-            .FirstOrDefault(x =>
-                x.Id == deductionId);
+            .AsNoTracking()
+            .Include(x => x.Employee);
     }
 
-    public List<Deduction> GetAllDeductions()
+    public async Task<bool> DeductionExistsAsync(Guid employeeId, string reason, int deductionMonth, int deductionYear, CancellationToken cancellationToken = default)
     {
-        return context.Deductions
-            .Include(x => x.Employee)
-            .OrderByDescending(x => x.CreatedAt)
-            .ToList();
+        return await context.Deductions
+            .AnyAsync(x => x.EmployeeId == employeeId &&
+                           x.DeductionMonth == deductionMonth &&
+                           x.DeductionYear == deductionYear &&
+                           x.Reason.ToLower() == reason.ToLower(), cancellationToken);
     }
 
-    public List<Deduction> GetEmployeeDeductions(
-        Guid employeeId)
+    public async Task AddDeductionAsync(Deduction deduction, CancellationToken cancellationToken = default)
     {
-        return context.Deductions
-            .Include(x => x.Employee)
-            .Where(x =>
-                x.EmployeeId == employeeId)
-            .OrderByDescending(x => x.CreatedAt)
-            .ToList();
+        await context.Deductions.AddAsync(deduction, cancellationToken);
     }
 
-    public void AddDeduction(
-        Deduction deduction)
+    public void UpdateDeduction(Deduction deduction)
     {
-        context.Deductions.Add(
-            deduction);
+        context.Deductions.Update(deduction);
     }
 
-    public void UpdateDeduction(
-        Deduction deduction)
+    public void DeleteDeduction(Deduction deduction)
     {
-        context.Deductions.Update(
-            deduction);
+        context.Deductions.Remove(deduction);
     }
 
-    public void SaveChanges()
+    public async Task SaveChangesAsync(CancellationToken cancellationToken = default)
     {
-        context.SaveChanges();
+        await context.SaveChangesAsync(cancellationToken);
     }
 }
