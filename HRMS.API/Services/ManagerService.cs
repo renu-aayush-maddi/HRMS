@@ -1,16 +1,25 @@
 using HRMS.API.Interfaces;
 using HRMS.API.Models.DTOs.Manager;
 using HRMS.API.Models.Entities;
+using HRMS.API.Exceptions;
+using System.Linq;
 
 namespace HRMS.API.Services;
 
 public class ManagerService : IManagerService
 {
     private readonly IManagerRepository repository;
+    private readonly IAuditLogService auditLogService;
+    private readonly INotificationService notificationService;
 
-    public ManagerService(IManagerRepository repository)
+    public ManagerService(
+        IManagerRepository repository,
+        IAuditLogService auditLogService,
+        INotificationService notificationService)
     {
         this.repository = repository;
+        this.auditLogService = auditLogService;
+        this.notificationService = notificationService;
     }
 
     public ManagerDashboardDto GetDashboard(Guid managerUserId)
@@ -153,6 +162,28 @@ public class ManagerService : IManagerService
             throw new Exception("Employee does not belong to your team");
         }
 
+        if (dto.PerformanceCycleId == Guid.Empty)
+        {
+            throw new Exception("Performance cycle is required");
+        }
+
+        var cycle = repository.GetPerformanceCycle(dto.PerformanceCycleId);
+        if (cycle == null)
+        {
+            throw new Exception("Performance cycle not found");
+        }
+
+        if (!string.Equals(cycle.Status, "Active", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new Exception("Performance cycle is not active");
+        }
+
+        var today = DateOnly.FromDateTime(DateTime.Today);
+        if (today < cycle.StartDate || today > cycle.EndDate)
+        {
+            throw new Exception("Reviews can only be submitted during the performance cycle dates");
+        }
+
         if (dto.Rating < 1 || dto.Rating > 5)
         {
             throw new Exception("Rating must be between 1 and 5");
@@ -163,9 +194,10 @@ public class ManagerService : IManagerService
             Id = Guid.NewGuid(),
             EmployeeId = dto.EmployeeId,
             ReviewerId = manager.Id,
+            PerformanceCycleId = dto.PerformanceCycleId,
             Rating = dto.Rating,
             Comments = dto.Comments,
-            ReviewDate = DateOnly.FromDateTime(DateTime.Today)
+            ReviewDate = today
         };
 
         repository.AddPerformanceReview(review);
@@ -212,5 +244,205 @@ public class ManagerService : IManagerService
                 ReviewDate = p.ReviewDate
             })
             .ToList();
+    }
+
+    public EligibleEmployeesResponseDto GetEligibleEmployees(Guid managerUserId, string? search, int page, int pageSize)
+    {
+        var manager = repository.GetEmployeeByUserId(managerUserId);
+        if (manager == null)
+        {
+            throw new NotFoundException("Manager not found.");
+        }
+
+        var (employees, totalCount) = repository.GetEligibleEmployees(manager.Id, search, page, pageSize);
+
+        var list = employees.Select(e => new EligibleEmployeeDto
+        {
+            Id = e.Id,
+            EmployeeCode = e.EmployeeCode,
+            FullName = $"{e.FirstName} {e.LastName}",
+            Email = e.Email,
+            Designation = e.Designation ?? string.Empty,
+            Department = e.Department?.Name ?? string.Empty,
+            CurrentManagerName = e.Manager != null ? $"{e.Manager.FirstName} {e.Manager.LastName}" : null
+        }).ToList();
+
+        return new EligibleEmployeesResponseDto
+        {
+            Employees = list,
+            TotalCount = totalCount
+        };
+    }
+
+    public void AddTeamMember(Guid managerUserId, Guid employeeId)
+    {
+        var manager = repository.GetEmployeeByUserId(managerUserId);
+        if (manager == null)
+        {
+            throw new NotFoundException("Manager not found.");
+        }
+
+        var employee = repository.GetEmployeeById(employeeId);
+        if (employee == null)
+        {
+            throw new NotFoundException("Employee not found.");
+        }
+
+        if (employee.IsDeleted)
+        {
+            throw new BusinessException("Cannot assign a deleted employee.");
+        }
+
+        if (employee.EmploymentStatus != "Active" && employee.EmploymentStatus != "Probation" && employee.EmploymentStatus != "OnLeave")
+        {
+            throw new BusinessException($"Only active employees can be assigned to a manager. Current status: {employee.EmploymentStatus}.");
+        }
+
+        if (employee.Id == manager.Id)
+        {
+            throw new BusinessException("Managers cannot assign themselves to their own team.");
+        }
+
+        if (employee.User != null && employee.User.Roles.Any(r => r.Name == "Admin" || r.Name == "HR" || r.Name == "Manager"))
+        {
+            throw new BusinessException("Managers can only manage employees. Admins, HR representatives, and other Managers cannot be assigned.");
+        }
+
+        if (employee.ManagerId == manager.Id)
+        {
+            throw new BusinessException("Employee is already assigned to your team.");
+        }
+
+        if (IsCircularReporting(manager, employee.Id))
+        {
+            throw new BusinessException("Invalid assignment: this assignment would create a circular reporting structure.");
+        }
+
+        var currentTeamCount = repository.GetTeamMembers(manager.Id).Count;
+        if (currentTeamCount >= 50)
+        {
+            throw new BusinessException("Maximum team size limit of 50 members reached.");
+        }
+
+        var oldManagerId = employee.ManagerId;
+        string? oldManagerName = null;
+        if (oldManagerId != null)
+        {
+            var oldManager = repository.GetEmployeeById(oldManagerId.Value);
+            if (oldManager != null)
+            {
+                oldManagerName = $"{oldManager.FirstName} {oldManager.LastName}";
+            }
+        }
+
+        // Perform assignment
+        employee.ManagerId = manager.Id;
+        repository.SaveChanges();
+
+        // Audit log
+        var details = $"Employee {employee.FirstName} {employee.LastName} ({employee.EmployeeCode}) assigned to Manager {manager.FirstName} {manager.LastName}.";
+        if (oldManagerId != null)
+        {
+            details += $" Transferred from previous Manager {oldManagerName} (ID: {oldManagerId}).";
+        }
+        _ = auditLogService.LogAsync("AddTeamMember", "Employee", employee.Id, details);
+
+        // Notify employee
+        if (employee.UserId != null)
+        {
+            try
+            {
+                notificationService.CreateNotification(
+                    employee.UserId.Value,
+                    "Manager Assigned",
+                    $"You have been assigned to Manager {manager.FirstName} {manager.LastName}."
+                );
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Failed to notify employee: {ex.Message}");
+            }
+        }
+
+        // Notify previous manager if transferred
+        if (oldManagerId != null)
+        {
+            var oldMgr = repository.GetEmployeeById(oldManagerId.Value);
+            if (oldMgr != null && oldMgr.UserId != null)
+            {
+                try
+                {
+                    notificationService.CreateNotification(
+                        oldMgr.UserId.Value,
+                        "Employee Transferred",
+                        $"Employee {employee.FirstName} {employee.LastName} has been transferred to Manager {manager.FirstName} {manager.LastName}."
+                    );
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Failed to notify old manager: {ex.Message}");
+                }
+            }
+        }
+    }
+
+    public void RemoveTeamMember(Guid managerUserId, Guid employeeId)
+    {
+        var manager = repository.GetEmployeeByUserId(managerUserId);
+        if (manager == null)
+        {
+            throw new NotFoundException("Manager not found.");
+        }
+
+        var employee = repository.GetEmployeeById(employeeId);
+        if (employee == null)
+        {
+            throw new NotFoundException("Employee not found.");
+        }
+
+        if (employee.ManagerId != manager.Id)
+        {
+            throw new ForbiddenException("You can only remove employees from your own team.");
+        }
+
+        // Perform removal
+        employee.ManagerId = null;
+        repository.SaveChanges();
+
+        // Audit log
+        var details = $"Employee {employee.FirstName} {employee.LastName} ({employee.EmployeeCode}) removed from Manager {manager.FirstName} {manager.LastName}'s team.";
+        _ = auditLogService.LogAsync("RemoveTeamMember", "Employee", employee.Id, details);
+
+        // Notify employee
+        if (employee.UserId != null)
+        {
+            try
+            {
+                notificationService.CreateNotification(
+                    employee.UserId.Value,
+                    "Team Assignment Removed",
+                    $"You have been removed from Manager {manager.FirstName} {manager.LastName}'s team."
+                );
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Failed to notify employee: {ex.Message}");
+            }
+        }
+    }
+
+    private bool IsCircularReporting(Employee newManager, Guid employeeId)
+    {
+        if (newManager.Id == employeeId) return true;
+
+        var current = newManager;
+        while (current.ManagerId != null)
+        {
+            if (current.ManagerId == employeeId) return true;
+            
+            current = repository.GetEmployeeById(current.ManagerId.Value);
+            if (current == null) break;
+        }
+        return false;
     }
 }

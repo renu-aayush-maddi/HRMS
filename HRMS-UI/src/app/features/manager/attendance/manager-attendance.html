@@ -1,0 +1,110 @@
+<div class="attendance-container">
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="header-title">
+      <h2>Team Attendance Logs</h2>
+      <p class="subtitle">Monitor daily check-ins, check-outs, and attendance statuses</p>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div class="loading-state" *ngIf="loading()">
+    <p>Retrieving attendance logs...</p>
+  </div>
+
+  <div class="error-state" *ngIf="error()">
+    <p style="display: flex; align-items: center; justify-content: center; gap: 6px;">
+      <svg lucideAlertTriangle [size]="18" [strokeWidth]="2"></svg> {{ error() }}
+    </p>
+    <button class="btn-primary" (click)="loadAttendance()">Retry</button>
+  </div>
+
+  <div *ngIf="!loading() && !error()">
+    <!-- Filter Bar -->
+    <div class="filters-card">
+      <div class="filters-grid">
+        <!-- Search Employee -->
+        <div class="filter-group">
+          <label for="employee">Employee Name</label>
+          <input 
+            type="text" 
+            id="employee" 
+            placeholder="Filter by name..." 
+            [ngModel]="employeeQuery()" 
+            (ngModelChange)="employeeQuery.set($event); applyFilters()"
+          />
+        </div>
+
+        <!-- Date filter -->
+        <div class="filter-group">
+          <label for="date">Attendance Date</label>
+          <input 
+            type="date" 
+            id="date" 
+            [ngModel]="dateFilter()" 
+            (ngModelChange)="dateFilter.set($event); applyFilters()"
+          />
+        </div>
+
+        <!-- Status Filter -->
+        <div class="filter-group">
+          <label for="status">Attendance Status</label>
+          <select id="status" [ngModel]="statusFilter()" (ngModelChange)="statusFilter.set($event); applyFilters()">
+            <option value="">All Statuses</option>
+            <option value="Present">Present</option>
+            <option value="Absent">Absent</option>
+            <option value="HalfDay">HalfDay</option>
+            <option value="Late">Late</option>
+          </select>
+        </div>
+
+        <!-- Reset Button -->
+        <div class="filter-group button-align">
+          <button class="btn-secondary" (click)="resetFilters()">Clear Filters</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Attendance Table -->
+    <div class="table-card">
+      <table class="custom-table">
+        <thead>
+          <tr>
+            <th>Employee Name</th>
+            <th>Attendance Date</th>
+            <th class="text-center">Check-In Time</th>
+            <th class="text-center">Check-Out Time</th>
+            <th class="text-center">Estimated Work Hours</th>
+            <th class="text-center">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let log of filteredLogs()">
+            <td class="font-semibold">{{ log.employeeName }}</td>
+            <td class="font-medium">{{ log.attendanceDate | date:'mediumDate' }}</td>
+            <td class="text-center">{{ log.checkIn ? (log.checkIn | date:'mediumTime') : '-' }}</td>
+            <td class="text-center">{{ log.checkOut ? (log.checkOut | date:'mediumTime') : '-' }}</td>
+            <td class="text-center font-medium">
+              <!-- If check-in and check-out exist, calculate dynamic hours -->
+              <span *ngIf="log.checkIn && log.checkOut">
+                {{ getWorkHours(log.checkIn, log.checkOut) | number:'1.2-2' }} hrs
+              </span>
+              <span *ngIf="!log.checkIn || !log.checkOut">-</span>
+            </td>
+            <td class="text-center">
+              <span class="badge" 
+                [class.bg-success]="log.status === 'Present'"
+                [class.bg-warning]="log.status === 'HalfDay' || log.status === 'Late'"
+                [class.bg-danger]="log.status === 'Absent'">
+                {{ log.status }}
+              </span>
+            </td>
+          </tr>
+          <tr *ngIf="filteredLogs().length === 0">
+            <td colspan="6" class="text-center text-gray py-4">No attendance logs match the query filters.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

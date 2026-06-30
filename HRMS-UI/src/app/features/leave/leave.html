@@ -1,0 +1,169 @@
+<div class="page-container">
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="header-title">
+      <h2>Leave Requests Management</h2>
+      <p class="subtitle">Review, approve, reject, or cancel employee leave applications</p>
+    </div>
+  </div>
+
+  <!-- Filters Panel -->
+  <div class="filters-card">
+    <div class="filters-grid">
+      <!-- Leave Type filter -->
+      <div class="filter-group">
+        <label for="leaveType">Leave Type</label>
+        <select id="leaveType" [ngModel]="selectedLeaveTypeId()" (ngModelChange)="selectedLeaveTypeId.set($event); applyFilters()">
+          <option value="">All Leave Types</option>
+          <option *ngFor="let t of leaveTypes()" [value]="t.id">{{ t.name }}</option>
+        </select>
+      </div>
+
+      <!-- Status filter -->
+      <div class="filter-group">
+        <label for="status">Status</label>
+        <select id="status" [ngModel]="selectedStatus()" (ngModelChange)="selectedStatus.set($event); applyFilters()">
+          <option value="">All Statuses</option>
+          <option value="Pending">Pending</option>
+          <option value="Approved">Approved</option>
+          <option value="Rejected">Rejected</option>
+          <option value="Cancelled">Cancelled</option>
+        </select>
+      </div>
+
+      <!-- From Date -->
+      <div class="filter-group">
+        <label for="fromDate">From Date</label>
+        <input type="date" id="fromDate" [ngModel]="filterFromDate()" (ngModelChange)="filterFromDate.set($event); applyFilters()" />
+      </div>
+
+      <!-- To Date -->
+      <div class="filter-group">
+        <label for="toDate">To Date</label>
+        <input type="date" id="toDate" [ngModel]="filterToDate()" (ngModelChange)="filterToDate.set($event); applyFilters()" />
+      </div>
+
+      <!-- Reset -->
+      <div class="filter-group button-align">
+        <button class="btn-clear" (click)="resetFilters()">Clear Filters</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div class="loading-state" *ngIf="loading()">
+    <p>Processing leave lists...</p>
+  </div>
+
+  <!-- Table View -->
+  <div class="table-card" *ngIf="!loading()">
+    <table class="custom-table">
+      <thead>
+        <tr>
+          <th>Employee</th>
+          <th>Leave Type</th>
+          <th>From Date</th>
+          <th>To Date</th>
+          <th>Reason</th>
+          <th>Status</th>
+          <th>Reviewer Comments</th>
+          <th class="text-right">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let lv of leaves()">
+          <td class="font-medium">{{ lv.employeeName }}</td>
+          <td>
+            <span class="badge bg-secondary">{{ lv.leaveType }}</span>
+          </td>
+          <td>{{ lv.fromDate | date:'mediumDate' }}</td>
+          <td>{{ lv.toDate | date:'mediumDate' }}</td>
+          <td class="reason-cell" [title]="lv.reason || ''">
+            {{ lv.reason ? (lv.reason | slice:0:40) + (lv.reason.length > 40 ? '...' : '') : '-' }}
+          </td>
+          <td>
+            <span class="badge" 
+              [class.bg-warning]="lv.status === 'Pending'" 
+              [class.bg-success]="lv.status === 'Approved'"
+              [class.bg-danger]="lv.status === 'Rejected'"
+              [class.bg-secondary]="lv.status === 'Cancelled'">
+              {{ lv.status }}
+            </span>
+          </td>
+          <td class="comments-cell" [title]="lv.managerComments || ''">
+            {{ lv.managerComments || '-' }}
+          </td>
+          <td class="text-right actions-cell">
+            <!-- Pending Leave Actions -->
+            <ng-container *ngIf="lv.status === 'Pending'">
+              <button class="btn-icon approve" (click)="openActionModal(lv.id, true)" [disabled]="submitting()">Approve</button>
+              <button class="btn-icon reject" (click)="openActionModal(lv.id, false)" [disabled]="submitting()">Reject</button>
+            </ng-container>
+            <!-- Approved Leave Actions -->
+            <button class="btn-icon cancel" *ngIf="lv.status === 'Approved'" (click)="cancelLeave(lv.id)" [disabled]="submitting()">
+              Cancel
+            </button>
+            <!-- Inactive States -->
+            <span class="text-gray" *ngIf="lv.status !== 'Pending' && lv.status !== 'Approved'">Processed</span>
+          </td>
+        </tr>
+        <tr *ngIf="leaves().length === 0">
+          <td colspan="8" class="text-center text-gray py-4">No leave requests found.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  <div class="pagination" *ngIf="totalPages() > 1" style="display: inline-flex; align-items: center; gap: 12px;">
+    <button (click)="previousPage()" [disabled]="pageNumber() === 1" class="btn-page" style="display: inline-flex; align-items: center; gap: 4px;">
+      <svg lucideChevronLeft [size]="16" [strokeWidth]="2"></svg> Prev
+    </button>
+    <span class="page-info">Page {{ pageNumber() }} of {{ totalPages() }} (Total: {{ totalRecords() }})</span>
+    <button (click)="nextPage()" [disabled]="pageNumber() === totalPages()" class="btn-page" style="display: inline-flex; align-items: center; gap: 4px;">
+      Next <svg lucideChevronRight [size]="16" [strokeWidth]="2"></svg>
+    </button>
+  </div>
+
+  <!-- Action Modal Overlay (Approve/Reject Comment) -->
+  <div class="modal-overlay" *ngIf="showActionModal()">
+    <div class="custom-modal-box">
+      <div class="modal-header">
+        <h3>{{ isApproval() ? 'Approve Leave Request' : 'Reject Leave Request' }}</h3>
+        <button class="close-btn" (click)="closeActionModal()" aria-label="Close">
+          <svg lucideX [size]="16" [strokeWidth]="2"></svg>
+        </button>
+      </div>
+
+      <form [formGroup]="actionForm" (ngSubmit)="submitAction()">
+        <div class="form-body">
+          <p class="modal-info-text">
+            Add comments to explain your decision (optional for approvals, recommended for rejections).
+          </p>
+
+          <div class="form-group full-width">
+            <label for="comments">HR/Manager Comments</label>
+            <textarea 
+              id="comments" 
+              formControlName="comments" 
+              placeholder="Enter review remarks here..."
+              rows="4"
+              [class.error-border]="actionForm.get('comments')?.touched && actionForm.get('comments')?.invalid"
+            ></textarea>
+            <span class="error-text" *ngIf="actionForm.get('comments')?.touched && actionForm.get('comments')?.invalid">
+              Comments must be under 500 characters.
+            </span>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" (click)="closeActionModal()" [disabled]="submitting()">Cancel</button>
+          <button type="submit" [class.btn-success]="isApproval()" [class.btn-danger-submit]="!isApproval()" [disabled]="actionForm.invalid || submitting()" style="display: inline-flex; align-items: center; gap: 6px;">
+            <svg lucideLoader [size]="16" class="spin-loader" *ngIf="submitting()"></svg>
+            {{ submitting() ? 'Processing...' : (isApproval() ? 'Confirm Approval' : 'Confirm Rejection') }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

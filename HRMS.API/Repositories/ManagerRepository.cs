@@ -200,6 +200,54 @@ public class ManagerRepository: IManagerRepository
             .Add(review);
     }
 
+    public Employee? GetEmployeeById(Guid id)
+    {
+        return context.Employees
+            .Include(e => e.User)
+            .ThenInclude(u => u!.Roles)
+            .FirstOrDefault(e => e.Id == id);
+    }
+
+    public (List<Employee> Employees, int TotalCount) GetEligibleEmployees(Guid managerEmployeeId, string? search, int page, int pageSize)
+    {
+        var query = context.Employees
+            .Include(e => e.Department)
+            .Include(e => e.Manager)
+            .Include(e => e.User)
+            .ThenInclude(u => u!.Roles)
+            .Where(e => !e.IsDeleted 
+                     && e.EmploymentStatus == "Active"
+                     && e.Id != managerEmployeeId);
+
+        // Exclude users with Admin, HR, or Manager roles
+        query = query.Where(e => e.User != null && !e.User.Roles.Any(r => r.Name == "Admin" || r.Name == "HR" || r.Name == "Manager"));
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var cleanSearch = search.Trim().ToLower();
+            query = query.Where(e => e.FirstName.ToLower().Contains(cleanSearch) 
+                                  || e.LastName.ToLower().Contains(cleanSearch) 
+                                  || e.EmployeeCode.ToLower().Contains(cleanSearch)
+                                  || e.Email.ToLower().Contains(cleanSearch));
+        }
+
+        var totalCount = query.Count();
+
+        var employees = query
+            .OrderBy(e => e.FirstName)
+            .ThenBy(e => e.LastName)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToList();
+
+        return (employees, totalCount);
+    }
+
+    public PerformanceCycle? GetPerformanceCycle(Guid id)
+    {
+        return context.PerformanceCycles.Find(id);
+    }
+
     public void SaveChanges()
     {
         context.SaveChanges();

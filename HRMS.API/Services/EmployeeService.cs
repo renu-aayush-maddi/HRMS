@@ -504,26 +504,26 @@ public class EmployeeService : IEmployeeService
                 $"Employee {employee.EmployeeCode} created.",
                 cancellationToken);
 
-            try
-            {
-                var emailBody = $@"
-                <h2>Welcome to HRMS</h2>
-                <p>Dear {employee.FirstName} {employee.LastName},</p>
-                <p>Your employee account has been created successfully.</p>
-                <table border='1' cellpadding='8' cellspacing='0'>
-                    <tr><td><strong>Email</strong></td><td>{dto.Email}</td></tr>
-                    <tr><td><strong>Temporary Password</strong></td><td>{temporaryPassword}</td></tr>
-                    <tr><td><strong>Employee Code</strong></td><td>{employee.EmployeeCode}</td></tr>
-                    <tr><td><strong>Role</strong></td><td>{dto.Role}</td></tr>
-                </table>
-                <p>Please login and change your password.</p>";
+            // try
+            // {
+            //     var emailBody = $@"
+            //     <h2>Welcome to HRMS</h2>
+            //     <p>Dear {employee.FirstName} {employee.LastName},</p>
+            //     <p>Your employee account has been created successfully.</p>
+            //     <table border='1' cellpadding='8' cellspacing='0'>
+            //         <tr><td><strong>Email</strong></td><td>{dto.Email}</td></tr>
+            //         <tr><td><strong>Temporary Password</strong></td><td>{temporaryPassword}</td></tr>
+            //         <tr><td><strong>Employee Code</strong></td><td>{employee.EmployeeCode}</td></tr>
+            //         <tr><td><strong>Role</strong></td><td>{dto.Role}</td></tr>
+            //     </table>
+            //     <p>Please login and change your password.</p>";
 
-                await emailService.SendEmailAsync(dto.Email, "Welcome To HRMS", emailBody);
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Failed sending employee onboarding email.");
-            }
+            //     await emailService.SendEmailAsync(dto.Email, "Welcome To HRMS", emailBody);
+            // }
+            // catch (Exception ex)
+            // {
+            //     logger.LogError(ex, "Failed sending employee onboarding email.");
+            // }
 
             notificationService.CreateNotification(
                 user.Id,

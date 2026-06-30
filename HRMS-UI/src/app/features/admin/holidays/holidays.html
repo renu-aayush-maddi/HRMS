@@ -1,0 +1,123 @@
+<div class="page-container">
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="header-title">
+      <h2>Holidays Schedule</h2>
+      <p class="subtitle">Maintain the official calendar of company holidays</p>
+    </div>
+    <div class="header-actions" *ngIf="isAdmin()">
+      <button class="btn-primary" (click)="openAddModal()" style="display: inline-flex; align-items: center; gap: 6px;">
+        <svg lucidePlus [size]="16" [strokeWidth]="2"></svg> Add Holiday
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div class="loading-state" *ngIf="loading()">
+    <p>Loading holidays...</p>
+  </div>
+
+  <!-- Table View -->
+  <div class="table-card" *ngIf="!loading()">
+    <table class="custom-table">
+      <thead>
+        <tr>
+          <th>Holiday Date</th>
+          <th>Name</th>
+          <th>Description</th>
+          <th>Type</th>
+          <th class="text-right" *ngIf="isAdmin()">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let holiday of holidays()">
+          <td class="font-medium date-cell">{{ holiday.holidayDate | date:'mediumDate' }}</td>
+          <td class="font-semibold">{{ holiday.name }}</td>
+          <td>{{ holiday.description || '-' }}</td>
+          <td>
+            <span class="badge" [class.bg-warning]="holiday.isOptional" [class.bg-primary]="!holiday.isOptional">
+              {{ holiday.isOptional ? 'Optional' : 'Mandatory' }}
+            </span>
+          </td>
+          <td class="text-right actions-cell" *ngIf="isAdmin()">
+            <button class="btn-icon edit" (click)="openEditModal(holiday)" style="display: inline-flex; align-items: center; gap: 4px;">
+              <svg lucideEdit [size]="14" [strokeWidth]="2"></svg> Edit
+            </button>
+            <button class="btn-icon delete" (click)="deleteHoliday(holiday.id)" style="display: inline-flex; align-items: center; gap: 4px;">
+              <svg lucideTrash [size]="14" [strokeWidth]="2"></svg> Delete
+            </button>
+          </td>
+        </tr>
+        <tr *ngIf="holidays().length === 0">
+          <td [attr.colspan]="isAdmin() ? 5 : 4" class="text-center text-gray py-4">No holidays defined on calendar.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Modal Overlay -->
+  <div class="modal-overlay" *ngIf="showModal()">
+    <div class="custom-modal-box">
+      <div class="modal-header">
+        <h3>{{ editingId ? 'Edit Holiday' : 'Add Holiday' }}</h3>
+        <button class="close-btn" (click)="closeModal()" aria-label="Close">
+          <svg lucideX [size]="16" [strokeWidth]="2"></svg>
+        </button>
+      </div>
+
+      <form [formGroup]="holidayForm" (ngSubmit)="saveHoliday()">
+        <div class="form-body">
+          <!-- Holiday Name -->
+          <div class="form-group full-width">
+            <label for="name">Holiday Name *</label>
+            <input 
+              type="text" 
+              id="name" 
+              formControlName="name" 
+              placeholder="e.g. Independence Day"
+              [class.error-border]="holidayForm.get('name')?.touched && holidayForm.get('name')?.invalid"
+            />
+          </div>
+
+          <!-- Date -->
+          <div class="form-group">
+            <label for="holidayDate">Holiday Date *</label>
+            <input 
+              type="date" 
+              id="holidayDate" 
+              formControlName="holidayDate"
+              [class.error-border]="holidayForm.get('holidayDate')?.touched && holidayForm.get('holidayDate')?.invalid"
+            />
+          </div>
+
+          <!-- Optional Checkbox -->
+          <div class="form-group checkbox-group">
+            <label class="checkbox-label">
+              <input type="checkbox" formControlName="isOptional" />
+              <span>Is Optional Holiday</span>
+            </label>
+          </div>
+
+          <!-- Description -->
+          <div class="form-group full-width">
+            <label for="description">Description</label>
+            <textarea 
+              id="description" 
+              formControlName="description" 
+              placeholder="Additional holiday details..."
+              rows="3"
+            ></textarea>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" (click)="closeModal()" [disabled]="submitting()">Cancel</button>
+          <button type="submit" class="btn-primary" [disabled]="holidayForm.invalid || submitting()" style="display: inline-flex; align-items: center; gap: 6px;">
+            <svg lucideLoader [size]="16" class="spin-loader" *ngIf="submitting()"></svg>
+            {{ submitting() ? (editingId ? 'Saving...' : 'Creating...') : (editingId ? 'Save Changes' : 'Create Holiday') }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

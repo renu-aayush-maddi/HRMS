@@ -1,0 +1,224 @@
+<div class="goals-container">
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="header-title">
+      <h2>Performance Goals</h2>
+      <p class="subtitle">Assign and track performance targets for your direct reports</p>
+    </div>
+    <div class="header-actions">
+      <button class="btn-primary" (click)="openAssignModal()" style="display: inline-flex; align-items: center; gap: 6px;">
+        <svg lucideTarget [size]="16" [strokeWidth]="2"></svg> Assign Goal
+      </button>
+    </div>
+  </div>
+
+  <!-- Success Notification -->
+  <div class="success-alert" *ngIf="successMessage()" style="display: flex; align-items: center; gap: 6px;">
+    <svg lucideCheckCircle [size]="16" [strokeWidth]="2"></svg> {{ successMessage() }}
+  </div>
+
+  <!-- Loading State -->
+  <div class="loading-state" *ngIf="loading()">
+    <p>Loading performance goals...</p>
+  </div>
+
+  <!-- Error State -->
+  <div class="error-state" *ngIf="error()">
+    <p style="display: flex; align-items: center; justify-content: center; gap: 6px;">
+      <svg lucideAlertTriangle [size]="18" [strokeWidth]="2"></svg> {{ error() }}
+    </p>
+    <button class="btn-primary" (click)="loadGoals()">Retry</button>
+  </div>
+
+  <div *ngIf="!loading() && !error()">
+    <!-- Filter Bar -->
+    <div class="filters-card">
+      <div class="filters-grid">
+        <!-- Team Member Filter -->
+        <div class="filter-group">
+          <label for="filterEmployee">Team Member</label>
+          <select id="filterEmployee" [ngModel]="selectedEmployeeFilter()" (ngModelChange)="selectedEmployeeFilter.set($event); applyFilters()">
+            <option value="">All Direct Reports</option>
+            <option *ngFor="let member of team()" [value]="member.id">
+              {{ member.fullName }}
+            </option>
+          </select>
+        </div>
+
+        <!-- Status Filter -->
+        <div class="filter-group">
+          <label for="filterStatus">Goal Status</label>
+          <select id="filterStatus" [ngModel]="selectedStatusFilter()" (ngModelChange)="selectedStatusFilter.set($event); applyFilters()">
+            <option value="">All Statuses</option>
+            <option value="Pending">Pending</option>
+            <option value="InProgress">In Progress</option>
+            <option value="Completed">Completed</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Goals Table -->
+    <div class="table-card">
+      <table class="custom-table">
+        <thead>
+          <tr>
+            <th>Employee Name</th>
+            <th>Goal Title</th>
+            <th>Description</th>
+            <th class="text-center">Target Date</th>
+            <th class="text-center">Status</th>
+            <th class="text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let goal of filteredGoals()">
+            <td class="font-semibold">{{ goal.employeeName }}</td>
+            <td class="font-semibold text-primary">{{ goal.title }}</td>
+            <td class="desc-cell">{{ goal.description }}</td>
+            <td class="text-center font-medium">{{ goal.targetDate | date:'mediumDate' }}</td>
+            <td class="text-center">
+              <span class="badge" 
+                [class.bg-secondary]="goal.status === 'Pending'"
+                [class.bg-warning]="goal.status === 'InProgress'"
+                [class.bg-success]="goal.status === 'Completed'">
+                {{ goal.status === 'InProgress' ? 'In Progress' : goal.status }}
+              </span>
+            </td>
+            <td class="text-right actions-cell">
+              <button class="btn-secondary btn-sm" (click)="openStatusModal(goal)" style="display: inline-flex; align-items: center; gap: 4px;">
+                <svg lucideEdit [size]="14" [strokeWidth]="2"></svg> Update Status
+              </button>
+            </td>
+          </tr>
+          <tr *ngIf="filteredGoals().length === 0">
+            <td colspan="6" class="text-center text-gray py-4">No performance goals found. Assign one above!</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Assign Goal Modal Overlay -->
+  <div class="modal-overlay" *ngIf="showAssignModal()">
+    <div class="custom-modal-box">
+      <div class="modal-header">
+        <h3>Assign New Goal</h3>
+        <button class="close-btn" (click)="closeAssignModal()" aria-label="Close">
+          <svg lucideX [size]="16" [strokeWidth]="2"></svg>
+        </button>
+      </div>
+
+      <form [formGroup]="assignForm" (ngSubmit)="submitAssignGoal()">
+        <div class="form-body">
+          <!-- Team Member Dropdown -->
+          <div class="form-group">
+            <label for="employeeId">Assign To (Team Member) *</label>
+            <select 
+              id="employeeId" 
+              formControlName="employeeId"
+              [class.error-border]="assignForm.get('employeeId')?.touched && assignForm.get('employeeId')?.invalid">
+              <option value="">-- Select Team Member --</option>
+              <option *ngFor="let member of team()" [value]="member.id">
+                {{ member.fullName }}
+              </option>
+            </select>
+            <span class="error-text" *ngIf="assignForm.get('employeeId')?.touched && assignForm.get('employeeId')?.invalid">
+              Please select a direct report.
+            </span>
+          </div>
+
+          <!-- Goal Title -->
+          <div class="form-group">
+            <label for="title">Goal Title *</label>
+            <input 
+              type="text" 
+              id="title" 
+              formControlName="title" 
+              placeholder="e.g. Complete Angular migration"
+              [class.error-border]="assignForm.get('title')?.touched && assignForm.get('title')?.invalid"
+            />
+            <span class="error-text" *ngIf="assignForm.get('title')?.touched && assignForm.get('title')?.invalid">
+              Title is required (max 150 chars).
+            </span>
+          </div>
+
+          <!-- Description -->
+          <div class="form-group">
+            <label for="description">Detailed Description *</label>
+            <textarea 
+              id="description" 
+              rows="3" 
+              formControlName="description" 
+              placeholder="What are the key deliverables or expectations?"
+              [class.error-border]="assignForm.get('description')?.touched && assignForm.get('description')?.invalid">
+            </textarea>
+            <span class="error-text" *ngIf="assignForm.get('description')?.touched && assignForm.get('description')?.invalid">
+              Description is required (max 500 chars).
+            </span>
+          </div>
+
+          <!-- Target Date -->
+          <div class="form-group">
+            <label for="targetDate">Target Completion Date *</label>
+            <input 
+              type="date" 
+              id="targetDate" 
+              formControlName="targetDate"
+              [class.error-border]="assignForm.get('targetDate')?.touched && assignForm.get('targetDate')?.invalid"
+            />
+            <span class="error-text" *ngIf="assignForm.get('targetDate')?.touched && assignForm.get('targetDate')?.invalid">
+              Target date is required.
+            </span>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" (click)="closeAssignModal()" [disabled]="submitting()">Cancel</button>
+          <button type="submit" class="btn-primary" [disabled]="assignForm.invalid || submitting()" style="display: inline-flex; align-items: center; gap: 6px;">
+            <svg lucideLoader [size]="16" class="spin-loader" *ngIf="submitting()"></svg>
+            {{ submitting() ? 'Assigning...' : 'Assign Goal' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Update Status Modal Overlay -->
+  <div class="modal-overlay" *ngIf="showStatusModal()">
+    <div class="custom-modal-box">
+      <div class="modal-header">
+        <h3>Update Goal Status</h3>
+        <button class="close-btn" (click)="closeStatusModal()" aria-label="Close">
+          <svg lucideX [size]="16" [strokeWidth]="2"></svg>
+        </button>
+      </div>
+
+      <form [formGroup]="statusForm" (ngSubmit)="submitStatusUpdate()">
+        <div class="form-body" *ngIf="selectedGoal()">
+          <p class="modal-instruction">
+            Update the status of goal <strong>"{{ selectedGoal()!.title }}"</strong> assigned to {{ selectedGoal()!.employeeName }}.
+          </p>
+
+          <!-- Status Dropdown -->
+          <div class="form-group">
+            <label for="status">Goal Status *</label>
+            <select id="status" formControlName="status">
+              <option value="Pending">Pending</option>
+              <option value="InProgress">In Progress</option>
+              <option value="Completed">Completed</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" (click)="closeStatusModal()" [disabled]="submitting()">Cancel</button>
+          <button type="submit" class="btn-primary" [disabled]="statusForm.invalid || submitting()" style="display: inline-flex; align-items: center; gap: 6px;">
+            <svg lucideLoader [size]="16" class="spin-loader" *ngIf="submitting()"></svg>
+            {{ submitting() ? 'Updating...' : 'Update Status' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

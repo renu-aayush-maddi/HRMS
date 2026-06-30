@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CGPA Calculator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f4f4;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 700px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px gray;
+        }
+
+        h2 {
+            text-align: center;
+            color: #333;
+        }
+
+        input, select, button {
+            width: 100%;
+            padding: 8px;
+            margin-top: 8px;
+            margin-bottom: 12px;
+        }
+
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #0056b3;
+        }
+
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            background: #eef;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>CGPA Calculator</h2>
+
+    <label>Name</label>
+    <input type="text" id="name">
+
+    <label>Program</label>
+    <input type="text" id="program">
+
+    <label>Branch</label>
+    <input type="text" id="branch">
+
+    <label>Number of Courses</label>
+    <input type="number" id="n">
+
+    <button onclick="generateCourses()">Create Course Fields</button>
+
+    <div id="courses"></div>
+
+    <button onclick="calculateCGPA()">Calculate CGPA</button>
+
+    <div id="result" class="result"></div>
+</div>
+
+<script>
+
+function generateCourses() {
+    let n = parseInt(document.getElementById("n").value);
+    let coursesDiv = document.getElementById("courses");
+
+    coursesDiv.innerHTML = "";
+
+    for(let i=1; i<=n; i++) {
+        coursesDiv.innerHTML += `
+            <h4>Course ${i}</h4>
+
+            <input type="text" id="course${i}"
+                   placeholder="Course Name">
+
+            <input type="number" id="credits${i}"
+                   placeholder="Credits" step="0.1">
+
+            <input type="number" id="percentage${i}"
+                   placeholder="Percentage" step="0.1">
+        `;
+    }
+}
+
+function calculateCGPA() {
+
+    let n = parseInt(document.getElementById("n").value);
+
+    let totalCredits = 0;
+    let totalCreditPoints = 0;
+
+    for(let i=1; i<=n; i++) {
+
+        let credits =
+            parseFloat(document.getElementById(`credits${i}`).value);
+
+        let percentage =
+            parseFloat(document.getElementById(`percentage${i}`).value);
+
+        let gp = percentage / 9.5;
+
+        if(gp > 10) gp = 10;
+
+        totalCreditPoints += gp * credits;
+        totalCredits += credits;
+    }
+
+    if(totalCredits === 0) {
+        alert("No credits entered!");
+        return;
+    }
+
+    let cgpa = totalCreditPoints / totalCredits;
+
+    let grade = "";
+
+    if(cgpa >= 9.5)
+        grade = "O (Outstanding)";
+    else if(cgpa >= 9.0)
+        grade = "S (Excellent)";
+    else if(cgpa >= 8.0)
+        grade = "A+ (Very Good)";
+    else if(cgpa >= 7.0)
+        grade = "A (Good)";
+    else if(cgpa >= 6.0)
+        grade = "A (Good)";
+    else if(cgpa >= 5.0)
+        grade = "B (Average)";
+    else if(cgpa >= 4.0)
+        grade = "C (Satisfactory)";
+    else
+        grade = "R (Not Satisfactory)";
+
+    let honors = "";
+
+    if(cgpa > 8.0) {
+        honors = `
+        <h4>Eligible for Honors</h4>
+        <ul>
+            <li>Artificial Intelligence and Machine Learning</li>
+            <li>Data Science</li>
+            <li>Cloud Computing</li>
+            <li>Cyber Security</li>
+            <li>Internet of Things (IoT)</li>
+        </ul>`;
+    }
+    else if(cgpa === 8.0) {
+        honors = "<p>You are just eligible for Honors.</p>";
+    }
+    else {
+        honors = "<p>Not eligible for Honors (Minimum CGPA 8.0 required).</p>";
+    }
+
+    document.getElementById("result").innerHTML = `
+        <h3>Result</h3>
+        <p><b>Total Credits:</b> ${totalCredits}</p>
+        <p><b>Total Credit Points:</b> ${totalCreditPoints.toFixed(2)}</p>
+        <p><b>CGPA:</b> ${cgpa.toFixed(2)}</p>
+        <p><b>Grade:</b> ${grade}</p>
+        ${honors}
+    `;
+}
+
+</script>
+
+</body>
+</html>

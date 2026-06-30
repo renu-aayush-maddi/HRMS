@@ -1,0 +1,164 @@
+/* Full page background */
+.login-page-wrapper {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  /* Replace this URL with your actual office background image */
+  background:
+    linear-gradient(rgba(15, 20, 25, 0.6), rgba(15, 20, 25, 0.8)),
+    url('../../../../assets/images/ex2.png') center/cover no-repeat;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+/* Glowing Title */
+.glow-title {
+  color: #a78bfa; /* Glowing Amethyst */
+  font-size: 3.5rem;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-shadow: 0 0 10px rgba(167, 139, 250, 0.8), 0 0 20px rgba(167, 139, 250, 0.4);
+  margin-bottom: 0.2rem;
+}
+
+.subtitle {
+  color: #e0e0e0;
+  font-size: 1.1rem;
+  font-weight: 300;
+}
+
+/* Glassmorphism Card Container */
+.login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10;
+}
+
+.glass-panel {
+  width: 440px;
+  padding: 40px;
+  border-radius: 20px;
+  /* Frosted glass effect */
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  /* Amethyst glowing border */
+  border: 1px solid rgba(139, 92, 246, 0.4);
+  box-shadow:
+    0 8px 32px 0 rgba(0, 0, 0, 0.3),
+    0 0 20px rgba(139, 92, 246, 0.2),
+    inset 0 0 15px rgba(139, 92, 246, 0.15);
+}
+
+/* Form Inputs */
+.form-group-custom label {
+  font-size: 0.9rem;
+  letter-spacing: 0.5px;
+}
+
+.input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.glass-input {
+  background: rgba(30, 30, 30, 0.6) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  color: #ffffff !important;
+  border-radius: 8px !important;
+  padding: 12px 15px 12px 40px !important;
+  /* Padding for left icon */
+  transition: all 0.3s ease;
+}
+
+.glass-input::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.glass-input:focus {
+  background: rgba(20, 20, 20, 0.8) !important;
+  border-color: #8b5cf6 !important;
+  box-shadow: 0 0 12px rgba(139, 92, 246, 0.4) !important;
+  outline: none;
+}
+
+/* Input Icons */
+.input-icon {
+  position: absolute;
+  left: 12px;
+  color: #a0a0a0;
+  font-size: 1.1rem;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.input-icon-right {
+  position: absolute;
+  right: 12px;
+  color: #a0a0a0;
+  font-size: 1.1rem;
+  cursor: pointer;
+  z-index: 5;
+}
+
+/* Links and Buttons */
+.forgot-link {
+  color: #a78bfa;
+  font-size: 0.85rem;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.forgot-link:hover {
+  color: #c084fc;
+  text-decoration: underline;
+}
+
+.btn-cyan {
+  background: linear-gradient(90deg, #6366f1 0%, #8b5cf6 100%);
+  border: none;
+  border-radius: 25px;
+  color: white;
+  padding: 12px;
+  font-size: 1rem;
+  letter-spacing: 1px;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.btn-cyan:hover:not([disabled]) {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(139, 92, 246, 0.4);
+  color: white;
+}
+
+.sign-in-text {
+  font-size: 0.75rem;
+  letter-spacing: 1px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+
+/* Custom Spinner for the Login Button */
+.custom-spinner {
+  width: 22px;
+  height: 22px;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: #ffffff;
+  animation: spin 0.8s ease-in-out infinite;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.tracking-wider {
+  letter-spacing: 1.5px;
+  font-size: 0.9rem;
+}

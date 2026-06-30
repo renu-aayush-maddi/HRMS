@@ -1,0 +1,121 @@
+<div class="page-container">
+  <div class="page-header">
+    <div class="header-title">
+      <h2>Salary Structure Configurations</h2>
+      <p class="subtitle">Manage company salary component ratios (Basic, HRA, Allowances) for contract structures</p>
+    </div>
+    <div class="header-actions">
+      <button class="btn-primary" (click)="openAddModal()" style="display: inline-flex; align-items: center; gap: 6px;">
+        <svg lucidePlus [size]="16" [strokeWidth]="2"></svg> Create Salary Structure
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div class="loading-state" *ngIf="loading()">
+    <p>Loading salary structures...</p>
+  </div>
+
+  <!-- Table -->
+  <div class="table-card" *ngIf="!loading()">
+    <table class="custom-table">
+      <thead>
+        <tr>
+          <th>Structure Name</th>
+          <th>Basic %</th>
+          <th>HRA %</th>
+          <th>Special Allowance %</th>
+          <th>Medical %</th>
+          <th>Travel %</th>
+          <th class="text-right">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let struct of structures()">
+          <td class="font-semibold">{{ struct.name }}</td>
+          <td>{{ struct.basicPercentage }}%</td>
+          <td>{{ struct.hraPercentage }}%</td>
+          <td>{{ struct.specialAllowancePercentage }}%</td>
+          <td>{{ struct.medicalAllowancePercentage }}%</td>
+          <td>{{ struct.travelAllowancePercentage }}%</td>
+          <td class="text-right actions-cell">
+            <button class="btn-icon edit" (click)="openEditModal(struct)">Edit</button>
+            <button class="btn-icon delete" (click)="deleteStructure(struct.id)">Delete</button>
+          </td>
+        </tr>
+        <tr *ngIf="structures().length === 0">
+          <td colspan="7" class="text-center text-gray py-4">No salary structures configured yet.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Modal Dialog -->
+  <div class="modal-overlay" *ngIf="showModal()">
+    <div class="custom-modal-box">
+      <div class="modal-header">
+        <h3>{{ isEdit() ? 'Edit Salary Structure' : 'Create Salary Structure' }}</h3>
+        <button class="close-btn" (click)="closeModal()" aria-label="Close">
+          <svg lucideX [size]="16" [strokeWidth]="2"></svg>
+        </button>
+      </div>
+
+      <form [formGroup]="structureForm" (ngSubmit)="submitForm()">
+        <div class="form-body">
+          <div class="form-group full-width">
+            <label for="name">Structure Name *</label>
+            <input 
+              type="text" 
+              id="name" 
+              formControlName="name" 
+              placeholder="e.g. Standard Executive, Intern Structure"
+              [class.error-border]="structureForm.get('name')?.touched && structureForm.get('name')?.invalid"
+            />
+            <span class="error-text" *ngIf="structureForm.get('name')?.touched && structureForm.get('name')?.invalid">
+              Name is required.
+            </span>
+          </div>
+
+          <div class="grid-2-cols">
+            <div class="form-group">
+              <label for="basicPercentage">Basic Salary (%) *</label>
+              <input type="number" id="basicPercentage" formControlName="basicPercentage" min="0" max="100" />
+            </div>
+
+            <div class="form-group">
+              <label for="hraPercentage">HRA (%) *</label>
+              <input type="number" id="hraPercentage" formControlName="hraPercentage" min="0" max="100" />
+            </div>
+
+            <div class="form-group">
+              <label for="specialAllowancePercentage">Special Allowance (%) *</label>
+              <input type="number" id="specialAllowancePercentage" formControlName="specialAllowancePercentage" min="0" max="100" />
+            </div>
+
+            <div class="form-group">
+              <label for="medicalAllowancePercentage">Medical (%) *</label>
+              <input type="number" id="medicalAllowancePercentage" formControlName="medicalAllowancePercentage" min="0" max="100" />
+            </div>
+
+            <div class="form-group full-width">
+              <label for="travelAllowancePercentage">Travel (%) *</label>
+              <input type="number" id="travelAllowancePercentage" formControlName="travelAllowancePercentage" min="0" max="100" />
+            </div>
+          </div>
+
+          <div class="total-alert" style="display: flex; align-items: center; gap: 6px;">
+            <svg lucideInfo [size]="16" [strokeWidth]="2"></svg> The sum of all above percentages must equal exactly <strong>100%</strong>.
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" (click)="closeModal()" [disabled]="submitting()">Cancel</button>
+          <button type="submit" class="btn-primary" [disabled]="structureForm.invalid || submitting()" style="display: inline-flex; align-items: center; gap: 6px;">
+            <svg lucideLoader [size]="16" class="spin-loader" *ngIf="submitting()"></svg>
+            {{ submitting() ? (isEdit() ? 'Saving...' : 'Creating...') : (isEdit() ? 'Save Changes' : 'Create') }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

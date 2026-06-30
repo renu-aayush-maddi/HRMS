@@ -1,0 +1,107 @@
+<div class="page-container">
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="header-title">
+      <h2>Performance Reviews</h2>
+      <p class="subtitle">View and export employee performance evaluation records</p>
+    </div>
+    <div class="header-actions">
+      <button class="btn-secondary" (click)="exportReviews()" style="display: inline-flex; align-items: center; gap: 6px;">
+        <svg lucideDownload [size]="16" [strokeWidth]="2"></svg> Export Excel
+      </button>
+    </div>
+  </div>
+
+  <!-- Filters Panel -->
+  <div class="filters-card">
+    <div class="filters-grid">
+      <!-- Search -->
+      <div class="filter-group">
+        <label for="search">Search Employee/Reviewer</label>
+        <input 
+          type="text" 
+          id="search" 
+          placeholder="Type name..." 
+          [ngModel]="searchQuery()" 
+          (ngModelChange)="searchQuery.set($event); applyFilters()"
+        />
+      </div>
+
+      <!-- Performance Cycle -->
+      <div class="filter-group">
+        <label for="cycle">Performance Cycle</label>
+        <select id="cycle" [ngModel]="selectedCycleId()" (ngModelChange)="selectedCycleId.set($event); applyFilters()">
+          <option value="">All Cycles</option>
+          <option *ngFor="let cycle of cycles()" [value]="cycle.id">{{ cycle.name }}</option>
+        </select>
+      </div>
+
+      <!-- Rating filter -->
+      <div class="filter-group">
+        <label for="rating">Rating</label>
+        <select id="rating" [ngModel]="selectedRating()" (ngModelChange)="selectedRating.set($event); applyFilters()">
+          <option [ngValue]="null">All Ratings</option>
+          <option [ngValue]="1">1 Star</option>
+          <option [ngValue]="2">2 Stars</option>
+          <option [ngValue]="3">3 Stars</option>
+          <option [ngValue]="4">4 Stars</option>
+          <option [ngValue]="5">5 Stars</option>
+        </select>
+      </div>
+
+      <!-- Reset -->
+      <div class="filter-group button-align">
+        <button class="btn-clear" (click)="resetFilters()">Clear Filters</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div class="loading-state" *ngIf="loading()">
+    <p>Loading performance reviews...</p>
+  </div>
+
+  <!-- Table View -->
+  <div class="table-card" *ngIf="!loading()">
+    <table class="custom-table">
+      <thead>
+        <tr>
+          <th>Employee</th>
+          <th>Reviewer</th>
+          <th>Performance Cycle</th>
+          <th>Rating</th>
+          <th>Comments</th>
+          <th>Review Date</th>
+          <th class="text-right">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let rev of reviews()">
+          <td class="font-medium">{{ rev.employeeName }}</td>
+          <td>{{ rev.reviewerName }}</td>
+          <td>
+            <span class="badge bg-secondary">{{ rev.performanceCycleName }}</span>
+          </td>
+          <td>
+            <span class="rating-stars" *ngIf="rev.rating" style="display: inline-flex; align-items: center; gap: 4px;">
+              <svg lucideStar [size]="14" [strokeWidth]="2" style="fill: var(--warning-color); color: var(--warning-color);"></svg> {{ rev.rating | number:'1.0-1' }}
+            </span>
+            <span class="text-gray" *ngIf="!rev.rating">Not rated</span>
+          </td>
+          <td class="comments-cell" [title]="rev.comments || ''">
+            {{ rev.comments ? (rev.comments | slice:0:60) + (rev.comments.length > 60 ? '...' : '') : '-' }}
+          </td>
+          <td>{{ (rev.reviewDate | date:'mediumDate') || '-' }}</td>
+          <td class="text-right actions-cell">
+            <button class="btn-icon delete" (click)="deleteReview(rev.id)" style="display: inline-flex; align-items: center; gap: 4px;">
+              <svg lucideTrash [size]="14" [strokeWidth]="2"></svg> Delete
+            </button>
+          </td>
+        </tr>
+        <tr *ngIf="reviews().length === 0">
+          <td colspan="7" class="text-center text-gray py-4">No performance reviews found matching criteria.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

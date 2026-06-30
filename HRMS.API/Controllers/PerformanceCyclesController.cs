@@ -7,7 +7,7 @@ namespace HRMS.API.Controllers;
 
 [Route("api/performance-cycles")]
 [ApiController]
-[Authorize(Roles = "Admin")]
+[Authorize]
 public class PerformanceCyclesController : ControllerBase
 {
     private readonly IPerformanceCycleService service;
@@ -18,6 +18,7 @@ public class PerformanceCyclesController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Roles = "Admin,HR")]
     public IActionResult AddCycle(AddPerformanceCycleDto dto)
     {
         service.AddCycle(dto);
@@ -37,6 +38,7 @@ public class PerformanceCyclesController : ControllerBase
     }
 
     [HttpPut("{id}")]
+    [Authorize(Roles = "Admin,HR")]
     public IActionResult UpdateCycle(Guid id, UpdatePerformanceCycleDto dto)
     {
         service.UpdateCycle(id, dto);
@@ -44,6 +46,7 @@ public class PerformanceCyclesController : ControllerBase
     }
 
     [HttpDelete("{id}")]
+    [Authorize(Roles = "Admin,HR")]
     public IActionResult DeleteCycle(Guid id)
     {
         service.DeleteCycle(id);

@@ -71,9 +71,13 @@ public class ExceptionMiddleware
             _ => HttpStatusCode.InternalServerError
         };
 
+        var message = statusCode == HttpStatusCode.InternalServerError
+            ? "An unexpected error occurred. Please contact the administrator."
+            : exception.Message;
+
         var response = new ErrorResponse
         {
-            Message = exception.Message,
+            Message = message,
             StatusCode = (int)statusCode,
             TraceId = context.TraceIdentifier,
             Path = context.Request.Path,

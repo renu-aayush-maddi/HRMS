@@ -27,4 +27,10 @@ public interface IManagerService
     List<PerformanceReviewDto> GetPerformanceReviews(Guid managerUserId);
 
     List<PerformanceReviewDto> GetEmployeePerformanceReviews(Guid managerUserId, Guid employeeId);
+
+    EligibleEmployeesResponseDto GetEligibleEmployees(Guid managerUserId, string? search, int page, int pageSize);
+
+    void AddTeamMember(Guid managerUserId, Guid employeeId);
+
+    void RemoveTeamMember(Guid managerUserId, Guid employeeId);
 }

@@ -1,0 +1,151 @@
+<div class="page-container">
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="header-title">
+      <h2>Payroll Administration</h2>
+      <p class="subtitle">Generate, approve, and track monthly employee salary disbursements</p>
+    </div>
+    <div class="header-actions">
+      <button class="btn-secondary" (click)="exportPayrolls()" style="display: inline-flex; align-items: center; gap: 6px;">
+        <svg lucideDownload [size]="16" [strokeWidth]="2"></svg> Export Excel
+      </button>
+      <button class="btn-primary" (click)="openGenerateModal()" style="display: inline-flex; align-items: center; gap: 6px;">
+        <svg lucideCoins [size]="16" [strokeWidth]="2"></svg> Generate Payroll
+      </button>
+    </div>
+  </div>
+
+  <!-- Filters Panel -->
+  <div class="filters-card">
+    <div class="filters-grid">
+      <!-- Month filter -->
+      <div class="filter-group">
+        <label for="month">Filter Month</label>
+        <select id="month" [ngModel]="filterMonth()" (ngModelChange)="filterMonth.set($event); applyFilters()">
+          <option [ngValue]="0">All Months</option>
+          <option *ngFor="let m of months" [ngValue]="m.value">{{ m.name }}</option>
+        </select>
+      </div>
+
+      <!-- Year filter -->
+      <div class="filter-group">
+        <label for="year">Filter Year</label>
+        <select id="year" [ngModel]="filterYear()" (ngModelChange)="filterYear.set($event); applyFilters()">
+          <option [ngValue]="0">All Years</option>
+          <option *ngFor="let y of years" [ngValue]="y">{{ y }}</option>
+        </select>
+      </div>
+
+      <!-- Status filter -->
+      <div class="filter-group">
+        <label for="status">Status</label>
+        <select id="status" [ngModel]="filterStatus()" (ngModelChange)="filterStatus.set($event); applyFilters()">
+          <option value="">All Statuses</option>
+          <option value="Generated">Generated</option>
+          <option value="Approved">Approved</option>
+          <option value="Paid">Paid</option>
+        </select>
+      </div>
+
+      <!-- Reset -->
+      <div class="filter-group button-align">
+        <button class="btn-clear" (click)="resetFilters()">Clear Filters</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div class="loading-state" *ngIf="loading()">
+    <p>Processing payroll operations...</p>
+  </div>
+
+  <!-- Table View -->
+  <div class="table-card" *ngIf="!loading()">
+    <table class="custom-table">
+      <thead>
+        <tr>
+          <th>Employee</th>
+          <th>Pay Period</th>
+          <th>Basic Salary</th>
+          <th>Bonus</th>
+          <th>Deductions</th>
+          <th>Net Salary</th>
+          <th>Status</th>
+          <th class="text-right">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let pay of payrolls()">
+          <td class="font-medium">{{ pay.employeeName }}</td>
+          <td>{{ getMonthName(pay.payMonth) }} {{ pay.payYear }}</td>
+          <td>₹{{ pay.basicSalary | number:'1.2-2' }}</td>
+          <td>₹{{ (pay.bonus | number:'1.2-2') || '0.00' }}</td>
+          <td>₹{{ (pay.deductions | number:'1.2-2') || '0.00' }}</td>
+          <td class="font-semibold text-primary">₹{{ (pay.netSalary | number:'1.2-2') || '0.00' }}</td>
+          <td>
+            <span class="badge" 
+              [class.bg-warning]="pay.status === 'Generated'" 
+              [class.bg-primary]="pay.status === 'Approved'"
+              [class.bg-success]="pay.status === 'Paid'">
+              {{ pay.status }}
+            </span>
+          </td>
+          <td class="text-right actions-cell">
+            <button class="btn-icon approve" *ngIf="pay.status === 'Generated'" (click)="approvePayroll(pay.id)" style="display: inline-flex; align-items: center; gap: 4px;">
+              <svg lucideCheck [size]="14" [strokeWidth]="2"></svg> Approve
+            </button>
+            <button class="btn-icon pay" *ngIf="pay.status === 'Approved'" (click)="markPaid(pay.id)" style="display: inline-flex; align-items: center; gap: 4px;">
+              <svg lucideCreditCard [size]="14" [strokeWidth]="2"></svg> Pay Salary
+            </button>
+            <span class="text-gray" *ngIf="pay.status === 'Paid'">Processed</span>
+          </td>
+        </tr>
+        <tr *ngIf="payrolls().length === 0">
+          <td colspan="8" class="text-center text-gray py-4">No payroll records matching search filter.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Generate Monthly Payroll Modal Overlay -->
+  <div class="modal-overlay" *ngIf="showGenerateModal()">
+    <div class="custom-modal-box">
+      <div class="modal-header">
+        <h3>Generate Monthly Payroll</h3>
+        <button class="close-btn" (click)="closeGenerateModal()" aria-label="Close">
+          <svg lucideX [size]="16" [strokeWidth]="2"></svg>
+        </button>
+      </div>
+
+      <form [formGroup]="generateForm" (ngSubmit)="submitGenerate()">
+        <div class="form-body">
+          <p class="modal-info-text">This will automatically compute salaries, bonuses, and deductions for all active employees for the selected period.</p>
+          
+          <!-- Month -->
+          <div class="form-group">
+            <label for="genMonth">Select Month *</label>
+            <select id="genMonth" formControlName="payMonth">
+              <option *ngFor="let m of months" [value]="m.value">{{ m.name }}</option>
+            </select>
+          </div>
+
+          <!-- Year -->
+          <div class="form-group">
+            <label for="genYear">Select Year *</label>
+            <select id="genYear" formControlName="payYear">
+              <option *ngFor="let y of years" [value]="y">{{ y }}</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" (click)="closeGenerateModal()" [disabled]="submitting()">Cancel</button>
+          <button type="submit" class="btn-primary" [disabled]="generateForm.invalid || submitting()" style="display: inline-flex; align-items: center; gap: 6px;">
+            <svg lucideLoader [size]="16" class="spin-loader" *ngIf="submitting()"></svg>
+            {{ submitting() ? 'Generating...' : 'Generate Now' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,139 @@
+<div class="salary-container">
+  <!-- Warning: No employee selected -->
+  <div class="no-employee-alert" *ngIf="!employeeId()" style="display: flex; align-items: center; justify-content: center; gap: 6px;">
+    <svg lucideAlertTriangle [size]="18" [strokeWidth]="2"></svg> Please select an employee from the dropdown above to manage their salary profile.
+  </div>
+
+  <!-- Loading State -->
+  <div class="loading-state" *ngIf="employeeId() && loading()">
+    <p>Retrieving salary structure details...</p>
+  </div>
+
+  <div *ngIf="employeeId() && !loading()">
+    <!-- Active Salary Overview -->
+    <div class="active-salary-card">
+      <div class="card-header">
+        <h3>Active Salary Profile</h3>
+        <button class="btn-primary" (click)="toggleAssignForm()" [disabled]="submitting()">
+          {{ showAssignForm() ? 'Cancel' : 'Update Salary' }}
+        </button>
+      </div>
+
+      <div class="salary-details-grid" *ngIf="activeSalary()">
+        <div class="detail-item">
+          <span class="label">Assigned Structure</span>
+          <span class="value">{{ activeSalary()!.salaryStructureName }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="label">Annual CTC</span>
+          <span class="value amount">${{ activeSalary()!.annualCtc | number:'1.2-2' }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="label">Monthly Base Est.</span>
+          <span class="value">${{ (activeSalary()!.annualCtc / 12) | number:'1.2-2' }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="label">Effective From</span>
+          <span class="value">{{ activeSalary()!.effectiveFrom | date:'mediumDate' }}</span>
+        </div>
+      </div>
+
+      <div class="no-active-salary" *ngIf="!activeSalary()" style="display: flex; align-items: center; justify-content: center; gap: 6px;">
+        <svg lucideXCircle [size]="18" [strokeWidth]="2" class="text-danger"></svg> No active salary profile assigned to this employee. Please assign one below to generate payroll.
+      </div>
+    </div>
+
+    <!-- Salary Assigner Form -->
+    <div class="assign-form-card" *ngIf="showAssignForm()">
+      <h3>Assign New Salary Structure</h3>
+      <form [formGroup]="assignForm" (ngSubmit)="submitAssignment()">
+        <div class="form-grid">
+          <!-- Structure selector -->
+          <div class="form-group">
+            <label for="salaryStructureId">Salary Structure Configuration *</label>
+            <select 
+              id="salaryStructureId" 
+              formControlName="salaryStructureId"
+              [class.error-border]="assignForm.get('salaryStructureId')?.touched && assignForm.get('salaryStructureId')?.invalid">
+              <option value="">-- Choose Structure --</option>
+              <option *ngFor="let s of structures()" [value]="s.id">
+                {{ s.name }}
+              </option>
+            </select>
+            <span class="error-text" *ngIf="assignForm.get('salaryStructureId')?.touched && assignForm.get('salaryStructureId')?.invalid">
+              Structure selection is required.
+            </span>
+          </div>
+
+          <!-- CTC -->
+          <div class="form-group">
+            <label for="annualCtc">Annual CTC ($) *</label>
+            <input 
+              type="number" 
+              id="annualCtc" 
+              formControlName="annualCtc" 
+              [class.error-border]="assignForm.get('annualCtc')?.touched && assignForm.get('annualCtc')?.invalid"
+            />
+            <span class="error-text" *ngIf="assignForm.get('annualCtc')?.touched && assignForm.get('annualCtc')?.invalid">
+              CTC must be at least $1,000.
+            </span>
+          </div>
+
+          <!-- Date -->
+          <div class="form-group">
+            <label for="effectiveFrom">Effective From Date *</label>
+            <input 
+              type="date" 
+              id="effectiveFrom" 
+              formControlName="effectiveFrom" 
+              [class.error-border]="assignForm.get('effectiveFrom')?.touched && assignForm.get('effectiveFrom')?.invalid"
+            />
+            <span class="error-text" *ngIf="assignForm.get('effectiveFrom')?.touched && assignForm.get('effectiveFrom')?.invalid">
+              Effective date is required.
+            </span>
+          </div>
+
+          <!-- Submit -->
+          <div class="form-actions">
+            <button type="submit" class="btn-primary" [disabled]="assignForm.invalid || submitting()" style="display: inline-flex; align-items: center; gap: 6px;">
+              <svg lucideLoader [size]="16" class="spin-loader" *ngIf="submitting()"></svg>
+              {{ submitting() ? 'Assigning...' : 'Assign Salary Profile' }}
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <!-- History Log Table -->
+    <div class="history-section">
+      <h3>Salary Adjustments History</h3>
+      <div class="table-card">
+        <table class="custom-table">
+          <thead>
+            <tr>
+              <th>Structure Configuration</th>
+              <th>Annual CTC</th>
+              <th>Effective From</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of history()">
+              <td class="font-semibold">{{ item.salaryStructureName }}</td>
+              <td class="font-semibold">${{ item.annualCtc | number:'1.2-2' }}</td>
+              <td>{{ item.effectiveFrom | date:'mediumDate' }}</td>
+              <td>
+                <span class="badge" [class.bg-success]="item.isActive" [class.bg-secondary]="!item.isActive">
+                  {{ item.isActive ? 'Active' : 'Inactive' }}
+                </span>
+              </td>
+            </tr>
+            <tr *ngIf="history().length === 0">
+              <td colspan="4" class="text-center text-gray py-4">No historical salary adjustments found.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,289 @@
+<div class="page-container">
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="header-title">
+      <h2>Attendance Administration</h2>
+      <p class="subtitle">Track daily logs, export reports, and process attendance regularization requests</p>
+    </div>
+    <div class="header-actions" *ngIf="activeTab() === 'logs'">
+      <button class="btn-secondary" (click)="exportLogs()" [disabled]="submitting()" style="display: inline-flex; align-items: center; gap: 6px;">
+        <svg lucideLoader [size]="16" class="spin-loader" *ngIf="submitting()"></svg>
+        <svg lucideDownload [size]="16" [strokeWidth]="2" *ngIf="!submitting()"></svg>
+        {{ submitting() ? 'Exporting...' : 'Export Excel' }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Tab Bar -->
+  <div class="tabs-navigation">
+    <button 
+      class="tab-btn" 
+      [class.active]="activeTab() === 'logs'" 
+      (click)="setTab('logs')">
+      Attendance Logs
+    </button>
+    <button 
+      class="tab-btn" 
+      [class.active]="activeTab() === 'regularizations'" 
+      (click)="setTab('regularizations')">
+      Regularization Requests
+    </button>
+  </div>
+
+  <!-- Tab 1: Attendance Logs -->
+  <div *ngIf="activeTab() === 'logs'">
+    <!-- Logs Filters -->
+    <div class="filters-card">
+      <div class="filters-grid">
+        <!-- Search Employee -->
+        <div class="filter-group">
+          <label for="logsSearch">Search Employee ID</label>
+          <input 
+            type="text" 
+            id="logsSearch" 
+            placeholder="Search employee guid..." 
+            [ngModel]="logsSearch()" 
+            (ngModelChange)="logsSearch.set($event); applyLogsFilters()"
+          />
+        </div>
+
+        <!-- Attendance Status -->
+        <div class="filter-group">
+          <label for="logsStatus">Status</label>
+          <select id="logsStatus" [ngModel]="logsStatus()" (ngModelChange)="logsStatus.set($event); applyLogsFilters()">
+            <option value="">All Statuses</option>
+            <option value="Present">Present</option>
+            <option value="Absent">Absent</option>
+            <option value="Late">Late</option>
+            <option value="On Leave">On Leave</option>
+            <option value="Half Day">Half Day</option>
+          </select>
+        </div>
+
+        <!-- From Date -->
+        <div class="filter-group">
+          <label for="logsFromDate">From Date</label>
+          <input type="date" id="logsFromDate" [ngModel]="logsFromDate()" (ngModelChange)="logsFromDate.set($event); applyLogsFilters()" />
+        </div>
+
+        <!-- To Date -->
+        <div class="filter-group">
+          <label for="logsToDate">To Date</label>
+          <input type="date" id="logsToDate" [ngModel]="logsToDate()" (ngModelChange)="logsToDate.set($event); applyLogsFilters()" />
+        </div>
+
+        <!-- Reset -->
+        <div class="filter-group button-align">
+          <button class="btn-clear" (click)="resetLogsFilters()">Clear Filters</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    <div class="loading-state" *ngIf="loading()">
+      <p>Loading attendance logs...</p>
+    </div>
+
+    <!-- Logs Table -->
+    <div class="table-card" *ngIf="!loading()">
+      <table class="custom-table">
+        <thead>
+          <tr>
+            <th>Employee</th>
+            <th>Date</th>
+            <th>Check In</th>
+            <th>Check Out</th>
+            <th>Hours Worked</th>
+            <th>Status</th>
+            <th>Remarks</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let log of logs()">
+            <td>
+              <div class="emp-info">
+                <span class="font-medium">{{ log.employeeName }}</span>
+                <span class="badge-code">{{ log.employeeCode }}</span>
+              </div>
+            </td>
+            <td>{{ log.attendanceDate | date:'mediumDate' }}</td>
+            <td>{{ (log.checkIn | date:'mediumTime') || '-' }}</td>
+            <td>{{ (log.checkOut | date:'mediumTime') || '-' }}</td>
+            <td class="font-semibold">{{ log.workingHours !== null ? (log.workingHours | number:'1.1-2') + ' hrs' : '-' }}</td>
+            <td>
+              <span class="badge" 
+                [class.bg-success]="log.status === 'Present'" 
+                [class.bg-danger]="log.status === 'Absent'"
+                [class.bg-warning]="log.status === 'Late' || log.status === 'Half Day'"
+                [class.bg-secondary]="log.status === 'On Leave'">
+                {{ log.status }}
+              </span>
+            </td>
+            <td>{{ log.remarks || '-' }}</td>
+          </tr>
+          <tr *ngIf="logs().length === 0">
+            <td colspan="7" class="text-center text-gray py-4">No attendance logs found matching filters.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Logs Pagination -->
+    <div class="pagination" *ngIf="logsTotalPages() > 1" style="display: inline-flex; align-items: center; gap: 12px;">
+      <button (click)="previousLogsPage()" [disabled]="logsPage() === 1" class="btn-page" style="display: inline-flex; align-items: center; gap: 4px;">
+        <svg lucideChevronLeft [size]="16" [strokeWidth]="2"></svg> Prev
+      </button>
+      <span class="page-info">Page {{ logsPage() }} of {{ logsTotalPages() }} (Total: {{ logsTotalRecords() }})</span>
+      <button (click)="nextLogsPage()" [disabled]="logsPage() === logsTotalPages()" class="btn-page" style="display: inline-flex; align-items: center; gap: 4px;">
+        Next <svg lucideChevronRight [size]="16" [strokeWidth]="2"></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Tab 2: Regularization Requests -->
+  <div *ngIf="activeTab() === 'regularizations'">
+    <!-- Req Filters -->
+    <div class="filters-card">
+      <div class="filters-grid">
+        <!-- Status filter -->
+        <div class="filter-group">
+          <label for="reqStatus">Approval Status</label>
+          <select id="reqStatus" [ngModel]="reqStatus()" (ngModelChange)="reqStatus.set($event); applyReqFilters()">
+            <option value="">All Requests</option>
+            <option value="Pending">Pending</option>
+            <option value="Approved">Approved</option>
+            <option value="Rejected">Rejected</option>
+          </select>
+        </div>
+
+        <!-- From Date -->
+        <div class="filter-group">
+          <label for="reqFromDate">From Date</label>
+          <input type="date" id="reqFromDate" [ngModel]="reqFromDate()" (ngModelChange)="reqFromDate.set($event); applyReqFilters()" />
+        </div>
+
+        <!-- To Date -->
+        <div class="filter-group">
+          <label for="reqToDate">To Date</label>
+          <input type="date" id="reqToDate" [ngModel]="reqToDate()" (ngModelChange)="reqToDate.set($event); applyReqFilters()" />
+        </div>
+
+        <!-- Reset -->
+        <div class="filter-group button-align">
+          <button class="btn-clear" (click)="resetReqFilters()">Clear Filters</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    <div class="loading-state" *ngIf="loading()">
+      <p>Loading regularization requests...</p>
+    </div>
+
+    <!-- Requests Table -->
+    <div class="table-card" *ngIf="!loading()">
+      <table class="custom-table">
+        <thead>
+          <tr>
+            <th>Employee</th>
+            <th>Attendance Date</th>
+            <th>Requested Check In</th>
+            <th>Requested Check Out</th>
+            <th>Reason</th>
+            <th>Status</th>
+            <th>HR Remarks</th>
+            <th class="text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let req of requests()">
+            <td>
+              <div class="emp-info">
+                <span class="font-medium">{{ req.employeeName }}</span>
+                <span class="badge-code">{{ req.employeeCode }}</span>
+              </div>
+            </td>
+            <td>{{ req.attendanceDate | date:'mediumDate' }}</td>
+            <td>{{ (req.requestedCheckIn | date:'mediumTime') || '-' }}</td>
+            <td>{{ (req.requestedCheckOut | date:'mediumTime') || '-' }}</td>
+            <td class="reason-cell" [title]="req.reason">{{ req.reason }}</td>
+            <td>
+              <span class="badge" 
+                [class.bg-warning]="req.status === 'Pending'" 
+                [class.bg-success]="req.status === 'Approved'"
+                [class.bg-danger]="req.status === 'Rejected'">
+                {{ req.status }}
+              </span>
+            </td>
+            <td>{{ req.hrComments || '-' }}</td>
+            <td class="text-right actions-cell">
+              <!-- Pending Actions -->
+              <ng-container *ngIf="req.status === 'Pending'">
+                <button class="btn-icon approve" (click)="openActionModal(req.id, true)" [disabled]="submitting()">Approve</button>
+                <button class="btn-icon reject" (click)="openActionModal(req.id, false)" [disabled]="submitting()">Reject</button>
+              </ng-container>
+              <!-- Processed status -->
+              <span class="text-gray" *ngIf="req.status !== 'Pending'">Processed</span>
+            </td>
+          </tr>
+          <tr *ngIf="requests().length === 0">
+            <td colspan="8" class="text-center text-gray py-4">No regularization requests found.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Req Pagination -->
+    <div class="pagination" *ngIf="reqTotalPages() > 1" style="display: inline-flex; align-items: center; gap: 12px;">
+      <button (click)="previousReqPage()" [disabled]="reqPage() === 1" class="btn-page" style="display: inline-flex; align-items: center; gap: 4px;">
+        <svg lucideChevronLeft [size]="16" [strokeWidth]="2"></svg> Prev
+      </button>
+      <span class="page-info">Page {{ reqPage() }} of {{ reqTotalPages() }} (Total: {{ reqTotalRecords() }})</span>
+      <button (click)="nextReqPage()" [disabled]="reqPage() === reqTotalPages()" class="btn-page" style="display: inline-flex; align-items: center; gap: 4px;">
+        Next <svg lucideChevronRight [size]="16" [strokeWidth]="2"></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Action Modal Overlay (Approve/Reject Regularization Comments) -->
+  <div class="modal-overlay" *ngIf="showActionModal()">
+    <div class="custom-modal-box">
+      <div class="modal-header">
+        <h3>{{ isApproval() ? 'Approve Regularization' : 'Reject Regularization' }}</h3>
+        <button class="close-btn" (click)="closeActionModal()" aria-label="Close">
+          <svg lucideX [size]="16" [strokeWidth]="2"></svg>
+        </button>
+      </div>
+
+      <form [formGroup]="actionForm" (ngSubmit)="submitAction()">
+        <div class="form-body">
+          <p class="modal-info-text">
+            {{ isApproval() ? 'Add approval comments/remarks for this request.' : 'Please provide comments stating the reason for rejecting this regularization.' }}
+          </p>
+
+          <div class="form-group full-width">
+            <label for="comments">HR Review Comments {{ !isApproval() ? '*' : '' }}</label>
+            <textarea 
+              id="comments" 
+              formControlName="comments" 
+              placeholder="Enter remarks..."
+              rows="4"
+              [class.error-border]="actionForm.get('comments')?.touched && actionForm.get('comments')?.invalid"
+            ></textarea>
+            <span class="error-text" *ngIf="actionForm.get('comments')?.touched && actionForm.get('comments')?.invalid">
+              Comments are required for rejections (max 500 characters).
+            </span>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" (click)="closeActionModal()" [disabled]="submitting()">Cancel</button>
+          <button type="submit" [class.btn-success]="isApproval()" [class.btn-danger-submit]="!isApproval()" [disabled]="actionForm.invalid || submitting()" style="display: inline-flex; align-items: center; gap: 6px;">
+            <svg lucideLoader [size]="16" class="spin-loader" *ngIf="submitting()"></svg>
+            {{ submitting() ? 'Processing...' : (isApproval() ? 'Confirm Approval' : 'Confirm Rejection') }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

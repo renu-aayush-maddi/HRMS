@@ -1,0 +1,103 @@
+<div class="balances-container">
+  <!-- Warning: No employee selected -->
+  <div class="no-employee-alert" *ngIf="!employeeId()" style="display: flex; align-items: center; justify-content: center; gap: 6px;">
+    <svg lucideAlertTriangle [size]="18" [strokeWidth]="2"></svg> Please select an employee from the dropdown above to view and manage their leave balances.
+  </div>
+
+  <!-- Loading State -->
+  <div class="loading-state" *ngIf="employeeId() && loading()">
+    <p>Retrieving leave balances...</p>
+  </div>
+
+  <div *ngIf="employeeId() && !loading()">
+    <!-- Balances Card -->
+    <div class="balances-card">
+      <div class="card-header">
+        <h3>Current Leave Balances</h3>
+        <button class="btn-primary" (click)="openModal()" style="display: inline-flex; align-items: center; gap: 6px;">
+          <svg lucidePlus [size]="16" [strokeWidth]="2"></svg> Allocate Leaves
+        </button>
+      </div>
+
+      <div class="table-card">
+        <table class="custom-table">
+          <thead>
+            <tr>
+              <th>Leave Type</th>
+              <th class="text-center">Allocated Days</th>
+              <th class="text-center">Used Days</th>
+              <th class="text-center">Remaining Days</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of balances()">
+              <td class="font-semibold">{{ item.leaveType }}</td>
+              <td class="text-center">{{ item.allocatedDays }}</td>
+              <td class="text-center text-danger">{{ item.usedDays }}</td>
+              <td class="text-center text-success font-semibold">{{ item.remainingDays }}</td>
+            </tr>
+            <tr *ngIf="balances().length === 0">
+              <td colspan="4" class="text-center text-gray py-4">No leave balances allocated for this employee.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Overlay -->
+  <div class="modal-overlay" *ngIf="showAllocateModal()">
+    <div class="custom-modal-box">
+      <div class="modal-header">
+        <h3>Allocate Leaves</h3>
+        <button class="close-btn" (click)="closeModal()" aria-label="Close">
+          <svg lucideX [size]="16" [strokeWidth]="2"></svg>
+        </button>
+      </div>
+
+      <form [formGroup]="allocateForm" (ngSubmit)="submitAllocation()">
+        <div class="form-body">
+          <!-- Leave Type Selection -->
+          <div class="form-group full-width">
+            <label for="leaveTypeId">Leave Type *</label>
+            <select 
+              id="leaveTypeId" 
+              formControlName="leaveTypeId"
+              [class.error-border]="allocateForm.get('leaveTypeId')?.touched && allocateForm.get('leaveTypeId')?.invalid">
+              <option value="">-- Select Leave Type --</option>
+              <option *ngFor="let t of leaveTypes()" [value]="t.id">
+                {{ t.name }}
+              </option>
+            </select>
+            <span class="error-text" *ngIf="allocateForm.get('leaveTypeId')?.touched && allocateForm.get('leaveTypeId')?.invalid">
+              Leave Type selection is required.
+            </span>
+          </div>
+
+          <!-- Allocated Days -->
+          <div class="form-group full-width">
+            <label for="allocatedDays">Allocated Days *</label>
+            <input 
+              type="number" 
+              id="allocatedDays" 
+              formControlName="allocatedDays" 
+              placeholder="e.g. 15"
+              [class.error-border]="allocateForm.get('allocatedDays')?.touched && allocateForm.get('allocatedDays')?.invalid"
+            />
+            <span class="error-text" *ngIf="allocateForm.get('allocatedDays')?.touched && allocateForm.get('allocatedDays')?.invalid">
+              Allocated days must be between 1 and 365.
+            </span>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" (click)="closeModal()" [disabled]="submitting()">Cancel</button>
+          <button type="submit" class="btn-primary" [disabled]="allocateForm.invalid || submitting()" style="display: inline-flex; align-items: center; gap: 6px;">
+            <svg lucideLoader [size]="16" class="spin-loader" *ngIf="submitting()"></svg>
+            {{ submitting() ? 'Allocating...' : 'Allocate Leave' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

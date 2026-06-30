@@ -1,0 +1,324 @@
+<div class="page-container">
+  <div class="page-header">
+    <div class="header-title">
+      <h2>Performance Bonus & Recommendations</h2>
+      <p class="subtitle">Analyze rating cycle performances, manage bonus thresholds, and process payouts</p>
+    </div>
+  </div>
+
+  <!-- Sub Tabs Navigation -->
+  <div class="tabs-navigation">
+    <button 
+      class="tab-btn" 
+      [class.active]="activeSubTab() === 'dashboard'" 
+      (click)="setSubTab('dashboard')">
+      Cycle Performance Dashboard
+    </button>
+    <button 
+      class="tab-btn" 
+      [class.active]="activeSubTab() === 'rules'" 
+      (click)="setSubTab('rules')">
+      Bonus Allocation Rules
+    </button>
+    <button 
+      class="tab-btn" 
+      [class.active]="activeSubTab() === 'recommendations'" 
+      (click)="setSubTab('recommendations')">
+      Bonus Recommendations
+    </button>
+  </div>
+
+  <!-- Cycle selector (visible on dashboard & recommendations tabs) -->
+  <div class="cycle-selector-card" *ngIf="activeSubTab() === 'dashboard' || activeSubTab() === 'recommendations'">
+    <div class="selector-group">
+      <label for="cycleSelect">Active Performance Cycle:</label>
+      <select id="cycleSelect" [ngModel]="selectedCycleId()" (ngModelChange)="selectedCycleId.set($event); setSubTab(activeSubTab())">
+        <option value="">-- Select Cycle --</option>
+        <option *ngFor="let c of cycles()" [value]="c.id">
+          {{ c.name }} ({{ c.startDate | date:'yyyy' }})
+        </option>
+      </select>
+
+      <!-- If cycles fails to load, allow manual guid input for thoroughness -->
+      <ng-container *ngIf="cycles().length === 0">
+        <span class="warning-lbl">Cycle list restricted. Input GUID manually:</span>
+        <input type="text" placeholder="Cycle GUID..." [ngModel]="selectedCycleId()" (ngModelChange)="selectedCycleId.set($event); setSubTab(activeSubTab())" class="manual-guid-input" />
+      </ng-container>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div class="loading-state" *ngIf="loading()">
+    <p>Loading data...</p>
+  </div>
+
+  <!-- Content Areas -->
+  <div *ngIf="!loading()">
+    
+    <!-- Tab 1: Dashboard -->
+    <div class="dashboard-tab" *ngIf="activeSubTab() === 'dashboard'">
+      <div class="no-cycle-alert" *ngIf="!selectedCycleId()" style="display: flex; align-items: center; justify-content: center; gap: 6px;">
+        <svg lucideAlertTriangle [size]="18" [strokeWidth]="2"></svg> Please select a Performance Cycle above to view metrics.
+      </div>
+
+      <div *ngIf="selectedCycleId() && dashboardData()">
+        <!-- Stats Widgets -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <span class="stat-label">Total Employees</span>
+            <span class="stat-value">{{ dashboardData()!.totalEmployees }}</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">Reviews Submitted</span>
+            <span class="stat-value">{{ dashboardData()!.totalReviews }}</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">Average Score</span>
+            <span class="stat-value highlight">{{ dashboardData()!.averageRating | number:'1.2-2' }} / 5.0</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">Completion Ratio</span>
+            <span class="stat-value">{{ dashboardData()!.reviewCompletionPercentage | number:'1.1-1' }}%</span>
+            <div class="progress-bar">
+              <div class="progress-fill" [style.width.%]="dashboardData()!.reviewCompletionPercentage"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Rankings Section -->
+        <div class="rankings-grid">
+          <!-- Top Performers -->
+          <div class="ranking-panel">
+            <h3 style="display: flex; align-items: center; gap: 6px;">
+              <svg lucideStar [size]="18" [strokeWidth]="2" style="fill: var(--warning-color); color: var(--warning-color);"></svg> Top Performers
+            </h3>
+            <ul class="ranking-list">
+              <li *ngFor="let emp of dashboardData()!.topPerformers">
+                <span class="name">{{ emp.employeeName }}</span>
+                <span class="badge score bg-success">{{ emp.averageRating | number:'1.2-2' }}</span>
+              </li>
+              <li *ngIf="dashboardData()!.topPerformers.length === 0" class="no-data">No performers recorded.</li>
+            </ul>
+          </div>
+
+          <!-- Lowest Performers -->
+          <div class="ranking-panel">
+            <h3 style="display: flex; align-items: center; gap: 6px;">
+              <svg lucideAlertTriangle [size]="18" [strokeWidth]="2" class="text-danger"></svg> Low Performers (Pip Risk)
+            </h3>
+            <ul class="ranking-list">
+              <li *ngFor="let emp of dashboardData()!.lowestPerformers">
+                <span class="name">{{ emp.employeeName }}</span>
+                <span class="badge score bg-danger">{{ emp.averageRating | number:'1.2-2' }}</span>
+              </li>
+              <li *ngIf="dashboardData()!.lowestPerformers.length === 0" class="no-data">No performers recorded.</li>
+            </ul>
+          </div>
+
+          <!-- Department Ratings -->
+          <div class="ranking-panel full-width">
+            <h3 style="display: flex; align-items: center; gap: 6px;">
+              <svg lucideBuilding2 [size]="18" [strokeWidth]="2"></svg> Department Rating Averages
+            </h3>
+            <div class="ratings-bar-list">
+              <div class="dept-rating-item" *ngFor="let dept of dashboardData()!.departmentRatings">
+                <div class="dept-info">
+                  <span class="dept-name">{{ dept.departmentName }}</span>
+                  <span class="dept-score font-semibold">{{ dept.averageRating | number:'1.2-2' }}</span>
+                </div>
+                <div class="progress-bar">
+                  <div class="progress-fill dept" [style.width.%]="(dept.averageRating / 5) * 100"></div>
+                </div>
+              </div>
+              <div *ngIf="dashboardData()!.departmentRatings.length === 0" class="no-data">No department data recorded.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab 2: Rules -->
+    <div class="rules-tab" *ngIf="activeSubTab() === 'rules'">
+      <div class="actions-row">
+        <h3>Bonus Rule Thresholds</h3>
+        <button class="btn-primary" (click)="openAddRuleModal()" style="display: inline-flex; align-items: center; gap: 6px;">
+          <svg lucidePlus [size]="16" [strokeWidth]="2"></svg> Create Rule
+        </button>
+      </div>
+
+      <div class="table-card">
+        <table class="custom-table">
+          <thead>
+            <tr>
+              <th>Min Review Rating</th>
+              <th>Max Review Rating</th>
+              <th>Bonus Multiplier Percentage</th>
+              <th>Active Status</th>
+              <th class="text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let rule of rules()">
+              <td class="font-semibold">{{ rule.minRating | number:'1.1-2' }}</td>
+              <td class="font-semibold">{{ rule.maxRating | number:'1.1-2' }}</td>
+              <td class="font-semibold text-green">{{ rule.bonusPercentage }}% of Salary</td>
+              <td>
+                <span class="badge" [class.bg-success]="rule.isActive" [class.bg-danger]="!rule.isActive">
+                  {{ rule.isActive ? 'Active' : 'Disabled' }}
+                </span>
+              </td>
+              <td class="text-right actions-cell">
+                <button class="btn-icon edit" (click)="openEditRuleModal(rule)" [disabled]="submitting()">Edit</button>
+                <button class="btn-icon delete" (click)="deleteRule(rule.id)" [disabled]="submitting()">Delete</button>
+              </td>
+            </tr>
+            <tr *ngIf="rules().length === 0">
+              <td colspan="5" class="text-center text-gray py-4">No bonus allocation rules configured.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Tab 3: Recommendations -->
+    <div class="recs-tab" *ngIf="activeSubTab() === 'recommendations'">
+      <div class="no-cycle-alert" *ngIf="!selectedCycleId()" style="display: flex; align-items: center; justify-content: center; gap: 6px;">
+        <svg lucideAlertTriangle [size]="18" [strokeWidth]="2"></svg> Please select a Performance Cycle above to view/generate recommendations.
+      </div>
+
+      <div *ngIf="selectedCycleId()">
+        <div class="actions-row">
+          <h3>Calculated Recommendations</h3>
+          <button class="btn-primary" (click)="generateRecs()" [disabled]="submitting()" style="display: inline-flex; align-items: center; gap: 6px;">
+            <svg lucideLoader [size]="16" class="spin-loader" *ngIf="submitting()"></svg>
+            <svg lucideRefreshCw [size]="16" [strokeWidth]="2" *ngIf="!submitting()"></svg>
+            {{ submitting() ? 'Calculating...' : 'Calculate Cycles Recommendations' }}
+          </button>
+        </div>
+
+        <div class="table-card">
+          <table class="custom-table">
+            <thead>
+              <tr>
+                <th>Employee</th>
+                <th>Score</th>
+                <th>Rec %</th>
+                <th>Rec Amount</th>
+                <th>Approved Amount</th>
+                <th>Status</th>
+                <th>Remarks</th>
+                <th class="text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let rec of recommendations()">
+                <td>{{ rec.employeeName }}</td>
+                <td>{{ rec.averageRating | number:'1.2-2' }}</td>
+                <td>{{ rec.recommendedPercentage }}%</td>
+                <td class="font-semibold">${{ rec.recommendedAmount | number:'1.2-2' }}</td>
+                <td class="font-semibold text-green">
+                  {{ rec.approvedAmount !== null ? '$' + (rec.approvedAmount | number:'1.2-2') : '-' }}
+                </td>
+                <td>
+                  <span class="badge" 
+                    [class.bg-warning]="rec.status === 'Pending'" 
+                    [class.bg-success]="rec.status === 'Approved'"
+                    [class.bg-danger]="rec.status === 'Rejected'">
+                    {{ rec.status }}
+                  </span>
+                </td>
+                <td>{{ rec.remarks || '-' }}</td>
+                <td class="text-right actions-cell">
+                  <ng-container *ngIf="rec.status === 'Pending'">
+                    <button class="btn-icon edit" (click)="openRecModal(rec)" [disabled]="submitting()">Modify</button>
+                    <button class="btn-icon approve" (click)="approveRec(rec.id)" [disabled]="submitting()">Approve</button>
+                    <button class="btn-icon reject" (click)="rejectRec(rec.id)" [disabled]="submitting()">Reject</button>
+                  </ng-container>
+                  <span class="text-gray" *ngIf="rec.status !== 'Pending'">Processed</span>
+                </td>
+              </tr>
+              <tr *ngIf="recommendations().length === 0">
+                <td colspan="8" class="text-center text-gray py-4">No recommendations found. Press button to calculate from scores.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 1: Rule Add/Edit -->
+  <div class="modal-overlay" *ngIf="showRuleModal()">
+    <div class="custom-modal-box">
+      <div class="modal-header">
+        <h3>{{ isRuleEdit() ? 'Edit Threshold Rule' : 'Create Threshold Rule' }}</h3>
+        <button class="close-btn" (click)="closeRuleModal()" aria-label="Close">
+          <svg lucideX [size]="16" [strokeWidth]="2"></svg>
+        </button>
+      </div>
+
+      <form [formGroup]="ruleForm" (ngSubmit)="submitRuleForm()">
+        <div class="form-body">
+          <div class="grid-2-cols">
+            <div class="form-group">
+              <label for="minRating">Minimum Score (1-5) *</label>
+              <input type="number" id="minRating" formControlName="minRating" step="0.1" />
+            </div>
+
+            <div class="form-group">
+              <label for="maxRating">Maximum Score (1-5) *</label>
+              <input type="number" id="maxRating" formControlName="maxRating" step="0.1" />
+            </div>
+          </div>
+
+          <div class="form-group full-width">
+            <label for="bonusPercentage">Bonus Payout Percentage (%) *</label>
+            <input type="number" id="bonusPercentage" formControlName="bonusPercentage" placeholder="e.g. 15 for 15% of basic salary" />
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" (click)="closeRuleModal()" [disabled]="submitting()">Cancel</button>
+          <button type="submit" class="btn-primary" [disabled]="ruleForm.invalid || submitting()" style="display: inline-flex; align-items: center; gap: 6px;">
+            <svg lucideLoader [size]="16" class="spin-loader" *ngIf="submitting()"></svg>
+            {{ submitting() ? 'Saving...' : 'Save Rule' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 2: Recommendation Override -->
+  <div class="modal-overlay" *ngIf="showRecModal()">
+    <div class="custom-modal-box">
+      <div class="modal-header">
+        <h3>Override Approved Payout Amount</h3>
+        <button class="close-btn" (click)="closeRecModal()" aria-label="Close">
+          <svg lucideX [size]="16" [strokeWidth]="2"></svg>
+        </button>
+      </div>
+
+      <form [formGroup]="recForm" (ngSubmit)="submitRecForm()">
+        <div class="form-body">
+          <div class="form-group full-width">
+            <label for="approvedAmount">Approved Payout Amount ($) *</label>
+            <input type="number" id="approvedAmount" formControlName="approvedAmount" min="0" />
+          </div>
+
+          <div class="form-group full-width">
+            <label for="remarks">Audit Remarks / Rationale</label>
+            <textarea id="remarks" formControlName="remarks" rows="3" placeholder="Explain rationale for adjustment..."></textarea>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" (click)="closeRecModal()" [disabled]="submitting()">Cancel</button>
+          <button type="submit" class="btn-primary" [disabled]="recForm.invalid || submitting()" style="display: inline-flex; align-items: center; gap: 6px;">
+            <svg lucideLoader [size]="16" class="spin-loader" *ngIf="submitting()"></svg>
+            {{ submitting() ? 'Updating...' : 'Update Amount' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

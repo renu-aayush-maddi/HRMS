@@ -27,6 +27,6 @@ public class NotificationsController: ControllerBase
     {
         service.MarkAsRead(notificationId);
 
-        return Ok("Notification marked as read");
+        return Ok(new{message = "Notification marked as read"});
     }
 }

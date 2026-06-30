@@ -1,0 +1,164 @@
+<div class="sub-tab-container">
+  <div class="empty-state" *ngIf="!employeeStore.profile()">
+    <h2>Select an employee</h2>
+    <p>Choose an employee from the dropdown above to view and manage their education history.</p>
+  </div>
+
+  <div *ngIf="employeeStore.profile()">
+    <div class="sub-tab-header">
+      <div class="left-header">
+        <h3>Education History for {{ employeeStore.profile()?.firstName }} {{ employeeStore.profile()?.lastName }}</h3>
+      </div>
+      <div class="right-header">
+        <div class="import-section">
+          <input type="file" (change)="onFileSelected($event)" accept=".xlsx, .xls" class="file-input" />
+          <button class="btn-secondary" (click)="importEducations()" [disabled]="submitting() || !selectedFile()" style="display: inline-flex; align-items: center; gap: 6px;">
+            <svg lucideLoader [size]="16" class="spin-loader" *ngIf="submitting()"></svg>
+            <svg lucideUpload [size]="16" [strokeWidth]="2" *ngIf="!submitting()"></svg>
+            {{ submitting() ? 'Importing...' : 'Import' }}
+          </button>
+        </div>
+        <button class="btn-secondary" (click)="exportEducations()" style="display: inline-flex; align-items: center; gap: 6px;">
+          <svg lucideDownload [size]="16" [strokeWidth]="2"></svg> Export
+        </button>
+        <button class="btn-primary" (click)="openAddModal()" style="display: inline-flex; align-items: center; gap: 6px;">
+          <svg lucidePlus [size]="16" [strokeWidth]="2"></svg> Add Education
+        </button>
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    <div class="loading-state" *ngIf="loading()">
+      <p>Loading education records...</p>
+    </div>
+
+    <!-- Table View -->
+    <div class="table-card" *ngIf="!loading()">
+      <table class="custom-table">
+        <thead>
+          <tr>
+            <th>Degree</th>
+            <th>Specialization</th>
+            <th>Institution</th>
+            <th>Graduation Year</th>
+            <th>Percentage</th>
+            <th class="text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let edu of educations()">
+            <td class="font-medium">{{ edu.degree }}</td>
+            <td>{{ edu.specialization }}</td>
+            <td>{{ edu.institutionName }}</td>
+            <td>{{ edu.graduationYear }}</td>
+            <td>{{ edu.percentage ? edu.percentage + '%' : '-' }}</td>
+            <td class="text-right actions-cell">
+              <button class="btn-icon edit" (click)="openEditModal(edu)" style="display: inline-flex; align-items: center; gap: 4px;">
+                <svg lucideEdit [size]="14" [strokeWidth]="2"></svg> Edit
+              </button>
+              <button class="btn-icon delete" (click)="deleteEducation(edu.id)" style="display: inline-flex; align-items: center; gap: 4px;">
+                <svg lucideTrash2 [size]="14" [strokeWidth]="2"></svg> Delete
+              </button>
+            </td>
+          </tr>
+          <tr *ngIf="educations().length === 0">
+            <td colspan="6" class="text-center text-gray py-4">No education records registered for this employee.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination" *ngIf="totalPages() > 1" style="display: inline-flex; align-items: center; gap: 12px;">
+      <button (click)="previousPage()" [disabled]="pageNumber() === 1" class="btn-page" style="display: inline-flex; align-items: center; gap: 4px;">
+        <svg lucideChevronLeft [size]="16" [strokeWidth]="2"></svg> Prev
+      </button>
+      <span class="page-info">Page {{ pageNumber() }} of {{ totalPages() }}</span>
+      <button (click)="nextPage()" [disabled]="pageNumber() === totalPages()" class="btn-page" style="display: inline-flex; align-items: center; gap: 4px;">
+        Next <svg lucideChevronRight [size]="16" [strokeWidth]="2"></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Modal Dialog -->
+  <div class="modal-overlay" *ngIf="showModal()">
+    <div class="custom-modal-box">
+      <div class="modal-header">
+        <h3>{{ editingId ? 'Edit Education Record' : 'Add Education Record' }}</h3>
+        <button class="close-btn" (click)="closeModal()" aria-label="Close">
+          <svg lucideX [size]="16" [strokeWidth]="2"></svg>
+        </button>
+      </div>
+
+      <form [formGroup]="educationForm" (ngSubmit)="saveEducation()">
+        <div class="form-body">
+          <!-- Degree -->
+          <div class="form-group full-width">
+            <label for="degree">Degree *</label>
+            <input 
+              type="text" 
+              id="degree" 
+              formControlName="degree" 
+              placeholder="e.g. B.Tech, Master of Business Administration"
+              [class.error-border]="educationForm.get('degree')?.touched && educationForm.get('degree')?.invalid"
+            />
+          </div>
+
+          <!-- Specialization -->
+          <div class="form-group full-width">
+            <label for="specialization">Specialization *</label>
+            <input 
+              type="text" 
+              id="specialization" 
+              formControlName="specialization" 
+              placeholder="e.g. Computer Science, Finance"
+              [class.error-border]="educationForm.get('specialization')?.touched && educationForm.get('specialization')?.invalid"
+            />
+          </div>
+
+          <!-- Institution Name -->
+          <div class="form-group full-width">
+            <label for="institutionName">Institution Name *</label>
+            <input 
+              type="text" 
+              id="institutionName" 
+              formControlName="institutionName" 
+              placeholder="e.g. Stanford University"
+              [class.error-border]="educationForm.get('institutionName')?.touched && educationForm.get('institutionName')?.invalid"
+            />
+          </div>
+
+          <!-- Graduation Year -->
+          <div class="form-group">
+            <label for="graduationYear">Graduation Year *</label>
+            <input 
+              type="number" 
+              id="graduationYear" 
+              formControlName="graduationYear" 
+            />
+          </div>
+
+          <!-- Percentage -->
+          <div class="form-group">
+            <label for="percentage">Percentage/GPA</label>
+            <input 
+              type="number" 
+              id="percentage" 
+              formControlName="percentage" 
+              placeholder="e.g. 85.5 or 3.8"
+              step="0.01"
+            />
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" (click)="closeModal()" [disabled]="submitting()">Cancel</button>
+          <button type="submit" class="btn-primary" [disabled]="educationForm.invalid || submitting()" style="display: inline-flex; align-items: center; gap: 6px;">
+            <svg lucideLoader [size]="16" class="spin-loader" *ngIf="submitting()"></svg>
+            {{ submitting() ? (editingId ? 'Saving...' : 'Adding...') : (editingId ? 'Save Changes' : 'Add Education') }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,192 @@
+<div class="page-container">
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="header-title">
+      <h2>Resignations Management</h2>
+      <p class="subtitle">Process employee resignation requests and full & final settlements</p>
+    </div>
+    <div class="header-actions">
+      <button class="btn-secondary" (click)="exportResignations()" style="display: inline-flex; align-items: center; gap: 6px;">
+        <svg lucideDownload [size]="16" [strokeWidth]="2"></svg> Export Excel
+      </button>
+    </div>
+  </div>
+
+  <!-- Filters Panel -->
+  <div class="filters-card">
+    <div class="filters-grid">
+      <!-- Search -->
+      <div class="filter-group">
+        <label for="search">Search Employee</label>
+        <input 
+          type="text" 
+          id="search" 
+          placeholder="Code or name..." 
+          [ngModel]="searchQuery()" 
+          (ngModelChange)="searchQuery.set($event); applyFilters()"
+        />
+      </div>
+
+      <!-- Resignation Status -->
+      <div class="filter-group">
+        <label for="status">Status</label>
+        <select id="status" [ngModel]="selectedStatus()" (ngModelChange)="selectedStatus.set($event); applyFilters()">
+          <option value="">All Statuses</option>
+          <option value="Pending">Pending</option>
+          <option value="Approved">Approved</option>
+          <option value="Rejected">Rejected</option>
+          <option value="Withdrawn">Withdrawn</option>
+        </select>
+      </div>
+
+      <!-- Settlement Status -->
+      <div class="filter-group">
+        <label for="settlement">Settlement Status</label>
+        <select id="settlement" [ngModel]="selectedSettlementStatus()" (ngModelChange)="selectedSettlementStatus.set($event); applyFilters()">
+          <option value="">All Settlements</option>
+          <option value="Pending">Pending</option>
+          <option value="Processing">Processing</option>
+          <option value="Completed">Completed</option>
+        </select>
+      </div>
+
+      <!-- Reset -->
+      <div class="filter-group button-align">
+        <button class="btn-clear" (click)="resetFilters()">Clear Filters</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div class="loading-state" *ngIf="loading()">
+    <p>Loading resignations...</p>
+  </div>
+
+  <!-- Table View -->
+  <div class="table-card" *ngIf="!loading()">
+    <table class="custom-table">
+      <thead>
+        <tr>
+          <th>Employee</th>
+          <th>Resignation Date</th>
+          <th>Last Working Date</th>
+          <th>Reason</th>
+          <th>Status</th>
+          <th>Settlement Status</th>
+          <th class="text-right">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let res of resignations()">
+          <td>
+            <div class="emp-info">
+              <span class="font-medium">{{ res.employeeName }}</span>
+              <span class="badge-code">{{ res.employeeCode }}</span>
+            </div>
+          </td>
+          <td>{{ res.resignationDate | date:'mediumDate' }}</td>
+          <td>{{ (res.lastWorkingDate | date:'mediumDate') || '-' }}</td>
+          <td class="reason-cell" [title]="res.reason || ''">
+            {{ res.reason ? (res.reason | slice:0:40) + (res.reason.length > 40 ? '...' : '') : '-' }}
+          </td>
+          <td>
+            <span class="badge" 
+              [class.bg-warning]="res.status === 'Pending'" 
+              [class.bg-success]="res.status === 'Approved'"
+              [class.bg-danger]="res.status === 'Rejected'"
+              [class.bg-secondary]="res.status === 'Withdrawn'">
+              {{ res.status }}
+            </span>
+          </td>
+          <td>
+            <span class="badge" 
+              [class.bg-warning]="res.finalSettlementStatus === 'Pending'" 
+              [class.bg-primary]="res.finalSettlementStatus === 'Processing'"
+              [class.bg-success]="res.finalSettlementStatus === 'Completed'">
+              {{ res.finalSettlementStatus || 'Pending' }}
+            </span>
+          </td>
+          <td class="text-right actions-cell">
+            <ng-container *ngIf="res.status === 'Pending'">
+              <button class="btn-icon approve" (click)="approveResignation(res.id)" [disabled]="submitting()">Approve</button>
+              <button class="btn-icon reject" (click)="openRejectModal(res.id)" [disabled]="submitting()">Reject</button>
+            </ng-container>
+            <button class="btn-icon settlement" (click)="openSettlementModal(res)" [disabled]="submitting()">Settlement</button>
+          </td>
+        </tr>
+        <tr *ngIf="resignations().length === 0">
+          <td colspan="7" class="text-center text-gray py-4">No resignation requests found.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Reject Reason Modal Overlay -->
+  <div class="modal-overlay" *ngIf="showRejectModal()">
+    <div class="custom-modal-box">
+      <div class="modal-header">
+        <h3>Reject Resignation Request</h3>
+        <button class="close-btn" (click)="closeRejectModal()" aria-label="Close">
+          <svg lucideX [size]="16" [strokeWidth]="2"></svg>
+        </button>
+      </div>
+
+      <form [formGroup]="rejectForm" (ngSubmit)="submitRejection()">
+        <div class="form-body">
+          <div class="form-group full-width">
+            <label for="reason">Rejection Reason/Comments *</label>
+            <textarea 
+              id="reason" 
+              formControlName="reason" 
+              placeholder="State the reason for rejecting the request..."
+              rows="4"
+              [class.error-border]="rejectForm.get('reason')?.touched && rejectForm.get('reason')?.invalid"
+            ></textarea>
+            <span class="error-text" *ngIf="rejectForm.get('reason')?.touched && rejectForm.get('reason')?.invalid">
+              Reason is required (max 500 characters).
+            </span>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" (click)="closeRejectModal()" [disabled]="submitting()">Cancel</button>
+          <button type="submit" class="btn-danger-submit" [disabled]="rejectForm.invalid || submitting()" style="display: inline-flex; align-items: center; gap: 6px;">
+            <svg lucideLoader [size]="16" class="spin-loader" *ngIf="submitting()"></svg>
+            {{ submitting() ? 'Rejecting...' : 'Confirm Rejection' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Settlement Update Modal Overlay -->
+  <div class="modal-overlay" *ngIf="showSettlementModal()">
+    <div class="custom-modal-box">
+      <div class="modal-header">
+        <h3>Update Final Settlement Status</h3>
+        <button class="close-btn" (click)="closeSettlementModal()" aria-label="Close">
+          <svg lucideX [size]="16" [strokeWidth]="2"></svg>
+        </button>
+      </div>
+
+      <form [formGroup]="settlementForm" (ngSubmit)="submitSettlement()">
+        <div class="form-body">
+          <div class="form-group full-width">
+            <label for="settlementStatus">Settlement Status *</label>
+            <select id="settlementStatus" formControlName="status">
+              <option *ngFor="let st of settlementStatuses" [value]="st">{{ st }}</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" (click)="closeSettlementModal()" [disabled]="submitting()">Cancel</button>
+          <button type="submit" class="btn-primary" [disabled]="submitting()" style="display: inline-flex; align-items: center; gap: 6px;">
+            <svg lucideLoader [size]="16" class="spin-loader" *ngIf="submitting()"></svg>
+            {{ submitting() ? 'Saving...' : 'Save Status' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

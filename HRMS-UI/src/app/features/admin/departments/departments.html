@@ -1,0 +1,93 @@
+<div class="page-container">
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="header-title">
+      <h2>Departments Management</h2>
+      <p class="subtitle">Add, edit, or remove company departments</p>
+    </div>
+    <div class="header-actions">
+      <div class="search-bar">
+        <input 
+          type="text" 
+          placeholder="Search departments..." 
+          [ngModel]="searchQuery()" 
+          (ngModelChange)="searchQuery.set($event); applyFilter()"
+        />
+      </div>
+      <button class="btn-primary" (click)="openAddModal()" style="display: inline-flex; align-items: center; gap: 6px;">
+        <svg lucidePlus [size]="16" [strokeWidth]="2"></svg> Add Department
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div class="loading-state" *ngIf="loading()">
+    <p>Loading departments...</p>
+  </div>
+
+  <!-- Table View -->
+  <div class="table-card" *ngIf="!loading()">
+    <table class="custom-table">
+      <thead>
+        <tr>
+          <th>Department Name</th>
+          <th class="text-right">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let dept of filteredDepartments()">
+          <td class="font-medium">{{ dept.name }}</td>
+          <td class="text-right actions-cell">
+            <button class="btn-icon edit" (click)="openEditModal(dept)" title="Edit" style="display: inline-flex; align-items: center; gap: 4px;">
+              <svg lucideEdit [size]="14" [strokeWidth]="2"></svg> Edit
+            </button>
+            <button class="btn-icon delete" (click)="deleteDepartment(dept.id)" title="Delete" style="display: inline-flex; align-items: center; gap: 4px;">
+              <svg lucideTrash [size]="14" [strokeWidth]="2"></svg> Delete
+            </button>
+          </td>
+        </tr>
+        <tr *ngIf="filteredDepartments().length === 0">
+          <td colspan="2" class="text-center text-gray py-4">No departments found.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Modal Overlay -->
+  <div class="modal-overlay" *ngIf="showModal()">
+    <div class="custom-modal-box">
+      <div class="modal-header">
+        <h3>{{ editingId ? 'Edit Department' : 'Add Department' }}</h3>
+        <button class="close-btn" (click)="closeModal()" aria-label="Close">
+          <svg lucideX [size]="16" [strokeWidth]="2"></svg>
+        </button>
+      </div>
+
+      <form [formGroup]="departmentForm" (ngSubmit)="saveDepartment()">
+        <div class="form-body">
+          <div class="form-group full-width">
+            <label for="name">Department Name *</label>
+            <input 
+              type="text" 
+              id="name" 
+              formControlName="name" 
+              placeholder="e.g. Human Resources"
+              [class.error-border]="departmentForm.get('name')?.touched && departmentForm.get('name')?.invalid"
+            />
+            <span class="error-text" *ngIf="departmentForm.get('name')?.touched && departmentForm.get('name')?.invalid">
+              Name is required (max 100 characters).
+            </span>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" (click)="closeModal()" [disabled]="submitting()">Cancel</button>
+          <button type="submit" class="btn-primary" [disabled]="departmentForm.invalid || submitting()" style="display: inline-flex; align-items: center; gap: 6px;">
+            <svg lucideLoader [size]="16" class="spin-loader" *ngIf="submitting()"></svg>
+            {{ submitting() ? (editingId ? 'Saving...' : 'Creating...') : (editingId ? 'Save Changes' : 'Create Department') }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

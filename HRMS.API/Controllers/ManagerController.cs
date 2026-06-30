@@ -91,4 +91,27 @@ public class ManagerController : ControllerBase
 
         return Ok(service.GetEmployeePerformanceReviews(managerUserId, employeeId));
     }
+
+    [HttpGet("eligible-employees")]
+    public IActionResult GetEligibleEmployees([FromQuery] string? search, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+    {
+        var managerUserId = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+        return Ok(service.GetEligibleEmployees(managerUserId, search, page, pageSize));
+    }
+
+    [HttpPost("team")]
+    public IActionResult AddTeamMember([FromBody] AssignTeamMemberDto dto)
+    {
+        var managerUserId = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+        service.AddTeamMember(managerUserId, dto.EmployeeId);
+        return Ok(new { Message = "Employee successfully assigned to team." });
+    }
+
+    [HttpDelete("team/{employeeId}")]
+    public IActionResult RemoveTeamMember(Guid employeeId)
+    {
+        var managerUserId = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+        service.RemoveTeamMember(managerUserId, employeeId);
+        return Ok(new { Message = "Employee successfully removed from team." });
+    }
 }

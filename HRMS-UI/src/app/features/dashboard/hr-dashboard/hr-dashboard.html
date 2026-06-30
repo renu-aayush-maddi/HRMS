@@ -1,0 +1,170 @@
+<div class="dashboard-container">
+  <!-- Page Header -->
+  <div class="dashboard-header">
+    <div class="welcome-section">
+      <h1>HR Dashboard</h1>
+      <p class="subtitle">Real-time aggregate data and department summaries</p>
+    </div>
+    <div class="actions-section">
+      <button class="btn-refresh" (click)="loadData()" [disabled]="loading()" style="display: inline-flex; align-items: center; gap: 6px;">
+        @if (loading()) {
+          <svg lucideLoader [size]="16" [strokeWidth]="2" class="spinner"></svg> Loading...
+        } @else {
+          <svg lucideRefreshCw [size]="16" [strokeWidth]="2"></svg> Refresh Data
+        }
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div class="loading-overlay" *ngIf="loading()">
+    <div class="spinner"></div>
+    <p>Updating metrics...</p>
+  </div>
+
+  <!-- Dashboard Content -->
+  <div class="dashboard-content" *ngIf="stats()">
+    <!-- Stat Cards Grid -->
+    <div class="stats-grid">
+      <!-- Card 1: Total Employees -->
+      <div class="stat-card">
+        <div class="card-icon blue">
+          <svg lucideUsers [size]="24" [strokeWidth]="2"></svg>
+        </div>
+        <div class="card-details">
+          <h3>Total Employees</h3>
+          <p class="value">{{ stats()!.totalEmployees }}</p>
+          <div class="sub-label">
+            <span class="highlight">{{ stats()!.activeEmployees }}</span> Active &middot; 
+            <span class="highlight">{{ stats()!.probationEmployees }}</span> Probation
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 2: Today's Attendance -->
+      <div class="stat-card">
+        <div class="card-icon green">
+          <svg lucideCalendar [size]="24" [strokeWidth]="2"></svg>
+        </div>
+        <div class="card-details">
+          <h3>Today's Attendance</h3>
+          <p class="value">{{ stats()!.attendancePercentage | number:'1.0-1' }}%</p>
+          <div class="sub-label">
+            <span class="text-success">{{ stats()!.presentToday }}</span> Present &middot; 
+            <span class="text-danger">{{ stats()!.absentToday }}</span> Absent Today
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 3: Leave Status -->
+      <div class="stat-card">
+        <div class="card-icon orange">
+          <svg lucidePlane [size]="24" [strokeWidth]="2"></svg>
+        </div>
+        <div class="card-details">
+          <h3>Leave & Attendance</h3>
+          <p class="value">{{ stats()!.pendingLeaves }}</p>
+          <div class="sub-label">
+            Pending Leaves &middot; <span class="highlight">{{ stats()!.onLeaveEmployees }}</span> On Leave Today
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 4: Monthly Payroll -->
+      <div class="stat-card">
+        <div class="card-icon purple">
+          <svg lucideCoins [size]="24" [strokeWidth]="2"></svg>
+        </div>
+        <div class="card-details">
+          <h3>Monthly Payroll</h3>
+          <p class="value">₹{{ stats()!.totalMonthlyPayroll | number:'1.0-0' }}</p>
+          <div class="sub-label">
+            For <span class="highlight">{{ stats()!.payrollGeneratedThisMonth }}</span> Generated Runs
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Summary Details Row -->
+    <div class="details-row">
+      <!-- Department List -->
+      <div class="details-card dept-card">
+        <div class="card-header">
+          <h3>Department Allocations</h3>
+          <span class="badge">{{ departments().length }} Departments</span>
+        </div>
+        <div class="card-body">
+          <table class="dashboard-table">
+            <thead>
+              <tr>
+                <th>Department</th>
+                <th class="text-center">Total Count</th>
+                <th class="text-center">Active</th>
+                <th class="text-center">On Leave</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let dept of departments()">
+                <td class="font-medium">{{ dept.departmentName }}</td>
+                <td class="text-center">{{ dept.employeeCount }}</td>
+                <td class="text-center text-success">{{ dept.activeEmployees }}</td>
+                <td class="text-center text-warning">{{ dept.onLeaveEmployees }}</td>
+              </tr>
+              <tr *ngIf="departments().length === 0">
+                <td colspan="4" class="text-center text-gray py-4">No department allocations found.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Leave Metrics Details -->
+      <div class="details-card leave-card" *ngIf="leaves()">
+        <div class="card-header">
+          <h3>Leave Application Stats</h3>
+          <span class="badge">Cumulative</span>
+        </div>
+        <div class="card-body">
+          <div class="leave-metrics-list">
+            <!-- Metric item 1 -->
+            <div class="metric-item">
+              <div class="metric-label">
+                <span>Pending Approvals</span>
+                <span class="font-bold text-warning">{{ leaves()!.pendingLeaves }}</span>
+              </div>
+              <div class="progress-bar-bg">
+                <div class="progress-bar-fill warning" [style.width.%]="(leaves()!.pendingLeaves / (leaves()!.totalLeaves || 1)) * 100"></div>
+              </div>
+            </div>
+
+            <!-- Metric item 2 -->
+            <div class="metric-item">
+              <div class="metric-label">
+                <span>Approved Requests</span>
+                <span class="font-bold text-success">{{ leaves()!.approvedLeaves }}</span>
+              </div>
+              <div class="progress-bar-bg">
+                <div class="progress-bar-fill success" [style.width.%]="(leaves()!.approvedLeaves / (leaves()!.totalLeaves || 1)) * 100"></div>
+              </div>
+            </div>
+
+            <!-- Metric item 3 -->
+            <div class="metric-item">
+              <div class="metric-label">
+                <span>Rejected Applications</span>
+                <span class="font-bold text-danger">{{ leaves()!.rejectedLeaves }}</span>
+              </div>
+              <div class="progress-bar-bg">
+                <div class="progress-bar-fill danger" [style.width.%]="(leaves()!.rejectedLeaves / (leaves()!.totalLeaves || 1)) * 100"></div>
+              </div>
+            </div>
+
+            <div class="total-leaves-banner">
+              Total leave applications processed: <strong>{{ leaves()!.totalLeaves }}</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

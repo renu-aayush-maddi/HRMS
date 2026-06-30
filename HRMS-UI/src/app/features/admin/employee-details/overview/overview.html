@@ -1,0 +1,144 @@
+@if(!employeeStore.profile()){
+
+<div class="empty-state">
+
+  <h2>
+
+    Select an employee
+
+  </h2>
+
+  <p>
+
+    Choose an employee from the dropdown above.
+
+  </p>
+
+</div>
+
+}
+
+@if(employeeStore.profile()){
+
+<div class="profile-card">
+
+  <div class="profile-header">
+
+    <h2>
+
+      {{ employeeStore.profile()?.firstName }}
+      {{ employeeStore.profile()?.lastName }}
+
+    </h2>
+
+    <span class="status">
+
+      {{ employeeStore.profile()?.employmentStatus }}
+
+    </span>
+
+  </div>
+
+  <div class="profile-grid">
+
+    <div>
+
+      <label>Employee Code</label>
+
+      <p>
+
+        {{ employeeStore.profile()?.employeeCode }}
+
+      </p>
+
+    </div>
+
+    <div>
+
+      <label>Email</label>
+
+      <p>
+
+        {{ employeeStore.profile()?.email }}
+
+      </p>
+
+    </div>
+
+    <div>
+
+      <label>Phone</label>
+
+      <p>
+
+        {{ employeeStore.profile()?.phone }}
+
+      </p>
+
+    </div>
+
+    <div>
+
+      <label>Department</label>
+
+      <p>
+
+        {{ employeeStore.profile()?.department }}
+
+      </p>
+
+    </div>
+
+    <div>
+
+      <label>Designation</label>
+
+      <p>
+
+        {{ employeeStore.profile()?.designation }}
+
+      </p>
+
+    </div>
+
+    <div>
+
+      <label>Manager</label>
+
+      <p>
+
+        {{ employeeStore.profile()?.managerName }}
+
+      </p>
+
+    </div>
+
+    <div>
+
+      <label>Status</label>
+
+      <p>
+
+        {{ employeeStore.profile()?.employmentStatus }}
+
+      </p>
+
+    </div>
+
+    <div>
+
+      <label>Salary</label>
+
+      <p>
+
+        ₹ {{ employeeStore.profile()?.salary }}
+
+      </p>
+
+    </div>
+
+  </div>
+
+</div>
+
+}

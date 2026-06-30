@@ -17,14 +17,23 @@ public class JwtHelper
     public string GenerateToken(
         Guid userId,
         string email,
-        string role)
+        string role,
+        Guid? employeeId)
     {
-        var claims = new[]
+        var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.NameIdentifier, userId.ToString()),
+                new Claim(ClaimTypes.Email, email),
+                new Claim(ClaimTypes.Role, role)
+            };
+
+        if (employeeId.HasValue)
         {
-            new Claim(ClaimTypes.NameIdentifier, userId.ToString()),
-            new Claim(ClaimTypes.Email, email),
-            new Claim(ClaimTypes.Role, role)
-        };
+            claims.Add(
+                new Claim(
+                    "EmployeeId",
+                    employeeId.Value.ToString()));
+        }
 
         var key = new SymmetricSecurityKey(
             Encoding.UTF8.GetBytes(

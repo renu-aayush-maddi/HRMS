@@ -1,0 +1,88 @@
+<div class="page-container">
+  <!-- Header -->
+  <div class="page-header">
+    <div>
+      <h1>Organization Hierarchy</h1>
+      <p class="subtitle">Visualize and search the company's reporting structure</p>
+    </div>
+    
+    <!-- Controls Toolbar -->
+    <div class="toolbar">
+      <!-- Search Input -->
+      <div class="search-box-container">
+        <div class="search-input-wrapper">
+          <svg lucideSearch [size]="16" class="search-icon"></svg>
+          <input 
+            type="text" 
+            placeholder="Search employee..." 
+            [(ngModel)]="searchQuery" 
+            (input)="onSearchInput()" 
+            class="search-input"
+          />
+          <button *ngIf="searchQuery" (click)="clearSearch()" class="clear-btn" aria-label="Clear search">
+            <svg lucideX [size]="14"></svg>
+          </button>
+        </div>
+        
+        <!-- Autocomplete Suggestions -->
+        <div class="suggestions-dropdown" *ngIf="searchResults.length > 0">
+          <button 
+            type="button" 
+            *ngFor="let emp of searchResults" 
+            (click)="selectEmployee(emp)" 
+            class="suggestion-item"
+          >
+            <div class="suggest-info">
+              <span class="suggest-name">{{ emp.name }}</span>
+              <span class="suggest-desc">{{ emp.designation }} · {{ emp.departmentName }}</span>
+            </div>
+            <span class="suggest-code">{{ emp.employeeCode }}</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Interaction Buttons -->
+      <div class="btn-group">
+        <button (click)="centerMe()" [disabled]="!currentEmployeeId" class="toolbar-btn text-btn" title="Center on Me">
+          <svg lucideUser [size]="16"></svg>
+          <span>Center Me</span>
+        </button>
+        <button (click)="zoomIn()" class="toolbar-btn icon-btn" title="Zoom In">
+          <svg lucidePlus [size]="16"></svg>
+        </button>
+        <button (click)="zoomOut()" class="toolbar-btn icon-btn" title="Zoom Out">
+          <svg lucideMinus [size]="16"></svg>
+        </button>
+        <button (click)="resetChart()" class="toolbar-btn text-btn" title="Reset view to fit screen">
+          <svg lucideRotateCcw [size]="16"></svg>
+          <span>Fit Screen</span>
+        </button>
+        <button (click)="expandAll()" class="toolbar-btn text-btn" title="Expand All Nodes">
+          <svg lucideUsers [size]="16"></svg>
+          <span>Expand All</span>
+        </button>
+        <button (click)="collapseAll()" class="toolbar-btn text-btn" title="Collapse All Nodes">
+          <svg lucideBuilding [size]="16"></svg>
+          <span>Collapse All</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div class="loading-state" *ngIf="loading()">
+    <div class="spinner"></div>
+    <p>Building organizational tree...</p>
+  </div>
+
+  <!-- Error State -->
+  <div class="error-state" *ngIf="error()">
+    ⚠️ {{ error() }}
+    <button (click)="loadHierarchy()" class="retry-btn">Retry</button>
+  </div>
+
+  <!-- Chart Main Canvas -->
+  <div class="chart-outer-container" [hidden]="loading() || error()">
+    <div #chartContainer class="chart-container"></div>
+  </div>
+</div>

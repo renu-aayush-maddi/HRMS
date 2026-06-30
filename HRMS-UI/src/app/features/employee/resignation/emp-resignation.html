@@ -1,0 +1,123 @@
+<div class="page-container">
+  <div class="page-header">
+    <div>
+      <h1>My Resignation</h1>
+      <p class="subtitle">Submit and track your resignation request</p>
+    </div>
+    <button class="btn-danger" (click)="openModal()" [disabled]="hasPendingResignation()">
+      {{ hasPendingResignation() ? 'Active Resignation Exists' : '+ Submit Resignation' }}
+    </button>
+  </div>
+
+  <div class="toast toast-success" *ngIf="successMessage()" style="display: flex; align-items: center; gap: 6px;">
+    <svg lucideCheckCircle [size]="16" [strokeWidth]="2"></svg> {{ successMessage() }}
+  </div>
+  <div class="toast toast-error" *ngIf="errorMessage()" style="display: flex; align-items: center; gap: 6px;">
+    <svg lucideAlertTriangle [size]="16" [strokeWidth]="2"></svg> {{ errorMessage() }}
+  </div>
+
+  <!-- Warning if active -->
+  <div class="info-banner" *ngIf="hasPendingResignation()" style="display: flex; align-items: center; gap: 6px;">
+    <svg lucideInfo [size]="16" [strokeWidth]="2"></svg> You already have an active resignation in the system. You can withdraw it if needed.
+  </div>
+
+  <!-- Loading -->
+  <div class="loading-state" *ngIf="loading()">
+    <div class="spinner"></div>
+    <p>Loading resignation records...</p>
+  </div>
+
+  <!-- Empty -->
+  <div class="empty-state-card" *ngIf="!loading() && resignations().length === 0" style="display: flex; align-items: center; justify-content: center; gap: 6px;">
+    <svg lucideFileText [size]="18" [strokeWidth]="2"></svg> No resignation records found.
+  </div>
+
+  <!-- Resignation Cards -->
+  <div class="resignations-list" *ngIf="!loading() && resignations().length > 0">
+    <div class="resignation-card" *ngFor="let r of resignations()">
+      <div class="res-header">
+        <div class="res-title">Resignation Submitted</div>
+        <span class="badge" [ngClass]="getStatusClass(r.status)">{{ r.status }}</span>
+      </div>
+
+      <div class="res-details">
+        <div class="res-detail-item">
+          <span class="detail-label">Resignation Date</span>
+          <span class="detail-value">{{ r.resignationDate | date:'mediumDate' }}</span>
+        </div>
+        <div class="res-detail-item" *ngIf="r.lastWorkingDate">
+          <span class="detail-label">Last Working Date</span>
+          <span class="detail-value">{{ r.lastWorkingDate | date:'mediumDate' }}</span>
+        </div>
+        <div class="res-detail-item">
+          <span class="detail-label">Settlement Status</span>
+          <span class="badge" [ngClass]="getSettlementClass(r.finalSettlementStatus)">{{ r.finalSettlementStatus }}</span>
+        </div>
+        <div class="res-detail-item" *ngIf="r.approvedAt">
+          <span class="detail-label">Approved By</span>
+          <span class="detail-value">{{ r.approvedBy }} · {{ r.approvedAt | date:'mediumDate' }}</span>
+        </div>
+        <div class="res-detail-item" *ngIf="r.rejectedAt">
+          <span class="detail-label">Rejected By</span>
+          <span class="detail-value text-danger">{{ r.rejectedBy }} · {{ r.rejectedAt | date:'mediumDate' }}</span>
+        </div>
+      </div>
+
+      <div class="res-reason" *ngIf="r.reason">
+        <div class="detail-label">Reason</div>
+        <p class="reason-text">{{ r.reason }}</p>
+      </div>
+
+      <div class="res-comments" *ngIf="r.hrComments">
+        <div class="detail-label">HR Comments</div>
+        <p class="reason-text">{{ r.hrComments }}</p>
+      </div>
+
+      <div class="res-actions">
+        <span class="res-date">Submitted: {{ r.createdAt | date:'mediumDate' }}</span>
+        <button
+          *ngIf="canWithdraw(r)"
+          class="btn-withdraw"
+          [disabled]="withdrawingId() === r.id"
+          (click)="withdraw(r.id)">
+          {{ withdrawingId() === r.id ? 'Withdrawing...' : 'Withdraw Resignation' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Submit Modal -->
+  <div class="modal-overlay" *ngIf="showModal()" (click)="closeModal()">
+    <div class="modal-panel" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Submit Resignation</h3>
+        <button class="modal-close" (click)="closeModal()" aria-label="Close">
+          <svg lucideX [size]="20" [strokeWidth]="2"></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="warning-notice" style="display: flex; align-items: center; gap: 6px;">
+          <svg lucideAlertTriangle [size]="18" [strokeWidth]="2"></svg> This action will initiate your resignation process. Please make sure you want to proceed.
+        </div>
+        <div class="form-group">
+          <label>Resignation Date *</label>
+          <input type="date" [ngModel]="resignationDate()" (ngModelChange)="resignationDate.set($event)" class="form-control">
+        </div>
+        <div class="form-group">
+          <label>Last Working Date</label>
+          <input type="date" [ngModel]="lastWorkingDate()" (ngModelChange)="lastWorkingDate.set($event)" class="form-control">
+        </div>
+        <div class="form-group">
+          <label>Reason (Optional)</label>
+          <textarea [ngModel]="reason()" (ngModelChange)="reason.set($event)" class="form-control" rows="4" placeholder="State your reason for resignation..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeModal()">Cancel</button>
+        <button class="btn-danger" (click)="submit()" [disabled]="submitting()">
+          {{ submitting() ? 'Submitting...' : 'Confirm Resignation' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

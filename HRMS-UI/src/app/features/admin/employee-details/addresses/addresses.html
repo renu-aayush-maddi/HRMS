@@ -1,0 +1,192 @@
+<div class="sub-tab-container">
+  <div class="empty-state" *ngIf="!employeeStore.profile()">
+    <h2>Select an employee</h2>
+    <p>Choose an employee from the dropdown above to view and manage their address records.</p>
+  </div>
+
+  <div *ngIf="employeeStore.profile()">
+    <!-- Header with Action buttons -->
+    <div class="sub-tab-header">
+      <div class="left-header">
+        <h3>Addresses for {{ employeeStore.profile()?.firstName }} {{ employeeStore.profile()?.lastName }}</h3>
+      </div>
+      <div class="right-header">
+        <!-- Import -->
+        <div class="import-section">
+          <input type="file" (change)="onFileSelected($event)" accept=".xlsx, .xls" class="file-input" id="importFile" />
+          <button class="btn-secondary" (click)="importAddresses()" [disabled]="submitting() || !selectedFile()" style="display: inline-flex; align-items: center; gap: 6px;">
+            <svg lucideLoader [size]="16" class="spin-loader" *ngIf="submitting()"></svg>
+            <svg lucideUpload [size]="16" [strokeWidth]="2" *ngIf="!submitting()"></svg>
+            {{ submitting() ? 'Importing...' : 'Import' }}
+          </button>
+        </div>
+        <!-- Export -->
+        <button class="btn-secondary" (click)="exportAddresses()" style="display: inline-flex; align-items: center; gap: 6px;">
+          <svg lucideDownload [size]="16" [strokeWidth]="2"></svg> Export
+        </button>
+        <!-- Add -->
+        <button class="btn-primary" (click)="openAddModal()" style="display: inline-flex; align-items: center; gap: 6px;">
+          <svg lucidePlus [size]="16" [strokeWidth]="2"></svg> Add Address
+        </button>
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    <div class="loading-state" *ngIf="loading()">
+      <p>Loading addresses...</p>
+    </div>
+
+    <!-- Table View -->
+    <div class="table-card" *ngIf="!loading()">
+      <table class="custom-table">
+        <thead>
+          <tr>
+            <th>Type</th>
+            <th>Address Line 1</th>
+            <th>Address Line 2</th>
+            <th>City</th>
+            <th>State</th>
+            <th>Country</th>
+            <th>Postal Code</th>
+            <th class="text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let addr of addresses()">
+            <td>
+              <span class="badge bg-secondary">{{ addr.addressType }}</span>
+            </td>
+            <td>{{ addr.addressLine1 }}</td>
+            <td>{{ addr.addressLine2 || '-' }}</td>
+            <td>{{ addr.city }}</td>
+            <td>{{ addr.state }}</td>
+            <td>{{ addr.country }}</td>
+            <td>{{ addr.postalCode }}</td>
+            <td class="text-right actions-cell">
+              <button class="btn-icon edit" (click)="openEditModal(addr)" style="display: inline-flex; align-items: center; gap: 4px;">
+                <svg lucideEdit [size]="14" [strokeWidth]="2"></svg> Edit
+              </button>
+              <button class="btn-icon delete" (click)="deleteAddress(addr.id)" style="display: inline-flex; align-items: center; gap: 4px;">
+                <svg lucideTrash2 [size]="14" [strokeWidth]="2"></svg> Delete
+              </button>
+            </td>
+          </tr>
+          <tr *ngIf="addresses().length === 0">
+            <td colspan="8" class="text-center text-gray py-4">No address records registered for this employee.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination" *ngIf="totalPages() > 1" style="display: inline-flex; align-items: center; gap: 12px;">
+      <button (click)="previousPage()" [disabled]="pageNumber() === 1" class="btn-page" style="display: inline-flex; align-items: center; gap: 4px;">
+        <svg lucideChevronLeft [size]="16" [strokeWidth]="2"></svg> Prev
+      </button>
+      <span class="page-info">Page {{ pageNumber() }} of {{ totalPages() }}</span>
+      <button (click)="nextPage()" [disabled]="pageNumber() === totalPages()" class="btn-page" style="display: inline-flex; align-items: center; gap: 4px;">
+        Next <svg lucideChevronRight [size]="16" [strokeWidth]="2"></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Modal Dialog -->
+  <div class="modal-overlay" *ngIf="showModal()">
+    <div class="custom-modal-box">
+      <div class="modal-header">
+        <h3>{{ editingId ? 'Edit Address' : 'Add Address' }}</h3>
+        <button class="close-btn" (click)="closeModal()" aria-label="Close">
+          <svg lucideX [size]="16" [strokeWidth]="2"></svg>
+        </button>
+      </div>
+
+      <form [formGroup]="addressForm" (ngSubmit)="saveAddress()">
+        <div class="form-body">
+          <!-- Type -->
+          <div class="form-group">
+            <label for="addressType">Address Type *</label>
+            <select id="addressType" formControlName="addressType">
+              <option *ngFor="let t of addressTypes" [value]="t">{{ t }}</option>
+            </select>
+          </div>
+
+          <!-- Address Line 1 -->
+          <div class="form-group full-width">
+            <label for="addressLine1">Address Line 1 *</label>
+            <input 
+              type="text" 
+              id="addressLine1" 
+              formControlName="addressLine1" 
+              placeholder="House/Plot no., Street name"
+              [class.error-border]="addressForm.get('addressLine1')?.touched && addressForm.get('addressLine1')?.invalid"
+            />
+          </div>
+
+          <!-- Address Line 2 -->
+          <div class="form-group full-width">
+            <label for="addressLine2">Address Line 2</label>
+            <input 
+              type="text" 
+              id="addressLine2" 
+              formControlName="addressLine2" 
+              placeholder="Apartment, Locality (Optional)"
+              [class.error-border]="addressForm.get('addressLine2')?.touched && addressForm.get('addressLine2')?.invalid"
+            />
+          </div>
+
+          <!-- City -->
+          <div class="form-group">
+            <label for="city">City *</label>
+            <input 
+              type="text" 
+              id="city" 
+              formControlName="city" 
+              [class.error-border]="addressForm.get('city')?.touched && addressForm.get('city')?.invalid"
+            />
+          </div>
+
+          <!-- State -->
+          <div class="form-group">
+            <label for="state">State *</label>
+            <input 
+              type="text" 
+              id="state" 
+              formControlName="state" 
+              [class.error-border]="addressForm.get('state')?.touched && addressForm.get('state')?.invalid"
+            />
+          </div>
+
+          <!-- Country -->
+          <div class="form-group">
+            <label for="country">Country *</label>
+            <input 
+              type="text" 
+              id="country" 
+              formControlName="country" 
+              [class.error-border]="addressForm.get('country')?.touched && addressForm.get('country')?.invalid"
+            />
+          </div>
+
+          <!-- Postal Code -->
+          <div class="form-group">
+            <label for="postalCode">Postal Code *</label>
+            <input 
+              type="text" 
+              id="postalCode" 
+              formControlName="postalCode" 
+              [class.error-border]="addressForm.get('postalCode')?.touched && addressForm.get('postalCode')?.invalid"
+            />
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" (click)="closeModal()" [disabled]="submitting()">Cancel</button>
+          <button type="submit" class="btn-primary" [disabled]="addressForm.invalid || submitting()" style="display: inline-flex; align-items: center; gap: 6px;">
+            <svg lucideLoader [size]="16" class="spin-loader" *ngIf="submitting()"></svg>
+            {{ submitting() ? (editingId ? 'Saving...' : 'Adding...') : (editingId ? 'Save Changes' : 'Add Address') }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

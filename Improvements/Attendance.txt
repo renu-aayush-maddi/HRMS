@@ -1,0 +1,422 @@
+ATTENDANCE MODULE - PENDING FEATURES & IMPROVEMENTS
+
+========================================
+HIGH PRIORITY (IMPLEMENT SOON)
+==============================
+
+1. Attendance Regularization
+
+Current Situation:
+
+* Employee forgets Check-In
+* Employee forgets Check-Out
+* Employee punches incorrect time
+* No way to correct attendance
+
+Required Implementation:
+
+* Employee submits regularization request
+* Manager approval workflow
+* HR approval workflow (optional)
+* Automatically update attendance after approval
+
+Business Importance:
+
+* Mandatory feature in most organizations
+* Prevents payroll inaccuracies
+* Handles genuine employee mistakes
+
+2. Employee Access Restriction
+
+Current Situation:
+
+* Any employee can view another employee's attendance records
+
+Required Implementation:
+
+* Employee → View only own attendance
+* Manager → View team attendance
+* HR/Admin → View all attendance records
+* Use JWT claims for authorization
+
+Business Importance:
+
+* Data privacy and security
+* Role-based access control
+
+3. Double Session Protection
+
+Current Situation:
+
+* Employee checks in
+* Does not check out
+* Attempts check-in again next day
+* System behavior is undefined
+
+Required Implementation:
+
+* Prevent new check-in if previous attendance is still open
+* Or automatically close previous session
+* Validate incomplete attendance records
+
+Business Importance:
+
+* Prevents incorrect attendance calculations
+* Maintains data integrity
+
+4. Future Date Protection
+
+Current Situation:
+
+* Attendance filters may allow future dates
+
+Required Implementation:
+
+* Prevent attendance creation for future dates
+* Prevent future date searches where not applicable
+
+Business Importance:
+
+* Data validation and consistency
+
+5. Attendance Status Constants
+
+Current Situation:
+
+* Status values are hardcoded strings
+
+Required Implementation:
+
+* Create centralized constants
+
+Example:
+
+* Present
+* Absent
+* Late
+* HalfDay
+
+Business Importance:
+
+* Prevents spelling mistakes
+* Easier maintenance
+* Consistent status handling
+
+========================================
+MEDIUM PRIORITY (PAYROLL RELATED)
+=================================
+
+6. Working Hours Calculation
+
+Current Situation:
+
+* Only Check-In and Check-Out times are stored
+
+Required Implementation:
+
+* Calculate total working hours
+* Include working hours in attendance response
+
+Example:
+
+* Check-In: 09:00 AM
+* Check-Out: 06:00 PM
+* Working Hours: 9 Hours
+
+Business Importance:
+
+* Required for payroll calculations
+* Required for attendance reports
+
+7. Late Arrival Logic
+
+Current Situation:
+
+* No late attendance detection
+
+Required Implementation:
+
+* Compare check-in time with office start time
+* Mark attendance as Late when applicable
+
+Example:
+
+* Office Start Time: 09:00 AM
+* Employee Check-In: 09:45 AM
+* Status: Late
+
+Business Importance:
+
+* Attendance discipline
+* Payroll deductions (if applicable)
+
+8. Half-Day Logic
+
+Current Situation:
+
+* No half-day calculation
+
+Required Implementation:
+
+* Define minimum working hours
+* Mark attendance as HalfDay when threshold is not met
+
+Example:
+
+* Working Hours < 4 Hours
+* Status = HalfDay
+
+Business Importance:
+
+* Payroll processing
+* Attendance policy enforcement
+
+9. Early Checkout Logic
+
+Current Situation:
+
+* No validation for early checkout
+
+Required Implementation:
+
+* Define minimum required working hours
+* Detect early checkout
+* Apply payroll impact if necessary
+
+Business Importance:
+
+* Attendance compliance
+* Payroll calculations
+
+10. Monthly Attendance Summary
+
+Current Situation:
+
+* Only daily attendance records available
+
+Required Implementation:
+
+* Present Days
+* Absent Days
+* Late Days
+* Half Days
+* Total Working Hours
+
+Business Importance:
+
+* Payroll generation
+* Employee reporting
+* Manager reporting
+
+========================================
+NICE TO HAVE FEATURES
+=====================
+
+11. Geo-Location Validation
+
+Purpose:
+
+* Restrict attendance marking to office location
+
+Required Data:
+
+* Latitude
+* Longitude
+* Allowed Office Radius
+
+Example:
+
+* Employee cannot check in from home
+
+Business Importance:
+
+* Useful for office-based organizations
+* Optional feature
+
+12. IP Address Tracking
+
+Required Implementation:
+
+* Store IP address during Check-In
+* Store IP address during Check-Out
+
+Business Importance:
+
+* Audit tracking
+* Security monitoring
+
+13. Device Tracking
+
+Required Implementation:
+
+* Store Browser Information
+* Store Device Information
+* Store Operating System Information
+
+Business Importance:
+
+* Additional audit capability
+* Not mandatory
+
+14. Shift Support
+
+Current Situation:
+
+* Only general shift supported
+
+Future Support:
+
+* Morning Shift
+* Night Shift
+* Rotational Shift
+
+Business Importance:
+
+* Required for larger organizations
+* Future scalability
+
+========================================
+REPORTING FEATURES
+==================
+
+15. Excel Export
+
+Required Implementation:
+
+* Export attendance reports to Excel
+
+Report Fields:
+
+* Date
+* Employee
+* Check-In
+* Check-Out
+* Status
+
+Business Importance:
+
+* Common HR requirement
+* Reporting convenience
+
+16. Attendance Dashboard
+
+Required Implementation:
+
+* Present Today Count
+* Absent Today Count
+* Late Today Count
+* On Leave Today Count
+
+Business Importance:
+
+* Quick attendance overview
+* Management visibility
+
+17. Monthly Attendance Report
+
+Required Implementation:
+
+* Generate monthly attendance report
+* Consider using stored procedure
+
+Possible Stored Procedure:
+
+* sp_monthly_attendance_report
+
+Business Importance:
+
+* Performance optimization
+* Reporting efficiency
+
+========================================
+AUDIT & LOGGING
+===============
+
+18. Audit Log
+
+Required Tracking:
+
+* Attendance Modified
+* Attendance Regularization Approved
+* Attendance Deleted
+
+Suggested Table:
+
+* audit_logs
+
+Business Importance:
+
+* Accountability
+* Compliance
+* Troubleshooting
+
+19. Error Logging
+
+Current Situation:
+
+* Partially handled through middleware
+
+Required Implementation:
+
+* Integrate ILogger into ExceptionMiddleware
+* Log application exceptions centrally
+
+Business Importance:
+
+* Easier debugging
+* Production monitoring
+
+========================================
+OUT OF SCOPE / NOT REQUIRED
+===========================
+
+The following features are generally unnecessary for this HRMS project:
+
+* Biometric Integration
+* Fingerprint Scanner Integration
+* Face Recognition Attendance
+* RFID Card Reader Support
+* SignalR Real-Time Attendance Updates
+
+========================================
+RECOMMENDED IMPLEMENTATION ROADMAP
+==================================
+
+NEXT SPRINT
+
+1. Attendance Regularization
+2. Employee Access Restriction
+3. Working Hours Calculation
+4. Late Arrival Logic
+5. Half-Day Logic
+
+BEFORE PAYROLL MODULE
+6. Monthly Attendance Summary
+7. Payroll Attendance Integration
+8. Early Checkout Logic
+
+BEFORE PRODUCTION RELEASE
+9. Audit Logs
+10. Excel Export
+11. Attendance Dashboard
+12. Error Logging
+
+FUTURE ENHANCEMENTS
+13. Geo-Location Validation
+14. Device Tracking
+15. Shift Support
+
+========================================
+MOST CRITICAL MISSING FEATURE
+=============================
+
+Attendance Regularization
+
+Reason:
+Without attendance regularization, employees have no way to correct:
+
+* Missed Check-Ins
+* Missed Check-Outs
+* Incorrect Punch Times
+
+This feature exists in almost every real-world HRMS and is essential before moving to production.

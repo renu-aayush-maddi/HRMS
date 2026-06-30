@@ -1,0 +1,151 @@
+<div class="page-container">
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="header-title">
+      <h2>Leave Types Management</h2>
+      <p class="subtitle">Configure and manage corporate leave policies</p>
+    </div>
+    <div class="header-actions" *ngIf="isAdmin()">
+      <button class="btn-primary" (click)="openAddModal()" style="display: inline-flex; align-items: center; gap: 6px;">
+        <svg lucidePlus [size]="16" [strokeWidth]="2"></svg> Add Leave Type
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div class="loading-state" *ngIf="loading()">
+    <p>Loading leave types...</p>
+  </div>
+
+  <!-- Table View -->
+  <div class="table-card" *ngIf="!loading()">
+    <table class="custom-table">
+      <thead>
+        <tr>
+          <th>Leave Type</th>
+          <th>Annual Allocation</th>
+          <th>Carry Forward</th>
+          <th>Max Carry Forward</th>
+          <th>Negative Balance Allowed</th>
+          <th>Status</th>
+          <th class="text-right" *ngIf="isAdmin()">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let type of leaveTypes()">
+          <td class="font-medium">{{ type.name }}</td>
+          <td>{{ type.annualAllocation }} Days</td>
+          <td>
+            <span class="badge" [class.bg-success]="type.carryForwardAllowed" [class.bg-secondary]="!type.carryForwardAllowed">
+              {{ type.carryForwardAllowed ? 'Yes' : 'No' }}
+            </span>
+          </td>
+          <td>{{ type.carryForwardAllowed ? type.maxCarryForward + ' Days' : '-' }}</td>
+          <td>
+            <span class="badge" [class.bg-warning]="type.negativeBalanceAllowed" [class.bg-secondary]="!type.negativeBalanceAllowed">
+              {{ type.negativeBalanceAllowed ? 'Allowed' : 'Not Allowed' }}
+            </span>
+          </td>
+          <td>
+            <span class="badge" [class.bg-success]="type.isActive" [class.bg-danger]="!type.isActive">
+              {{ type.isActive ? 'Active' : 'Inactive' }}
+            </span>
+          </td>
+          <td class="text-right actions-cell" *ngIf="isAdmin()">
+            <button class="btn-icon edit" (click)="openEditModal(type)" style="display: inline-flex; align-items: center; gap: 4px;">
+              <svg lucideEdit [size]="14" [strokeWidth]="2"></svg> Edit
+            </button>
+            <button class="btn-icon delete" (click)="deleteLeaveType(type.id)" style="display: inline-flex; align-items: center; gap: 4px;">
+              <svg lucideTrash [size]="14" [strokeWidth]="2"></svg> Delete
+            </button>
+          </td>
+        </tr>
+        <tr *ngIf="leaveTypes().length === 0">
+          <td [attr.colspan]="isAdmin() ? 7 : 6" class="text-center text-gray py-4">No leave types defined.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Modal Overlay -->
+  <div class="modal-overlay" *ngIf="showModal()">
+    <div class="custom-modal-box">
+      <div class="modal-header">
+        <h3>{{ editingId ? 'Edit Leave Type' : 'Add Leave Type' }}</h3>
+        <button class="close-btn" (click)="closeModal()" aria-label="Close">
+          <svg lucideX [size]="16" [strokeWidth]="2"></svg>
+        </button>
+      </div>
+
+      <form [formGroup]="leaveTypeForm" (ngSubmit)="saveLeaveType()">
+        <div class="form-body">
+          <!-- Name -->
+          <div class="form-group full-width">
+            <label for="name">Leave Type Name *</label>
+            <input 
+              type="text" 
+              id="name" 
+              formControlName="name" 
+              placeholder="e.g. Sick Leave, Annual Leave"
+              [class.error-border]="leaveTypeForm.get('name')?.touched && leaveTypeForm.get('name')?.invalid"
+            />
+          </div>
+
+          <!-- Annual Allocation -->
+          <div class="form-group">
+            <label for="annualAllocation">Annual Allocation (Days) *</label>
+            <input 
+              type="number" 
+              id="annualAllocation" 
+              formControlName="annualAllocation"
+              min="0"
+            />
+          </div>
+
+          <!-- Carry Forward Toggle -->
+          <div class="form-group checkbox-group">
+            <label class="checkbox-label">
+              <input type="checkbox" formControlName="carryForwardAllowed" />
+              <span>Allow Carry Forward</span>
+            </label>
+          </div>
+
+          <!-- Max Carry Forward (conditional validation recommended, but we keep field disabled/hidden if not allowed) -->
+          <div class="form-group" *ngIf="leaveTypeForm.get('carryForwardAllowed')?.value">
+            <label for="maxCarryForward">Max Carry Forward (Days) *</label>
+            <input 
+              type="number" 
+              id="maxCarryForward" 
+              formControlName="maxCarryForward"
+              min="0"
+            />
+          </div>
+
+          <!-- Negative Balance Allowed Toggle -->
+          <div class="form-group checkbox-group">
+            <label class="checkbox-label">
+              <input type="checkbox" formControlName="negativeBalanceAllowed" />
+              <span>Allow Negative Balance</span>
+            </label>
+          </div>
+
+          <!-- Active status (Edit only) -->
+          <div class="form-group checkbox-group" *ngIf="editingId">
+            <label class="checkbox-label">
+              <input type="checkbox" formControlName="isActive" />
+              <span>Is Active</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" (click)="closeModal()" [disabled]="submitting()">Cancel</button>
+          <button type="submit" class="btn-primary" [disabled]="leaveTypeForm.invalid || submitting()" style="display: inline-flex; align-items: center; gap: 6px;">
+            <svg lucideLoader [size]="16" class="spin-loader" *ngIf="submitting()"></svg>
+            {{ submitting() ? (editingId ? 'Saving...' : 'Creating...') : (editingId ? 'Save Changes' : 'Create Leave Type') }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

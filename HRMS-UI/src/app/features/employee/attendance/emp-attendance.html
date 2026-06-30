@@ -1,0 +1,205 @@
+<div class="page-container">
+  <div class="page-header">
+    <div>
+      <h1>My Attendance</h1>
+      <p class="subtitle">Track your check-ins, request regularizations, and view your history</p>
+    </div>
+    <button class="btn-primary" (click)="openRegModal()">+ Request Regularization</button>
+  </div>
+
+  <!-- Toast Notifications -->
+  <div class="toast toast-success" *ngIf="successMessage()" style="display: flex; align-items: center; gap: 6px;">
+    <svg lucideCheckCircle [size]="16" [strokeWidth]="2"></svg> {{ successMessage() }}
+  </div>
+  <div class="toast toast-error" *ngIf="errorMessage()" style="display: flex; align-items: center; gap: 6px;">
+    <svg lucideAlertTriangle [size]="16" [strokeWidth]="2"></svg> {{ errorMessage() }}
+  </div>
+
+  <!-- Today's Status Card -->
+  <div class="today-card">
+    <div class="today-info">
+      <div class="today-dot" [ngClass]="{
+        'dot-present': todayLog()?.status === 'Present',
+        'dot-late': todayLog()?.status === 'Late',
+        'dot-absent': !todayLog()
+      }"></div>
+      <div>
+        <div class="today-label">Today's Status</div>
+        <div class="today-status">
+          {{ todayLog() ? todayLog()!.status : 'Not Checked In' }}
+          <span class="today-time" *ngIf="todayLog()?.checkIn"> · In: {{ todayLog()!.checkIn | date:'shortTime' }}</span>
+          <span class="today-time" *ngIf="todayLog()?.checkOut"> · Out: {{ todayLog()!.checkOut | date:'shortTime' }}</span>
+        </div>
+      </div>
+    </div>
+    <div class="today-actions">
+      <button class="btn-checkin" [disabled]="checkingIn() || (!!todayLog() && !todayLog()!.checkOut)" (click)="checkIn()" style="display: inline-flex; align-items: center; gap: 6px;">
+        <svg lucideLogIn [size]="16" [strokeWidth]="2"></svg> {{ checkingIn() ? 'Checking In...' : 'Check In' }}
+      </button>
+      <button class="btn-checkout" [disabled]="checkingOut() || !todayLog() || !!todayLog()!.checkOut" (click)="checkOut()" style="display: inline-flex; align-items: center; gap: 6px;">
+        <svg lucideLogOut [size]="16" [strokeWidth]="2"></svg> {{ checkingOut() ? 'Checking Out...' : 'Check Out' }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="filters-bar">
+    <div class="filter-group">
+      <label>From</label>
+      <input type="date" [ngModel]="fromDateFilter()" (ngModelChange)="fromDateFilter.set($event)" class="form-control">
+    </div>
+    <div class="filter-group">
+      <label>To</label>
+      <input type="date" [ngModel]="toDateFilter()" (ngModelChange)="toDateFilter.set($event)" class="form-control">
+    </div>
+    <div class="filter-group">
+      <label>Status</label>
+      <select [ngModel]="statusFilter()" (ngModelChange)="statusFilter.set($event)" class="form-control">
+        <option value="">All Statuses</option>
+        <option value="Present">Present</option>
+        <option value="Late">Late</option>
+        <option value="Absent">Absent</option>
+        <option value="Half Day">Half Day</option>
+      </select>
+    </div>
+    <div class="filter-actions">
+      <button class="btn-primary" (click)="applyFilters()">Apply</button>
+      <button class="btn-secondary" (click)="resetFilters()">Reset</button>
+    </div>
+  </div>
+
+  <!-- Attendance Log Table -->
+  <div class="table-card">
+    <div class="table-header">
+      <h3>Attendance Log</h3>
+      <span class="record-count">{{ totalLogs() }} records</span>
+    </div>
+
+    <div class="loading-row" *ngIf="logsLoading()">
+      <div class="spinner"></div> Loading attendance logs...
+    </div>
+
+    <div class="empty-state" *ngIf="!logsLoading() && logs().length === 0" style="display: flex; align-items: center; justify-content: center; gap: 6px;">
+      <svg lucideClipboardList [size]="18" [strokeWidth]="2"></svg> No attendance records found for the selected filters.
+    </div>
+
+    <div class="table-wrapper" *ngIf="!logsLoading() && logs().length > 0">
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Check In</th>
+            <th>Check Out</th>
+            <th>Work Hours</th>
+            <th>Status</th>
+            <th>Remarks</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let log of logs()">
+            <td class="font-semibold">{{ log.attendanceDate | date:'mediumDate' }}</td>
+            <td>{{ log.checkIn ? (log.checkIn | date:'shortTime') : '-' }}</td>
+            <td>{{ log.checkOut ? (log.checkOut | date:'shortTime') : '-' }}</td>
+            <td class="font-medium">{{ getWorkHours(log.checkIn, log.checkOut) }}</td>
+            <td>
+              <span class="badge" [ngClass]="getStatusClass(log.status)">{{ log.status }}</span>
+            </td>
+            <td class="text-muted">{{ log.remarks || '-' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination" *ngIf="totalPages() > 1" style="display: inline-flex; align-items: center; gap: 12px;">
+      <button class="page-btn" [disabled]="logsPage() === 1" (click)="prevPage()" style="display: inline-flex; align-items: center; gap: 4px;">
+        <svg lucideChevronLeft [size]="16" [strokeWidth]="2"></svg> Prev
+      </button>
+      <span class="page-info">Page {{ logsPage() }} of {{ totalPages() }}</span>
+      <button class="page-btn" [disabled]="logsPage() === totalPages()" (click)="nextPage()" style="display: inline-flex; align-items: center; gap: 4px;">
+        Next <svg lucideChevronRight [size]="16" [strokeWidth]="2"></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Regularization Requests Table -->
+  <div class="table-card">
+    <div class="table-header">
+      <h3>My Regularization Requests</h3>
+      <button class="btn-outline-primary" (click)="openRegModal()">+ New Request</button>
+    </div>
+
+    <div class="loading-row" *ngIf="regularizationsLoading()">
+      <div class="spinner"></div> Loading requests...
+    </div>
+
+    <div class="empty-state" *ngIf="!regularizationsLoading() && regularizations().length === 0" style="display: flex; align-items: center; justify-content: center; gap: 6px;">
+      <svg lucideFileText [size]="18" [strokeWidth]="2"></svg> No regularization requests submitted yet.
+    </div>
+
+    <div class="table-wrapper" *ngIf="!regularizationsLoading() && regularizations().length > 0">
+      <table>
+        <thead>
+          <tr>
+            <th>Attendance Date</th>
+            <th>Requested Check In</th>
+            <th>Requested Check Out</th>
+            <th>Reason</th>
+            <th>Status</th>
+            <th>HR Comments</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let req of regularizations()">
+            <td class="font-semibold">{{ req.attendanceDate | date:'mediumDate' }}</td>
+            <td>{{ req.requestedCheckIn ? (req.requestedCheckIn | date:'shortTime') : '-' }}</td>
+            <td>{{ req.requestedCheckOut ? (req.requestedCheckOut | date:'shortTime') : '-' }}</td>
+            <td class="text-muted reason-cell">{{ req.reason }}</td>
+            <td>
+              <span class="badge" [ngClass]="getRegStatusClass(req.status)">{{ req.status }}</span>
+            </td>
+            <td class="text-muted">{{ req.hrComments || '-' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Regularization Modal -->
+  <div class="modal-overlay" *ngIf="showRegModal()" (click)="closeRegModal()">
+    <div class="modal-panel" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Request Attendance Regularization</h3>
+        <button class="modal-close" (click)="closeRegModal()" aria-label="Close">
+          <svg lucideX [size]="20" [strokeWidth]="2"></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Attendance Date *</label>
+          <input type="date" [ngModel]="regDate()" (ngModelChange)="regDate.set($event)" class="form-control">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Requested Check In</label>
+            <input type="time" [ngModel]="regCheckIn()" (ngModelChange)="regCheckIn.set($event)" class="form-control">
+          </div>
+          <div class="form-group">
+            <label>Requested Check Out</label>
+            <input type="time" [ngModel]="regCheckOut()" (ngModelChange)="regCheckOut.set($event)" class="form-control">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Reason *</label>
+          <textarea [ngModel]="regReason()" (ngModelChange)="regReason.set($event)" class="form-control" rows="3" placeholder="Explain the reason for regularization..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeRegModal()">Cancel</button>
+        <button class="btn-primary" (click)="submitRegularization()" [disabled]="submittingReg()">
+          {{ submittingReg() ? 'Submitting...' : 'Submit Request' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

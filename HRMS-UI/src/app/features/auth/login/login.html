@@ -1,0 +1,50 @@
+<div class="login-page-wrapper">
+  <div class="title-container text-center mb-4">
+    <h1 class="glow-title">HRMS PORTAL</h1>
+    <p class="subtitle">Empowering Your Journey</p>
+  </div>
+
+  <div class="login-container">
+    <div class="login-card glass-panel">
+      <h2 class="text-center text-white mb-4 fw-bold">Welcome Back!</h2>
+
+      <form [formGroup]="loginForm" (ngSubmit)="login()">
+
+        <div class="mb-3 form-group-custom">
+          <label class="text-white mb-1">Email Address</label>
+          <div class="input-wrapper">
+            <svg lucideMail [size]="16" [strokeWidth]="2" class="input-icon"
+              style="color: rgba(236, 10, 244, 0.7);"></svg>
+            <input type="email" class="form-control glass-input" formControlName="email"
+              placeholder="yourname@company.com">
+          </div>
+        </div>
+
+        <div class="mb-3 form-group-custom">
+          <label class="text-white mb-1">Password</label>
+          <div class="input-wrapper">
+            <svg lucideKey [size]="16" [strokeWidth]="2" class="input-icon"
+              style="color: rgba(236, 10, 244, 0.7);"></svg>
+            <input type="password" class="form-control glass-input" formControlName="password" placeholder="••••••••">
+            <svg lucideEye [size]="16" [strokeWidth]="2" class="input-icon-right"
+              style="color: rgba(240, 235, 235, 0.7); cursor: pointer;"></svg>
+          </div>
+        </div>
+
+        <div class="forgot-link-wrapper mb-4 text-end">
+          <a routerLink="/forgot-password" class="forgot-link">Forgot Password?</a>
+        </div>
+
+        <button class="btn btn-cyan w-100 fw-bold d-flex justify-content-center align-items-center gap-2"
+          [disabled]="loading">
+          <svg lucideLoader [size]="16" class="spin-loader" *ngIf="loading"></svg>
+          {{ loading ? 'LOGGING IN...' : 'LOGIN' }} <svg lucideArrowRight [size]="16" [strokeWidth]="2" style="margin-left: 4px;" *ngIf="!loading"></svg>
+        </button>
+
+        <div class="text-center mt-3 sign-in-text">
+          SIGN IN TO HRMS
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,73 @@
+<div class="page-container">
+  <div class="page-header">
+    <div>
+      <h1>My Performance Reviews</h1>
+      <p class="subtitle">Performance evaluations submitted by your manager</p>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div class="loading-state" *ngIf="loading()">
+    <div class="spinner"></div>
+    <p>Loading your reviews...</p>
+  </div>
+
+  <!-- Error -->
+  <div class="error-state" *ngIf="error()" style="display: flex; align-items: center; justify-content: center; gap: 6px;">
+    <svg lucideAlertTriangle [size]="18" [strokeWidth]="2"></svg> {{ error() }}
+  </div>
+
+  <div *ngIf="!loading() && !error()">
+    <!-- Avg Rating Banner -->
+    <div class="avg-rating-card" *ngIf="reviews().length > 0" style="display: flex; align-items: center; gap: 20px;">
+      <div class="avg-rating-icon" style="display: flex; align-items: center;">
+        <svg lucideStar [size]="32" [strokeWidth]="1.8" style="fill: #fbbf24; color: #fbbf24;"></svg>
+      </div>
+      <div>
+        <div class="avg-label">Your Average Rating</div>
+        <div class="avg-value">{{ avgRating() }}<span class="avg-total"> / 5</span></div>
+        <div class="avg-sub">Based on {{ reviews().length }} review(s)</div>
+      </div>
+      <div class="stars-display" style="display: flex; align-items: center; gap: 4px;">
+        <svg lucideStar *ngFor="let s of stars" [size]="24" [strokeWidth]="2" class="display-star" [ngClass]="getStarClass(s, avgRating())" [style.fill]="getStarClass(s, avgRating()) === 'star-filled' ? '#fbbf24' : 'none'" [style.color]="getStarClass(s, avgRating()) === 'star-filled' ? '#fbbf24' : 'rgba(255,255,255,0.2)'"></svg>
+      </div>
+    </div>
+
+    <!-- Empty -->
+    <div class="empty-state-card" *ngIf="reviews().length === 0" style="display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 12px; padding: 40px;">
+      <svg lucideStar [size]="36" [strokeWidth]="1.5" style="color: #cbd5e1;"></svg>
+      <span>No performance reviews received yet. Your manager will submit reviews after your evaluation.</span>
+    </div>
+
+    <!-- Reviews List -->
+    <div class="reviews-list" *ngIf="reviews().length > 0">
+      <div class="review-card" *ngFor="let review of reviews()">
+        <div class="review-header">
+          <div class="reviewer-info">
+            <div class="reviewer-avatar">{{ review.reviewerName ? review.reviewerName.charAt(0).toUpperCase() : '?' }}</div>
+            <div>
+              <div class="reviewer-name">{{ review.reviewerName }}</div>
+              <div class="review-cycle">{{ review.performanceCycleName }}</div>
+            </div>
+          </div>
+          <div class="review-meta">
+            <div class="review-date" *ngIf="review.reviewDate">{{ review.reviewDate | date:'mediumDate' }}</div>
+            <div class="review-rating" *ngIf="review.rating">
+              <div class="stars-row" style="display: flex; align-items: center; gap: 2px;">
+                <svg lucideStar *ngFor="let s of stars" [size]="16" [strokeWidth]="2" [ngClass]="getStarClass(s, review.rating)" [style.fill]="getStarClass(s, review.rating) === 'star-filled' ? '#fbbf24' : 'none'" [style.color]="getStarClass(s, review.rating) === 'star-filled' ? '#fbbf24' : '#cbd5e1'"></svg>
+              </div>
+              <span class="rating-label">{{ getRatingLabel(review.rating) }}</span>
+            </div>
+          </div>
+        </div>
+        <div class="review-comments" *ngIf="review.comments">
+          <div class="comments-label">Reviewer Comments</div>
+          <p class="comments-text">{{ review.comments }}</p>
+        </div>
+        <div class="review-comments text-muted-italic" *ngIf="!review.comments">
+          No comments provided.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

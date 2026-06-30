@@ -1,0 +1,154 @@
+<div class="sub-tab-container">
+  <div class="empty-state" *ngIf="!employeeStore.profile()">
+    <h2>Select an employee</h2>
+    <p>Choose an employee from the dropdown above to view and manage their emergency contacts.</p>
+  </div>
+
+  <div *ngIf="employeeStore.profile()">
+    <div class="sub-tab-header">
+      <div class="left-header">
+        <h3>Emergency Contacts for {{ employeeStore.profile()?.firstName }} {{ employeeStore.profile()?.lastName }}</h3>
+      </div>
+      <div class="right-header">
+        <div class="import-section">
+          <input type="file" (change)="onFileSelected($event)" accept=".xlsx, .xls" class="file-input" />
+          <button class="btn-secondary" (click)="importContacts()" [disabled]="submitting() || !selectedFile()" style="display: inline-flex; align-items: center; gap: 6px;">
+            <svg lucideLoader [size]="16" class="spin-loader" *ngIf="submitting()"></svg>
+            <svg lucideUpload [size]="16" [strokeWidth]="2" *ngIf="!submitting()"></svg>
+            {{ submitting() ? 'Importing...' : 'Import' }}
+          </button>
+        </div>
+        <button class="btn-secondary" (click)="exportContacts()" style="display: inline-flex; align-items: center; gap: 6px;">
+          <svg lucideDownload [size]="16" [strokeWidth]="2"></svg> Export
+        </button>
+        <button class="btn-primary" (click)="openAddModal()" style="display: inline-flex; align-items: center; gap: 6px;">
+          <svg lucidePlus [size]="16" [strokeWidth]="2"></svg> Add Contact
+        </button>
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    <div class="loading-state" *ngIf="loading()">
+      <p>Loading emergency contacts...</p>
+    </div>
+
+    <!-- Table View -->
+    <div class="table-card" *ngIf="!loading()">
+      <table class="custom-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Relationship</th>
+            <th>Phone</th>
+            <th>Email</th>
+            <th class="text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let contact of contacts()">
+            <td class="font-medium">{{ contact.contactName }}</td>
+            <td>
+              <span class="badge bg-secondary">{{ contact.relationship }}</span>
+            </td>
+            <td>{{ contact.phone }}</td>
+            <td>{{ contact.email }}</td>
+            <td class="text-right actions-cell">
+              <button class="btn-icon edit" (click)="openEditModal(contact)" style="display: inline-flex; align-items: center; gap: 4px;">
+                <svg lucideEdit [size]="14" [strokeWidth]="2"></svg> Edit
+              </button>
+              <button class="btn-icon delete" (click)="deleteContact(contact.id)" style="display: inline-flex; align-items: center; gap: 4px;">
+                <svg lucideTrash2 [size]="14" [strokeWidth]="2"></svg> Delete
+              </button>
+            </td>
+          </tr>
+          <tr *ngIf="contacts().length === 0">
+            <td colspan="5" class="text-center text-gray py-4">No emergency contacts registered for this employee.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination" *ngIf="totalPages() > 1" style="display: inline-flex; align-items: center; gap: 12px;">
+      <button (click)="previousPage()" [disabled]="pageNumber() === 1" class="btn-page" style="display: inline-flex; align-items: center; gap: 4px;">
+        <svg lucideChevronLeft [size]="16" [strokeWidth]="2"></svg> Prev
+      </button>
+      <span class="page-info">Page {{ pageNumber() }} of {{ totalPages() }}</span>
+      <button (click)="nextPage()" [disabled]="pageNumber() === totalPages()" class="btn-page" style="display: inline-flex; align-items: center; gap: 4px;">
+        Next <svg lucideChevronRight [size]="16" [strokeWidth]="2"></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Modal Dialog -->
+  <div class="modal-overlay" *ngIf="showModal()">
+    <div class="custom-modal-box">
+      <div class="modal-header">
+        <h3>{{ editingId ? 'Edit Emergency Contact' : 'Add Emergency Contact' }}</h3>
+        <button class="close-btn" (click)="closeModal()" aria-label="Close">
+          <svg lucideX [size]="16" [strokeWidth]="2"></svg>
+        </button>
+      </div>
+
+      <form [formGroup]="contactForm" (ngSubmit)="saveContact()">
+        <div class="form-body">
+          <!-- Contact Name -->
+          <div class="form-group full-width">
+            <label for="contactName">Contact Name *</label>
+            <input 
+              type="text" 
+              id="contactName" 
+              formControlName="contactName" 
+              placeholder="e.g. Jane Doe"
+              [class.error-border]="contactForm.get('contactName')?.touched && contactForm.get('contactName')?.invalid"
+            />
+          </div>
+
+          <!-- Relationship -->
+          <div class="form-group">
+            <label for="relationship">Relationship *</label>
+            <input 
+              type="text" 
+              id="relationship" 
+              formControlName="relationship" 
+              placeholder="e.g. Spouse, Father"
+              [class.error-border]="contactForm.get('relationship')?.touched && contactForm.get('relationship')?.invalid"
+            />
+          </div>
+
+          <!-- Phone -->
+          <div class="form-group">
+            <label for="phone">Phone *</label>
+            <input 
+              type="text" 
+              id="phone" 
+              formControlName="phone" 
+              placeholder="e.g. +1234567890"
+              [class.error-border]="contactForm.get('phone')?.touched && contactForm.get('phone')?.invalid"
+            />
+          </div>
+
+          <!-- Email -->
+          <div class="form-group full-width">
+            <label for="email">Email *</label>
+            <input 
+              type="email" 
+              id="email" 
+              formControlName="email" 
+              placeholder="e.g. jdoe@example.com"
+              [class.error-border]="contactForm.get('email')?.touched && contactForm.get('email')?.invalid"
+            />
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" (click)="closeModal()" [disabled]="submitting()">Cancel</button>
+          <button type="submit" class="btn-primary" [disabled]="contactForm.invalid || submitting()" style="display: inline-flex; align-items: center; gap: 6px;">
+            <svg lucideLoader [size]="16" class="spin-loader" *ngIf="submitting()"></svg>
+            {{ submitting() ? (editingId ? 'Saving...' : 'Adding...') : (editingId ? 'Save Changes' : 'Add Contact') }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

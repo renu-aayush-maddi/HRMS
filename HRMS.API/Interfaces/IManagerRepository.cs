@@ -30,5 +30,11 @@ public interface IManagerRepository
 
     void AddPerformanceReview(PerformanceReview review);
 
+    Employee? GetEmployeeById(Guid id);
+
+    (List<Employee> Employees, int TotalCount) GetEligibleEmployees(Guid managerEmployeeId, string? search, int page, int pageSize);
+
+    PerformanceCycle? GetPerformanceCycle(Guid id);
+
     void SaveChanges();
 }

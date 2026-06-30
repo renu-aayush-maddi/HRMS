@@ -10,7 +10,7 @@ using HRMS.API.Repositories;
 using HRMS.API.Services;
 using HRMS.API.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Mvc; 
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -49,11 +49,25 @@ builder.Services
             return new BadRequestObjectResult(
                 new
                 {
-                    Message =
-                        "Validation Failed",
+                    Message = errors.FirstOrDefault() ?? "Validation Failed",
                     Errors = errors
                 });
         };
+});
+
+builder.Services.AddSignalR();
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("Angular",
+        policy =>
+        {
+            policy
+                .AllowAnyHeader()
+                .AllowAnyMethod()
+                .AllowCredentials()
+                .WithOrigins("http://localhost:4200","http://192.168.29.49:4200");
+        });
 });
 
 builder.Services.AddEndpointsApiExplorer();
@@ -110,109 +124,110 @@ builder.Services.AddScoped<JwtHelper>();
 
 builder.Services.AddScoped<IEmployeeRepository, EmployeeRepository>();
 builder.Services.AddScoped<IEmployeeService, EmployeeService>();
+builder.Services.AddScoped<IHierarchyService, HierarchyService>();
 
-builder.Services.AddScoped<IAttendanceRepository,AttendanceRepository>();
-builder.Services.AddScoped<IAttendanceService,AttendanceService>();
+builder.Services.AddScoped<IAttendanceRepository, AttendanceRepository>();
+builder.Services.AddScoped<IAttendanceService, AttendanceService>();
 
-builder.Services.AddScoped<ILeaveRepository,LeaveRepository>();
-builder.Services.AddScoped<ILeaveService,LeaveService>();
+builder.Services.AddScoped<ILeaveRepository, LeaveRepository>();
+builder.Services.AddScoped<ILeaveService, LeaveService>();
 
-builder.Services.AddScoped<IPayrollRepository,PayrollRepository>();
-builder.Services.AddScoped<IPayrollService,PayrollService>();
+builder.Services.AddScoped<IPayrollRepository, PayrollRepository>();
+builder.Services.AddScoped<IPayrollService, PayrollService>();
 
 
-builder.Services.AddScoped<IReviewRepository,ReviewRepository>();
-builder.Services.AddScoped<IReviewService,ReviewService>();
+builder.Services.AddScoped<IReviewRepository, ReviewRepository>();
+builder.Services.AddScoped<IReviewService, ReviewService>();
 
-builder.Services.AddScoped<IDepartmentRepository,DepartmentRepository>();
-builder.Services.AddScoped<IDepartmentService,DepartmentService>();
+builder.Services.AddScoped<IDepartmentRepository, DepartmentRepository>();
+builder.Services.AddScoped<IDepartmentService, DepartmentService>();
 
-builder.Services.AddScoped<IHrDashboardRepository,HrDashboardRepository>();
-builder.Services.AddScoped<IHrDashboardService,HrDashboardService>();
+builder.Services.AddScoped<IHrDashboardRepository, HrDashboardRepository>();
+builder.Services.AddScoped<IHrDashboardService, HrDashboardService>();
 
-builder.Services.AddScoped<INotificationRepository,NotificationRepository>();
-builder.Services.AddScoped<INotificationService,NotificationService>();
+builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
 
-builder.Services.AddScoped<ILeaveTypeRepository,LeaveTypeRepository>();
-builder.Services.AddScoped<ILeaveTypeService,LeaveTypeService>();
+builder.Services.AddScoped<ILeaveTypeRepository, LeaveTypeRepository>();
+builder.Services.AddScoped<ILeaveTypeService, LeaveTypeService>();
 
-builder.Services.AddScoped<ILeaveBalanceRepository,LeaveBalanceRepository>();
-builder.Services.AddScoped<ILeaveBalanceService,LeaveBalanceService>();
+builder.Services.AddScoped<ILeaveBalanceRepository, LeaveBalanceRepository>();
+builder.Services.AddScoped<ILeaveBalanceService, LeaveBalanceService>();
 
-builder.Services.AddScoped<IUserManagementRepository,UserManagementRepository>();
-builder.Services.AddScoped<IUserManagementService,UserManagementService>();
+builder.Services.AddScoped<IUserManagementRepository, UserManagementRepository>();
+builder.Services.AddScoped<IUserManagementService, UserManagementService>();
 
-builder.Services.AddScoped<IHolidayRepository,HolidayRepository>();
-builder.Services.AddScoped<IHolidayService,HolidayService>();
+builder.Services.AddScoped<IHolidayRepository, HolidayRepository>();
+builder.Services.AddScoped<IHolidayService, HolidayService>();
 
-builder.Services.AddScoped<IEmployeeDocumentRepository,EmployeeDocumentRepository>();
-builder.Services.AddScoped<IEmployeeDocumentService,EmployeeDocumentService>();
+builder.Services.AddScoped<IEmployeeDocumentRepository, EmployeeDocumentRepository>();
+builder.Services.AddScoped<IEmployeeDocumentService, EmployeeDocumentService>();
 
-builder.Services.AddScoped<IEmployeeEducationRepository,EmployeeEducationRepository>();
-builder.Services.AddScoped<IEmployeeEducationService,EmployeeEducationService>();
+builder.Services.AddScoped<IEmployeeEducationRepository, EmployeeEducationRepository>();
+builder.Services.AddScoped<IEmployeeEducationService, EmployeeEducationService>();
 
-builder.Services.AddScoped<IEmployeeExperienceRepository,EmployeeExperienceRepository>();
-builder.Services.AddScoped<IEmployeeExperienceService,EmployeeExperienceService>();
+builder.Services.AddScoped<IEmployeeExperienceRepository, EmployeeExperienceRepository>();
+builder.Services.AddScoped<IEmployeeExperienceService, EmployeeExperienceService>();
 
-builder.Services.AddScoped<IEmployeeEmergencyContactRepository,EmployeeEmergencyContactRepository>();
-builder.Services.AddScoped<IEmployeeEmergencyContactService,EmployeeEmergencyContactService>();
+builder.Services.AddScoped<IEmployeeEmergencyContactRepository, EmployeeEmergencyContactRepository>();
+builder.Services.AddScoped<IEmployeeEmergencyContactService, EmployeeEmergencyContactService>();
 
-builder.Services.AddScoped<IEmployeeAddressRepository,EmployeeAddressRepository>();
-builder.Services.AddScoped<IEmployeeAddressService,EmployeeAddressService>();
+builder.Services.AddScoped<IEmployeeAddressRepository, EmployeeAddressRepository>();
+builder.Services.AddScoped<IEmployeeAddressService, EmployeeAddressService>();
 
-builder.Services.AddScoped<IEmployeeResignationRepository,EmployeeResignationRepository>();
+builder.Services.AddScoped<IEmployeeResignationRepository, EmployeeResignationRepository>();
 
-builder.Services.AddScoped<IEmployeeResignationService,EmployeeResignationService>();
+builder.Services.AddScoped<IEmployeeResignationService, EmployeeResignationService>();
 
-builder.Services.AddScoped<IManagerRepository,ManagerRepository>();
-builder.Services.AddScoped<IManagerService,ManagerService>();
+builder.Services.AddScoped<IManagerRepository, ManagerRepository>();
+builder.Services.AddScoped<IManagerService, ManagerService>();
 
 
 builder.Services.AddScoped<IGoalRepository, GoalRepository>();
-builder.Services.AddScoped<IGoalService,GoalService>();
+builder.Services.AddScoped<IGoalService, GoalService>();
 
 
-builder.Services.AddScoped<ISalaryStructureRepository,SalaryStructureRepository>();
-builder.Services.AddScoped<ISalaryStructureService,SalaryStructureService>();
+builder.Services.AddScoped<ISalaryStructureRepository, SalaryStructureRepository>();
+builder.Services.AddScoped<ISalaryStructureService, SalaryStructureService>();
 
-builder.Services.AddScoped<IEmployeeSalaryRepository,EmployeeSalaryRepository>();
-builder.Services.AddScoped<IEmployeeSalaryService,EmployeeSalaryService>();
+builder.Services.AddScoped<IEmployeeSalaryRepository, EmployeeSalaryRepository>();
+builder.Services.AddScoped<IEmployeeSalaryService, EmployeeSalaryService>();
 
-builder.Services.AddScoped<IBonusRepository,BonusRepository>();
-builder.Services.AddScoped<IBonusService,BonusService>();
-
-
-builder.Services.AddScoped<IDeductionRepository,DeductionRepository>();
-builder.Services.AddScoped<IDeductionService,DeductionService>();
-
-builder.Services.AddScoped<IPayslipService,PayslipService>();
-
-builder.Services.AddScoped<IPerformanceDashboardRepository,PerformanceDashboardRepository>();
-builder.Services.AddScoped<IPerformanceDashboardService,PerformanceDashboardService>();
+builder.Services.AddScoped<IBonusRepository, BonusRepository>();
+builder.Services.AddScoped<IBonusService, BonusService>();
 
 
-builder.Services.AddScoped<IPerformanceBonusRuleRepository,PerformanceBonusRuleRepository>();
-builder.Services.AddScoped<IPerformanceBonusRuleService,PerformanceBonusRuleService>();
+builder.Services.AddScoped<IDeductionRepository, DeductionRepository>();
+builder.Services.AddScoped<IDeductionService, DeductionService>();
 
-builder.Services.AddScoped<IPerformanceBonusRecommendationService,PerformanceBonusRecommendationService>();
-builder.Services.AddScoped<IPerformanceBonusRecommendationRepository,PerformanceBonusRecommendationRepository>();
+builder.Services.AddScoped<IPayslipService, PayslipService>();
+
+builder.Services.AddScoped<IPerformanceDashboardRepository, PerformanceDashboardRepository>();
+builder.Services.AddScoped<IPerformanceDashboardService, PerformanceDashboardService>();
 
 
-builder.Services.AddScoped<IPerformanceCycleRepository,PerformanceCycleRepository>();
-builder.Services.AddScoped<IPerformanceCycleService,PerformanceCycleService>();
+builder.Services.AddScoped<IPerformanceBonusRuleRepository, PerformanceBonusRuleRepository>();
+builder.Services.AddScoped<IPerformanceBonusRuleService, PerformanceBonusRuleService>();
+
+builder.Services.AddScoped<IPerformanceBonusRecommendationService, PerformanceBonusRecommendationService>();
+builder.Services.AddScoped<IPerformanceBonusRecommendationRepository, PerformanceBonusRecommendationRepository>();
+
+
+builder.Services.AddScoped<IPerformanceCycleRepository, PerformanceCycleRepository>();
+builder.Services.AddScoped<IPerformanceCycleService, PerformanceCycleService>();
 
 builder.Services.AddHttpContextAccessor();
 
-builder.Services.AddScoped<IUserContextService,UserContextService>();
-builder.Services.AddScoped<IEmployeeAccessResolver,EmployeeAccessResolver>();
+builder.Services.AddScoped<IUserContextService, UserContextService>();
+builder.Services.AddScoped<IEmployeeAccessResolver, EmployeeAccessResolver>();
 
-builder.Services.AddScoped<IAuditLogRepository,AuditLogRepository>();
+builder.Services.AddScoped<IAuditLogRepository, AuditLogRepository>();
 
-builder.Services.AddScoped<IAuditLogService,AuditLogService>();
+builder.Services.AddScoped<IAuditLogService, AuditLogService>();
 
 
-builder.Services.AddScoped<IAttendanceRegularizationRepository,AttendanceRegularizationRepository>();
-builder.Services.AddScoped<IAttendanceRegularizationService,AttendanceRegularizationService>();
+builder.Services.AddScoped<IAttendanceRegularizationRepository, AttendanceRegularizationRepository>();
+builder.Services.AddScoped<IAttendanceRegularizationService, AttendanceRegularizationService>();
 
 builder.Services.AddScoped<IEmailService, EmailService>();
 
@@ -314,10 +329,14 @@ app.UseHttpsRedirection();
 
 app.UseRateLimiter();
 
+app.UseCors("Angular");
+
 app.UseAuthentication();
 
 app.UseAuthorization();
 
 app.MapControllers();
+
+app.MapHub<HRMS.API.Hubs.NotificationHub>("/notificationHub");
 
 app.Run();

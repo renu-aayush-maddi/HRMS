@@ -95,6 +95,39 @@ public class EmployeeRepository : IEmployeeRepository
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<List<Employee>> GetActiveEmployeesForHierarchyAsync(CancellationToken cancellationToken = default)
+    {
+        return await context.Employees
+            .AsNoTracking()
+            .Include(e => e.Department)
+            .Where(e => !e.IsDeleted)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<List<Employee>> GetDirectReportsAsync(Guid managerId, CancellationToken cancellationToken = default)
+    {
+        return await context.Employees
+            .AsNoTracking()
+            .Include(e => e.Department)
+            .Where(e => !e.IsDeleted && e.EmploymentStatus == "Active" && e.ManagerId == managerId)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<List<Employee>> SearchActiveEmployeesAsync(string query, CancellationToken cancellationToken = default)
+    {
+        var cleanQuery = query.Trim().ToLower();
+        return await context.Employees
+            .AsNoTracking()
+            .Include(e => e.Department)
+            .Where(e => !e.IsDeleted && e.EmploymentStatus == "Active")
+            .Where(e => e.FirstName.ToLower().Contains(cleanQuery)
+                     || e.LastName.ToLower().Contains(cleanQuery)
+                     || e.EmployeeCode.ToLower().Contains(cleanQuery)
+                     || e.Designation.ToLower().Contains(cleanQuery)
+                     || (e.Department != null && e.Department.Name.ToLower().Contains(cleanQuery)))
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<long> GetNextEmployeeNumberAsync(CancellationToken cancellationToken = default)
     {
         var employeeCodes = await context.Employees

@@ -1,0 +1,195 @@
+<div class="page-container">
+  <div class="page-header">
+    <div>
+      <h1>My Payroll</h1>
+      <p class="subtitle">View your payroll history, download payslips, and track bonuses & deductions</p>
+    </div>
+  </div>
+
+  <div class="toast toast-success" *ngIf="successMessage()" style="display: flex; align-items: center; gap: 6px;">
+    <svg lucideCheckCircle [size]="16" [strokeWidth]="2"></svg> {{ successMessage() }}
+  </div>
+  <div class="toast toast-error" *ngIf="errorMessage()" style="display: flex; align-items: center; gap: 6px;">
+    <svg lucideAlertTriangle [size]="16" [strokeWidth]="2"></svg> {{ errorMessage() }}
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs-bar">
+    <button class="tab-btn" [class.active]="activeTab() === 'payroll'" (click)="setTab('payroll')" style="display: inline-flex; align-items: center; gap: 6px;">
+      <svg lucideCoins [size]="16" [strokeWidth]="2"></svg> Payroll History
+    </button>
+    <button class="tab-btn" [class.active]="activeTab() === 'bonuses'" (click)="setTab('bonuses')" style="display: inline-flex; align-items: center; gap: 6px;">
+      <svg lucideGift [size]="16" [strokeWidth]="2"></svg> My Bonuses
+      <span class="tab-badge" *ngIf="bonuses().length">{{ bonuses().length }}</span>
+    </button>
+    <button class="tab-btn" [class.active]="activeTab() === 'deductions'" (click)="setTab('deductions')" style="display: inline-flex; align-items: center; gap: 6px;">
+      <svg lucideTrendingDown [size]="16" [strokeWidth]="2"></svg> My Deductions
+      <span class="tab-badge" *ngIf="deductions().length">{{ deductions().length }}</span>
+    </button>
+  </div>
+
+  <!-- ─── PAYROLL TAB ─── -->
+  <div *ngIf="activeTab() === 'payroll'">
+    <div class="filters-bar">
+      <div class="filter-group">
+        <label>Filter by Year</label>
+        <select [ngModel]="payYearFilter()" (ngModelChange)="payYearFilter.set($event); loadPayrolls()" class="form-control">
+          <option value="">All Years</option>
+          <option *ngFor="let y of years" [value]="y">{{ y }}</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="table-card">
+      <div class="table-header">
+        <h3>Payroll Records</h3>
+        <span class="record-count">{{ payrolls().length }} records</span>
+      </div>
+
+      <div class="loading-row" *ngIf="payrollsLoading()">
+        <div class="spinner"></div> Loading payroll records...
+      </div>
+
+      <div class="empty-state" *ngIf="!payrollsLoading() && payrolls().length === 0" style="display: flex; align-items: center; justify-content: center; gap: 6px;">
+        <svg lucideCoins [size]="18" [strokeWidth]="2"></svg> No payroll records found.
+      </div>
+
+      <div class="table-wrapper" *ngIf="!payrollsLoading() && payrolls().length > 0">
+        <table>
+          <thead>
+            <tr>
+              <th>Period</th>
+              <th>Basic Salary</th>
+              <th>Bonus</th>
+              <th>Deductions</th>
+              <th>Net Salary</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let p of payrolls()">
+              <td class="font-semibold">{{ getMonthName(p.payMonth) }} {{ p.payYear }}</td>
+              <td>{{ p.basicSalary | currency:'INR':'symbol':'1.0-0' }}</td>
+              <td class="text-success">{{ p.bonus ? (p.bonus | currency:'INR':'symbol':'1.0-0') : '-' }}</td>
+              <td class="text-danger">{{ p.deductions ? (p.deductions | currency:'INR':'symbol':'1.0-0') : '-' }}</td>
+              <td class="font-semibold net-salary">{{ (p.netSalary ?? p.basicSalary) | currency:'INR':'symbol':'1.0-0' }}</td>
+              <td>
+                <span class="badge" [ngClass]="getStatusClass(p.status)">{{ p.status }}</span>
+              </td>
+              <td>
+                <button
+                  class="btn-download"
+                  [disabled]="downloadingId() === p.id"
+                  (click)="downloadPayslip(p.id)"
+                  style="display: inline-flex; align-items: center; gap: 4px;">
+                  <svg lucideDownload [size]="14" [strokeWidth]="2"></svg> Payslip
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── BONUSES TAB ─── -->
+  <div *ngIf="activeTab() === 'bonuses'">
+    <div class="summary-banner bonus-banner" *ngIf="bonuses().length > 0" style="display: flex; align-items: center; gap: 12px;">
+      <span class="summary-icon" style="display: flex; align-items: center;">
+        <svg lucideGift [size]="28" [strokeWidth]="1.8"></svg>
+      </span>
+      <div>
+        <div class="summary-label">Total Bonuses Received</div>
+        <div class="summary-value">{{ bonusTotalAmount() | currency:'INR':'symbol':'1.0-0' }}</div>
+      </div>
+    </div>
+
+    <div class="table-card">
+      <div class="table-header">
+        <h3>Bonus History</h3>
+      </div>
+
+      <div class="loading-row" *ngIf="bonusesLoading()">
+        <div class="spinner"></div> Loading bonuses...
+      </div>
+
+      <div class="empty-state" *ngIf="!bonusesLoading() && bonuses().length === 0" style="display: flex; align-items: center; justify-content: center; gap: 6px;">
+        <svg lucideGift [size]="18" [strokeWidth]="2"></svg> No bonuses recorded yet.
+      </div>
+
+      <div class="table-wrapper" *ngIf="!bonusesLoading() && bonuses().length > 0">
+        <table>
+          <thead>
+            <tr>
+              <th>Period</th>
+              <th>Amount</th>
+              <th>Reason</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let b of bonuses()">
+              <td class="font-semibold">{{ getMonthName(b.bonusMonth) }} {{ b.bonusYear }}</td>
+              <td class="text-success font-semibold">{{ b.amount | currency:'INR':'symbol':'1.0-0' }}</td>
+              <td class="text-muted">{{ b.reason }}</td>
+              <td>
+                <span class="badge" [ngClass]="getBonusStatusClass(b.status)">{{ b.status }}</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── DEDUCTIONS TAB ─── -->
+  <div *ngIf="activeTab() === 'deductions'">
+    <div class="summary-banner deduction-banner" *ngIf="deductions().length > 0" style="display: flex; align-items: center; gap: 12px;">
+      <span class="summary-icon" style="display: flex; align-items: center;">
+        <svg lucideTrendingDown [size]="28" [strokeWidth]="1.8"></svg>
+      </span>
+      <div>
+        <div class="summary-label">Total Deductions Applied</div>
+        <div class="summary-value">{{ deductionTotalAmount() | currency:'INR':'symbol':'1.0-0' }}</div>
+      </div>
+    </div>
+
+    <div class="table-card">
+      <div class="table-header">
+        <h3>Deduction History</h3>
+      </div>
+
+      <div class="loading-row" *ngIf="deductionsLoading()">
+        <div class="spinner"></div> Loading deductions...
+      </div>
+
+      <div class="empty-state" *ngIf="!deductionsLoading() && deductions().length === 0" style="display: flex; align-items: center; justify-content: center; gap: 6px;">
+        <svg lucideTrendingDown [size]="18" [strokeWidth]="2"></svg> No deductions recorded yet.
+      </div>
+
+      <div class="table-wrapper" *ngIf="!deductionsLoading() && deductions().length > 0">
+        <table>
+          <thead>
+            <tr>
+              <th>Period</th>
+              <th>Amount</th>
+              <th>Reason</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let d of deductions()">
+              <td class="font-semibold">{{ getMonthName(d.deductionMonth) }} {{ d.deductionYear }}</td>
+              <td class="text-danger font-semibold">{{ d.amount | currency:'INR':'symbol':'1.0-0' }}</td>
+              <td class="text-muted">{{ d.reason }}</td>
+              <td>
+                <span class="badge" [ngClass]="getBonusStatusClass(d.status)">{{ d.status }}</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>

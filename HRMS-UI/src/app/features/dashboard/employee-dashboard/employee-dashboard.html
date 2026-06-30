@@ -1,0 +1,222 @@
+<div class="dashboard-container">
+
+  <!-- Header -->
+  <div class="dashboard-header">
+    <div class="header-text">
+      <h1>My Dashboard</h1>
+      <p class="subtitle">Welcome back! Here's your personal workspace overview for {{ today | date:'EEEE, MMMM d, y' }}</p>
+    </div>
+  </div>
+
+  <div class="toast toast-success" *ngIf="successMessage()">
+    <span class="toast-icon">
+      <svg lucideCheckCircle [size]="18" [strokeWidth]="2"></svg>
+    </span>
+    <span>{{ successMessage() }}</span>
+  </div>
+  <div class="toast toast-error" *ngIf="error()">
+    <span class="toast-icon">
+      <svg lucideAlertTriangle [size]="18" [strokeWidth]="2"></svg>
+    </span>
+    <span>{{ error() }}</span>
+  </div>
+
+  <!-- Loading State -->
+  <div class="loading-state" *ngIf="loading()">
+    <div class="spinner"></div>
+    <p>Loading your dashboard...</p>
+  </div>
+
+  <div *ngIf="!loading()">
+
+    <!-- Today's Attendance Card (Prominent) -->
+    <div class="attendance-hero">
+      <div class="attendance-info">
+        <div class="attendance-indicator" [ngClass]="getAttendanceStatusClass()"></div>
+        <div>
+          <h2 class="attendance-title">Today's Attendance</h2>
+          <p class="attendance-status" *ngIf="!todayAttendance()">Not checked in yet</p>
+          <p class="attendance-status" *ngIf="todayAttendance()">
+            Status: <strong>{{ todayAttendance()!.status }}</strong>
+            <span *ngIf="todayAttendance()!.checkIn"> · In: {{ todayAttendance()!.checkIn | date:'shortTime' }}</span>
+            <span *ngIf="todayAttendance()!.checkOut"> · Out: {{ todayAttendance()!.checkOut | date:'shortTime' }}</span>
+          </p>
+        </div>
+      </div>
+      <div class="attendance-actions">
+        <button
+          class="btn-checkin"
+          [disabled]="checkingIn() || (!!todayAttendance() && !todayAttendance()!.checkOut)"
+          (click)="checkIn()"
+          style="display: inline-flex; align-items: center; gap: 6px;">
+          <svg lucideLogIn [size]="16" [strokeWidth]="2"></svg>
+          {{ checkingIn() ? 'Checking In...' : 'Check In' }}
+        </button>
+        <button
+          class="btn-checkout"
+          [disabled]="checkingOut() || !todayAttendance() || !!todayAttendance()!.checkOut"
+          (click)="checkOut()"
+          style="display: inline-flex; align-items: center; gap: 6px;">
+          <svg lucideLogOut [size]="16" [strokeWidth]="2"></svg>
+          {{ checkingOut() ? 'Checking Out...' : 'Check Out' }}
+        </button>
+        <a routerLink="/employee/attendance" class="btn-history">View History →</a>
+      </div>
+    </div>
+
+    <!-- Stats Grid -->
+    <div class="stats-grid">
+      <!-- Leave Balance -->
+      <a routerLink="/employee/leave" class="stat-card leave-card">
+        <div class="stat-icon">
+          <svg lucidePalmtree [size]="28" [strokeWidth]="1.8"></svg>
+        </div>
+        <div class="stat-content">
+          <span class="stat-label">Leave Balance</span>
+          <span class="stat-value">{{ totalLeaveAllocated() - totalLeaveUsed() }}</span>
+          <span class="stat-sub">days remaining ({{ totalLeaveUsed() }}/{{ totalLeaveAllocated() }} used)</span>
+          <span class="stat-link">Manage Leave →</span>
+        </div>
+      </a>
+
+      <!-- Pending Leaves -->
+      <a routerLink="/employee/leave" class="stat-card pending-card">
+        <div class="stat-icon">
+          <svg lucideClock [size]="28" [strokeWidth]="1.8"></svg>
+        </div>
+        <div class="stat-content">
+          <span class="stat-label">Pending Leaves</span>
+          <span class="stat-value">{{ pendingLeaves() }}</span>
+          <span class="stat-sub">awaiting approval</span>
+          <span class="stat-link">View Requests →</span>
+        </div>
+      </a>
+
+      <!-- Active Goals -->
+      <a routerLink="/employee/goals" class="stat-card goals-card">
+        <div class="stat-icon">
+          <svg lucideTarget [size]="28" [strokeWidth]="1.8"></svg>
+        </div>
+        <div class="stat-content">
+          <span class="stat-label">Active Goals</span>
+          <span class="stat-value">{{ pendingGoals() }}</span>
+          <span class="stat-sub">not yet completed</span>
+          <span class="stat-link">View Goals →</span>
+        </div>
+      </a>
+
+      <!-- Payslips -->
+      <a routerLink="/employee/payroll" class="stat-card payroll-card">
+        <div class="stat-icon">
+          <svg lucideCoins [size]="28" [strokeWidth]="1.8"></svg>
+        </div>
+        <div class="stat-content">
+          <span class="stat-label">My Payroll</span>
+          <span class="stat-value">View</span>
+          <span class="stat-sub">payslips & salary history</span>
+          <span class="stat-link">Open Payroll →</span>
+        </div>
+      </a>
+    </div>
+
+    <!-- Leave Balances by Type -->
+    <div class="section-card" *ngIf="leaveBalances().length > 0">
+      <div class="section-header">
+        <h3>Leave Balances by Type</h3>
+        <a routerLink="/employee/leave" class="section-link">Apply Leave →</a>
+      </div>
+      <div class="leave-balances-grid">
+        <div class="leave-balance-item" *ngFor="let balance of leaveBalances()">
+          <div class="balance-header">
+            <span class="balance-type">{{ balance.leaveType }}</span>
+            <span class="balance-remaining">{{ balance.remainingDays }} left</span>
+          </div>
+          <div class="balance-bar-wrapper">
+            <div
+              class="balance-bar-fill"
+              [style.width.%]="balance.allocatedDays > 0 ? (balance.usedDays / balance.allocatedDays * 100) : 0"
+              [ngClass]="balance.remainingDays === 0 ? 'bar-full' : balance.remainingDays <= 2 ? 'bar-warn' : 'bar-ok'">
+            </div>
+          </div>
+          <div class="balance-details">
+            <span>{{ balance.usedDays }} used</span>
+            <span>{{ balance.allocatedDays }} total</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="section-card">
+      <div class="section-header">
+        <h3>Quick Actions</h3>
+      </div>
+      <div class="quick-actions-grid">
+        <a routerLink="/employee/attendance" class="action-btn">
+          <span class="action-icon">
+            <svg lucideCalendar [size]="20" [strokeWidth]="2"></svg>
+          </span>
+          <div class="action-text">
+            <span class="action-title">Attendance</span>
+            <span class="action-desc">Check in/out & request regularizations</span>
+          </div>
+        </a>
+        <a routerLink="/employee/leave" class="action-btn">
+          <span class="action-icon">
+            <svg lucidePalmtree [size]="20" [strokeWidth]="2"></svg>
+          </span>
+          <div class="action-text">
+            <span class="action-title">Leave</span>
+            <span class="action-desc">Apply for leave & view balances</span>
+          </div>
+        </a>
+        <a routerLink="/employee/payroll" class="action-btn">
+          <span class="action-icon">
+            <svg lucideCoins [size]="20" [strokeWidth]="2"></svg>
+          </span>
+          <div class="action-text">
+            <span class="action-title">Payroll</span>
+            <span class="action-desc">Payslips, bonuses & deductions</span>
+          </div>
+        </a>
+        <a routerLink="/employee/goals" class="action-btn">
+          <span class="action-icon">
+            <svg lucideTarget [size]="20" [strokeWidth]="2"></svg>
+          </span>
+          <div class="action-text">
+            <span class="action-title">Goals</span>
+            <span class="action-desc">View & update performance goals</span>
+          </div>
+        </a>
+        <a routerLink="/employee/reviews" class="action-btn">
+          <span class="action-icon">
+            <svg lucideStar [size]="20" [strokeWidth]="2"></svg>
+          </span>
+          <div class="action-text">
+            <span class="action-title">Reviews</span>
+            <span class="action-desc">View performance reviews from manager</span>
+          </div>
+        </a>
+        <a routerLink="/employee/profile" class="action-btn">
+          <span class="action-icon">
+            <svg lucideUser [size]="20" [strokeWidth]="2"></svg>
+          </span>
+          <div class="action-text">
+            <span class="action-title">My Profile</span>
+            <span class="action-desc">View & manage your personal info</span>
+          </div>
+        </a>
+        <a routerLink="/employee/resignation" class="action-btn action-btn-danger">
+          <span class="action-icon">
+            <svg lucideFileText [size]="20" [strokeWidth]="2"></svg>
+          </span>
+          <div class="action-text">
+            <span class="action-title">Resignation</span>
+            <span class="action-desc">Submit or track your resignation</span>
+          </div>
+        </a>
+      </div>
+    </div>
+
+  </div>
+</div>

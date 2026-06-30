@@ -1,0 +1,126 @@
+<div class="page-container">
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="header-title">
+      <h2>Performance Cycles</h2>
+      <p class="subtitle">Manage review periods and goal-setting cycles</p>
+    </div>
+    <div class="header-actions">
+      <button class="btn-primary" (click)="openAddModal()">
+        Initiate New Cycle
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div class="loading-state" *ngIf="loading()">
+    <p>Loading performance cycles...</p>
+  </div>
+
+  <!-- Table View -->
+  <div class="table-card" *ngIf="!loading()">
+    <table class="custom-table">
+      <thead>
+        <tr>
+          <th>Cycle Name</th>
+          <th>Start Date</th>
+          <th>End Date</th>
+          <th>Status</th>
+          <th class="text-right">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let cycle of cycles()">
+          <td class="font-semibold">{{ cycle.name }}</td>
+          <td>{{ cycle.startDate | date:'mediumDate' }}</td>
+          <td>{{ cycle.endDate | date:'mediumDate' }}</td>
+          <td>
+            <span class="badge" 
+              [class.bg-success]="cycle.status === 'Active'" 
+              [class.bg-danger]="cycle.status === 'Closed'"
+              [class.bg-secondary]="cycle.status === 'Draft'">
+              {{ cycle.status }}
+            </span>
+          </td>
+          <td class="text-right actions-cell">
+            <button class="btn-icon edit" (click)="openEditModal(cycle)" style="display: inline-flex; align-items: center; gap: 4px;">
+              <svg lucideEdit [size]="14" [strokeWidth]="2"></svg> Edit
+            </button>
+            <button class="btn-icon delete" (click)="deleteCycle(cycle.id)" style="display: inline-flex; align-items: center; gap: 4px;">
+              <svg lucideTrash [size]="14" [strokeWidth]="2"></svg> Delete
+            </button>
+          </td>
+        </tr>
+        <tr *ngIf="cycles().length === 0">
+          <td colspan="5" class="text-center text-gray py-4">No performance cycles found.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Modal Overlay -->
+  <div class="modal-overlay" *ngIf="showModal()">
+    <div class="custom-modal-box">
+      <div class="modal-header">
+        <h3>{{ editingId ? 'Edit Performance Cycle' : 'Initiate Performance Cycle' }}</h3>
+        <button class="close-btn" (click)="closeModal()" aria-label="Close">
+          <svg lucideX [size]="16" [strokeWidth]="2"></svg>
+        </button>
+      </div>
+
+      <form [formGroup]="cycleForm" (ngSubmit)="saveCycle()">
+        <div class="form-body">
+          <!-- Name -->
+          <div class="form-group full-width">
+            <label for="name">Cycle Name *</label>
+            <input 
+              type="text" 
+              id="name" 
+              formControlName="name" 
+              placeholder="e.g. FY 2026 Mid-Year Review"
+              [class.error-border]="cycleForm.get('name')?.touched && cycleForm.get('name')?.invalid"
+            />
+          </div>
+
+          <!-- Start Date -->
+          <div class="form-group">
+            <label for="startDate">Start Date *</label>
+            <input 
+              type="date" 
+              id="startDate" 
+              formControlName="startDate"
+              [class.error-border]="cycleForm.get('startDate')?.touched && cycleForm.get('startDate')?.invalid"
+            />
+          </div>
+
+          <!-- End Date -->
+          <div class="form-group">
+            <label for="endDate">End Date *</label>
+            <input 
+              type="date" 
+              id="endDate" 
+              formControlName="endDate"
+              [class.error-border]="cycleForm.get('endDate')?.touched && cycleForm.get('endDate')?.invalid"
+            />
+          </div>
+
+          <!-- Status (Edit Mode only) -->
+          <div class="form-group" *ngIf="editingId">
+            <label for="status">Status *</label>
+            <select id="status" formControlName="status">
+              <option *ngFor="let st of statuses" [value]="st">{{ st }}</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" (click)="closeModal()" [disabled]="submitting()">Cancel</button>
+          <button type="submit" class="btn-primary" [disabled]="cycleForm.invalid || submitting()" style="display: inline-flex; align-items: center; gap: 6px;">
+            <svg lucideLoader [size]="16" class="spin-loader" *ngIf="submitting()"></svg>
+            {{ submitting() ? (editingId ? 'Saving...' : 'Initiating...') : (editingId ? 'Save Changes' : 'Initiate Cycle') }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

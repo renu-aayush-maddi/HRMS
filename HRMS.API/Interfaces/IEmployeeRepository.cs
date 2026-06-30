@@ -25,6 +25,12 @@ public interface IEmployeeRepository
 
     Task<List<Employee>> GetManagersAsync(CancellationToken cancellationToken = default);
 
+    Task<List<Employee>> GetActiveEmployeesForHierarchyAsync(CancellationToken cancellationToken = default);
+
+    Task<List<Employee>> GetDirectReportsAsync(Guid managerId, CancellationToken cancellationToken = default);
+
+    Task<List<Employee>> SearchActiveEmployeesAsync(string query, CancellationToken cancellationToken = default);
+
     Task<long> GetNextEmployeeNumberAsync(CancellationToken cancellationToken = default);
 
     Task AddEmployeeAsync(Employee employee, CancellationToken cancellationToken = default);

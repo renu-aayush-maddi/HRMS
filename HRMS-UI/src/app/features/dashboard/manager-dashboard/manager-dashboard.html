@@ -1,0 +1,141 @@
+<div class="dashboard-container">
+  <!-- Header -->
+  <div class="dashboard-header">
+    <h1>Manager Dashboard</h1>
+    <p class="subtitle">Real-time overview of your direct reports and approvals</p>
+  </div>
+
+  <!-- Loading State -->
+  <div class="loading-state" *ngIf="loading() && !error()">
+    <p>Loading dashboard data...</p>
+  </div>
+
+  <div class="error-state" *ngIf="error()">
+    <p style="display: flex; align-items: center; justify-content: center; gap: 6px;">
+      <svg lucideAlertTriangle [size]="18" [strokeWidth]="2"></svg> {{ error() }}
+    </p>
+    <button class="btn-primary" (click)="loadDashboardData()">Retry</button>
+  </div>
+
+  <div *ngIf="!loading() && !error()">
+    <!-- Stats Cards Grid -->
+    <div class="stats-grid" *ngIf="stats()">
+      <!-- Team Size Card -->
+      <div class="stat-card">
+        <div class="stat-icon team-icon">
+          <svg lucideUsers [size]="24" [strokeWidth]="2"></svg>
+        </div>
+        <div class="stat-content">
+          <span class="stat-label">Total Team Size</span>
+          <span class="stat-value">{{ stats()!.teamSize }}</span>
+        </div>
+      </div>
+
+      <!-- Present Card -->
+      <div class="stat-card">
+        <div class="stat-icon present-icon">
+          <svg lucideCheckCircle [size]="24" [strokeWidth]="2"></svg>
+        </div>
+        <div class="stat-content">
+          <span class="stat-label">Present Today</span>
+          <span class="stat-value">{{ stats()!.presentToday }}</span>
+        </div>
+      </div>
+
+      <!-- On Leave Card -->
+      <div class="stat-card">
+        <div class="stat-icon leave-icon">
+          <svg lucidePalmtree [size]="24" [strokeWidth]="2"></svg>
+        </div>
+        <div class="stat-content">
+          <span class="stat-label">On Leave Today</span>
+          <span class="stat-value">{{ stats()!.onLeaveToday }}</span>
+        </div>
+      </div>
+
+      <!-- Pending Leaves Card -->
+      <a routerLink="/manager/leave-approvals" class="stat-card interactive-card">
+        <div class="stat-icon pending-icon">
+          <svg lucideClock [size]="24" [strokeWidth]="2"></svg>
+        </div>
+        <div class="stat-content">
+          <span class="stat-label">Pending Leaves</span>
+          <span class="stat-value text-warning">{{ stats()!.pendingLeaveRequests }}</span>
+          <span class="click-prompt">View approvals &rarr;</span>
+        </div>
+      </a>
+
+      <!-- Pending Regularizations Card -->
+      <div class="stat-card">
+        <div class="stat-icon regularization-icon">
+          <svg lucideAlarmClock [size]="24" [strokeWidth]="2"></svg>
+        </div>
+        <div class="stat-content">
+          <span class="stat-label">Pending Regularizations</span>
+          <span class="stat-value">{{ stats()!.pendingRegularizations }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Secondary Widgets -->
+    <div class="dashboard-widgets">
+      <!-- Late Employees Widget -->
+      <div class="widget-card late-employees-widget">
+        <div class="widget-header">
+          <h3>Late Arrivals Today</h3>
+          <span class="badge badge-warning" *ngIf="lateEmployees().length">{{ lateEmployees().length }} late</span>
+        </div>
+        <div class="widget-content">
+          <div class="empty-state" *ngIf="lateEmployees().length === 0" style="display: flex; align-items: center; justify-content: center; gap: 6px;">
+            <svg lucideSun [size]="18" [strokeWidth]="2" style="color: var(--warning-color);"></svg> No late arrivals reported today. Great job, team!
+          </div>
+          <ul class="late-list" *ngIf="lateEmployees().length > 0">
+            <li *ngFor="let emp of lateEmployees()" class="late-item">
+              <span class="emp-name">{{ emp.employeeName }}</span>
+              <span class="emp-checkin text-danger">
+                Checked in: {{ emp.checkIn ? (emp.checkIn | date:'shortTime') : 'N/A' }}
+              </span>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Quick Actions Widget -->
+      <div class="widget-card quick-actions-widget">
+        <div class="widget-header">
+          <h3>Quick Management Actions</h3>
+        </div>
+        <div class="widget-content actions-grid">
+          <a routerLink="/manager/team" class="action-btn">
+            <span class="btn-icon">
+              <svg lucideFolder [size]="20" [strokeWidth]="2"></svg>
+            </span>
+            <span class="btn-title">View Team Directory</span>
+            <span class="btn-desc">Check active team members profiles</span>
+          </a>
+          <a routerLink="/manager/team-attendance" class="action-btn">
+            <span class="btn-icon">
+              <svg lucideCalendar [size]="20" [strokeWidth]="2"></svg>
+            </span>
+            <span class="btn-title">Track Team Attendance</span>
+            <span class="btn-desc">View check-in logs and work hours</span>
+          </a>
+          <a routerLink="/manager/goals" class="action-btn">
+            <span class="btn-icon">
+              <svg lucideTarget [size]="20" [strokeWidth]="2"></svg>
+            </span>
+            <span class="btn-title">Assign Team Goals</span>
+            <span class="btn-desc">Assign and update performance targets</span>
+          </a>
+          <a routerLink="/manager/reviews" class="action-btn">
+            <span class="btn-icon">
+              <svg lucideFileText [size]="20" [strokeWidth]="2"></svg>
+            </span>
+            <span class="btn-title">Submit Performance Reviews</span>
+            <span class="btn-desc">Evaluate direct reports</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

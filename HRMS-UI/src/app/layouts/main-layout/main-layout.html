@@ -1,0 +1,182 @@
+<div class="layout" [class.sidebar-collapsed]="isSidebarCollapsed()" [class.mobile-menu-open]="isMobileMenuOpen()">
+
+  <!-- Overlay to close mobile menu -->
+  <div class="sidebar-overlay" (click)="closeMobileMenu()"></div>
+
+  <aside class="sidebar-container">
+    <app-sidebar
+      [collapsed]="isSidebarCollapsed()"
+      [mobileOpen]="isMobileMenuOpen()"
+      (toggleCollapse)="toggleSidebar()"
+      (closeMobile)="closeMobileMenu()">
+    </app-sidebar>
+  </aside>
+
+  <div class="content">
+
+    <header class="header">
+      <div class="header-left">
+        <button class="mobile-toggle-btn" (click)="toggleMobileMenu()" aria-label="Toggle menu">
+          <svg lucideMenu [size]="20" [strokeWidth]="2"></svg>
+        </button>
+        <span class="app-subtitle" *ngIf="authStore.currentUser()">
+          Welcome, <strong class="user-email">{{ authStore.currentUser()?.email }}</strong> ({{ authStore.currentUser()?.role }})
+        </span>
+      </div>
+      <div class="header-right">
+        <!-- Notification Dropdown Container -->
+        <div class="notification-container" [class.open]="isNotificationOpen()">
+          <button class="notification-bell-btn" (click)="toggleNotification()" aria-label="Notifications">
+            <svg lucideBell [size]="20" [strokeWidth]="2"></svg>
+            <span class="notification-badge" *ngIf="notificationService.unreadCount() > 0">
+              {{ notificationService.unreadCount() }}
+            </span>
+          </button>
+          
+          <div class="notification-overlay-backdrop" *ngIf="isNotificationOpen()" (click)="toggleNotification()"></div>
+
+          <div class="notification-dropdown">
+            <div class="notification-dropdown-header">
+              <h3>Notifications</h3>
+              <span class="unread-summary" *ngIf="notificationService.unreadCount() > 0">
+                {{ notificationService.unreadCount() }} unread
+              </span>
+            </div>
+            
+            <div class="notification-list">
+              @if (notificationService.notifications().length === 0) {
+                <div class="no-notifications">
+                  <svg lucideBellOff [size]="24" [strokeWidth]="1.8" class="no-icon"></svg>
+                  <p>No notifications yet</p>
+                </div>
+              } @else {
+                @for (item of notificationService.notifications(); track item.id) {
+                  <div class="notification-item" [class.unread]="!item.isRead" (click)="markAsRead(item.id)">
+                    <div class="notification-item-content">
+                      <h4 class="notification-title">{{ item.title }}</h4>
+                      <p class="notification-msg">{{ item.message }}</p>
+                      <span class="notification-time">{{ formatTime(item.createdAt) }}</span>
+                    </div>
+                    <span class="unread-dot" *ngIf="!item.isRead"></span>
+                  </div>
+                }
+              }
+            </div>
+          </div>
+        </div>
+
+        <button class="change-pwd-btn" (click)="openChangePasswordModal()">
+          <svg lucideKey [size]="16" [strokeWidth]="2" class="key-icon-svg"></svg> Change Password
+        </button>
+
+        <button class="logout-btn" (click)="logout()">
+          <svg lucideLogOut [size]="16" [strokeWidth]="2" class="logout-icon-svg"></svg> Logout
+        </button>
+      </div>
+    </header>
+
+    <main class="page-content">
+      <router-outlet></router-outlet>
+    </main>
+
+  </div>
+
+  <!-- Change Password Modal -->
+  <div class="modal-overlay" *ngIf="showChangePasswordModal()" (click)="closeChangePasswordModal()">
+    <div class="modal-panel" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Change Password</h3>
+        <button class="modal-close" (click)="closeChangePasswordModal()" aria-label="Close">
+          <svg lucideX [size]="16" [strokeWidth]="2"></svg>
+        </button>
+      </div>
+      
+      <div class="modal-body">
+        <div *ngIf="changeSuccessMessage()" class="alert alert-success">
+          {{ changeSuccessMessage() }}
+        </div>
+        <div *ngIf="changeErrorMessage()" class="alert alert-danger">
+          {{ changeErrorMessage() }}
+        </div>
+
+        <form [formGroup]="changePasswordForm" (ngSubmit)="submitChangePassword()" *ngIf="!changeSuccessMessage()">
+          <p class="change-pwd-subtitle">Update your password to keep your account secure.</p>
+
+          <div class="form-group mb-3">
+            <label>Current Password *</label>
+            <div class="password-wrapper">
+              <input 
+                [type]="showCurrentPassword() ? 'text' : 'password'" 
+                formControlName="currentPassword" 
+                class="form-control" 
+                placeholder="Enter current password">
+              <button type="button" class="eye-btn" (click)="showCurrentPassword.update(v => !v)" aria-label="Toggle password visibility">
+                @if (showCurrentPassword()) {
+                  <svg lucideEyeOff [size]="18" [strokeWidth]="2"></svg>
+                } @else {
+                  <svg lucideEye [size]="18" [strokeWidth]="2"></svg>
+                }
+              </button>
+            </div>
+            <div *ngIf="changePasswordForm.get('currentPassword')?.touched && changePasswordForm.get('currentPassword')?.invalid" class="validation-error">
+              Current password is required.
+            </div>
+          </div>
+
+          <div class="form-group mb-3">
+            <label>New Password *</label>
+            <div class="password-wrapper">
+              <input 
+                [type]="showNewPassword() ? 'text' : 'password'" 
+                formControlName="newPassword" 
+                class="form-control" 
+                placeholder="Minimum 6 characters">
+              <button type="button" class="eye-btn" (click)="showNewPassword.update(v => !v)" aria-label="Toggle password visibility">
+                @if (showNewPassword()) {
+                  <svg lucideEyeOff [size]="18" [strokeWidth]="2"></svg>
+                } @else {
+                  <svg lucideEye [size]="18" [strokeWidth]="2"></svg>
+                }
+              </button>
+            </div>
+            <div *ngIf="changePasswordForm.get('newPassword')?.touched && changePasswordForm.get('newPassword')?.invalid" class="validation-error">
+              New password must be at least 6 characters long.
+            </div>
+          </div>
+
+          <div class="form-group mb-4">
+            <label>Confirm Password *</label>
+            <div class="password-wrapper">
+              <input 
+                [type]="showConfirmPassword() ? 'text' : 'password'" 
+                formControlName="confirmPassword" 
+                class="form-control" 
+                placeholder="Retype new password">
+              <button type="button" class="eye-btn" (click)="showConfirmPassword.update(v => !v)" aria-label="Toggle password visibility">
+                @if (showConfirmPassword()) {
+                  <svg lucideEyeOff [size]="18" [strokeWidth]="2"></svg>
+                } @else {
+                  <svg lucideEye [size]="18" [strokeWidth]="2"></svg>
+                }
+              </button>
+            </div>
+            <div *ngIf="changePasswordForm.get('confirmPassword')?.touched && changePasswordForm.get('confirmPassword')?.invalid" class="validation-error">
+              Confirm password is required.
+            </div>
+            <div *ngIf="changePasswordForm.touched && changePasswordForm.hasError('passwordMismatch')" class="validation-error">
+              Passwords do not match.
+            </div>
+          </div>
+
+          <div class="modal-footer px-0 pb-0">
+            <button type="button" class="btn btn-secondary" (click)="closeChangePasswordModal()">Cancel</button>
+            <button type="submit" class="btn btn-primary" [disabled]="changingPassword()">
+              {{ changingPassword() ? 'Saving...' : 'Update Password' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+</div>

@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\renua\\OneDrive\\Desktop\\HRMS\\HRMS.API\\HRMS.API.csproj": {}
+    "C:\\Users\\renua\\OneDrive\\Desktop\\HRMS - Copy\\HRMS.API\\HRMS.API.csproj": {}
   },
   "projects": {
-    "C:\\Users\\renua\\OneDrive\\Desktop\\HRMS\\HRMS.API\\HRMS.API.csproj": {
+    "C:\\Users\\renua\\OneDrive\\Desktop\\HRMS - Copy\\HRMS.API\\HRMS.API.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\renua\\OneDrive\\Desktop\\HRMS\\HRMS.API\\HRMS.API.csproj",
+        "projectUniqueName": "C:\\Users\\renua\\OneDrive\\Desktop\\HRMS - Copy\\HRMS.API\\HRMS.API.csproj",
         "projectName": "HRMS.API",
-        "projectPath": "C:\\Users\\renua\\OneDrive\\Desktop\\HRMS\\HRMS.API\\HRMS.API.csproj",
+        "projectPath": "C:\\Users\\renua\\OneDrive\\Desktop\\HRMS - Copy\\HRMS.API\\HRMS.API.csproj",
         "packagesPath": "C:\\Users\\renua\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\renua\\OneDrive\\Desktop\\HRMS\\HRMS.API\\obj\\",
+        "outputPath": "C:\\Users\\renua\\OneDrive\\Desktop\\HRMS - Copy\\HRMS.API\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

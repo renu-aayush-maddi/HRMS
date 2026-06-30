@@ -1,0 +1,288 @@
+<div class="team-container">
+  <!-- Toast Notification Alert -->
+  <div class="toast-alert" *ngIf="toastMessage()" [class.error]="toastType() === 'error'">
+    <span class="toast-text">{{ toastMessage() }}</span>
+  </div>
+
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="header-title">
+      <h2>Team Directory</h2>
+      <p class="subtitle">View and manage your direct reports profiles</p>
+    </div>
+    <button class="btn btn-primary btn-add-member" (click)="openAddModal()">
+      <svg lucidePlus [size]="16" [strokeWidth]="2" class="btn-icon"></svg> Add Team Member
+    </button>
+  </div>
+
+  <!-- Loading State -->
+  <div class="loading-state" *ngIf="loading()">
+    <svg lucideLoader [size]="32" class="spinner-icon"></svg>
+    <p>Loading team members...</p>
+  </div>
+
+  <!-- Error State -->
+  <div class="error-state" *ngIf="error()">
+    <p style="display: flex; align-items: center; justify-content: center; gap: 6px;">
+      <svg lucideAlertTriangle [size]="18" [strokeWidth]="2"></svg> {{ error() }}
+    </p>
+    <button class="btn btn-primary" (click)="loadTeam()">Retry</button>
+  </div>
+
+  <div *ngIf="!loading() && !error()">
+    <!-- Filter Bar -->
+    <div class="filters-card">
+      <div class="filters-grid">
+        <div class="filter-group search-group">
+          <label for="search">Search Employee</label>
+          <div class="search-input-wrapper">
+            <svg lucideSearch [size]="16" class="search-icon-inside"></svg>
+            <input 
+              type="text" 
+              id="search" 
+              placeholder="Search by name, code or designation..." 
+              [ngModel]="searchQuery()"
+              (ngModelChange)="searchQuery.set($event); applyFilters()"
+            />
+          </div>
+        </div>
+        <div class="filter-group">
+          <label for="status">Employment Status</label>
+          <select id="status" [ngModel]="statusFilter()" (ngModelChange)="statusFilter.set($event); applyFilters()">
+            <option value="">All Statuses</option>
+            <option value="Active">Active</option>
+            <option value="Probation">Probation</option>
+            <option value="OnLeave">On Leave</option>
+            <option value="Suspended">Suspended</option>
+            <option value="Terminated">Terminated</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Team Table -->
+    <div class="table-card">
+      <table class="custom-table">
+        <thead>
+          <tr>
+            <th>Employee Code</th>
+            <th>Full Name</th>
+            <th>Email Address</th>
+            <th>Designation</th>
+            <th>Department</th>
+            <th>Status</th>
+            <th class="text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let member of filteredTeam()" class="interactive-row" (click)="viewDetails(member)">
+            <td class="font-medium">{{ member.employeeCode }}</td>
+            <td class="font-semibold">{{ member.fullName }}</td>
+            <td>{{ member.email }}</td>
+            <td>{{ member.designation }}</td>
+            <td>{{ member.department }}</td>
+            <td>
+              <span class="badge" 
+                [class.bg-success]="member.employmentStatus === 'Active' || member.employmentStatus === 'OnLeave'" 
+                [class.bg-warning]="member.employmentStatus === 'Probation'"
+                [class.bg-danger]="member.employmentStatus === 'Suspended' || member.employmentStatus === 'Terminated'">
+                {{ member.employmentStatus }}
+              </span>
+            </td>
+            <td class="text-right actions-cell" (click)="$event.stopPropagation()">
+              <div class="action-btn-group">
+                <button class="btn-secondary btn-sm" (click)="viewDetails(member)">View Profile</button>
+                <button class="btn-danger-outline btn-sm" (click)="openRemoveConfirm(member)" title="Remove from Team">
+                  <svg lucideTrash2 [size]="14" [strokeWidth]="2"></svg>
+                </button>
+              </div>
+            </td>
+          </tr>
+          <tr *ngIf="filteredTeam().length === 0">
+            <td colspan="7" class="text-center text-gray py-4">No team members match the search filters.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Detail Drawer Overlay -->
+  <div class="drawer-overlay" *ngIf="selectedMember()" (click)="closeDrawer()">
+    <div class="drawer-content" (click)="$event.stopPropagation()">
+      <div class="drawer-header">
+        <h3>Employee Profile Details</h3>
+        <button class="close-btn" (click)="closeDrawer()">
+          <svg lucideX [size]="18"></svg>
+        </button>
+      </div>
+
+      <div class="drawer-body" *ngIf="selectedMember()">
+        <div class="profile-avatar-section">
+          <div class="avatar-large">{{ selectedMember()!.fullName.charAt(0) }}</div>
+          <h2>{{ selectedMember()!.fullName }}</h2>
+          <span class="badge" [class.bg-success]="selectedMember()!.employmentStatus === 'Active'">
+            {{ selectedMember()!.employmentStatus }}
+          </span>
+        </div>
+
+        <div class="profile-info-grid">
+          <div class="info-item">
+            <span class="label">Employee ID Code</span>
+            <span class="value">{{ selectedMember()!.employeeCode }}</span>
+          </div>
+
+          <div class="info-item">
+            <span class="label">Email Address</span>
+            <span class="value">{{ selectedMember()!.email }}</span>
+          </div>
+
+          <div class="info-item">
+            <span class="label">Designation Job Role</span>
+            <span class="value">{{ selectedMember()!.designation }}</span>
+          </div>
+
+          <div class="info-item">
+            <span class="label">Department Group</span>
+            <span class="value">{{ selectedMember()!.department }}</span>
+          </div>
+        </div>
+
+        <div class="drawer-actions">
+          <a [routerLink]="['/manager/goals']" [queryParams]="{employeeId: selectedMember()!.id}" class="action-card-link" (click)="closeDrawer()" style="display: inline-flex; align-items: center; gap: 10px;">
+            <svg lucideTarget [size]="18" [strokeWidth]="2"></svg>
+            <span class="card-title">Manage Goals</span>
+          </a>
+          <a [routerLink]="['/manager/reviews']" [queryParams]="{employeeId: selectedMember()!.id}" class="action-card-link" (click)="closeDrawer()" style="display: inline-flex; align-items: center; gap: 10px;">
+            <svg lucideFileText [size]="18" [strokeWidth]="2"></svg>
+            <span class="card-title">Write Evaluation Review</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Team Member Modal -->
+  <div class="modal-overlay" *ngIf="showAddModal()" (click)="closeAddModal()">
+    <div class="modal-panel add-member-panel" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Add Team Member</h3>
+        <button class="modal-close" (click)="closeAddModal()">
+          <svg lucideX [size]="18"></svg>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Search field -->
+        <div class="modal-search-wrapper mb-3">
+          <svg lucideSearch [size]="16" class="search-icon-inside"></svg>
+          <input 
+            type="text" 
+            placeholder="Search eligible employees by name or code..."
+            [ngModel]="eligibleSearch()"
+            (ngModelChange)="onEligibleSearchChange($event)"
+            class="form-control lookup-search"
+          />
+        </div>
+
+        <!-- Loading State for Lookup -->
+        <div *ngIf="eligibleLoading()" class="text-center py-4">
+          <svg lucideLoader [size]="24" class="spinner-icon"></svg>
+          <p class="text-secondary mt-2">Searching eligible employees...</p>
+        </div>
+
+        <!-- Error State for Lookup -->
+        <div *ngIf="!eligibleLoading() && eligibleError()" class="alert alert-danger">
+          {{ eligibleError() }}
+        </div>
+
+        <!-- Results List -->
+        <div *ngIf="!eligibleLoading() && !eligibleError()">
+          <div class="eligible-list-container">
+            <div *ngFor="let emp of eligibleEmployees()" class="eligible-item-row">
+              <div class="eligible-item-left">
+                <div class="avatar-small">{{ emp.fullName.charAt(0) }}</div>
+                <div class="eligible-item-info">
+                  <span class="eligible-name font-semibold">{{ emp.fullName }}</span>
+                  <span class="eligible-meta">{{ emp.employeeCode }} • {{ emp.designation }}</span>
+                  <span class="eligible-dept">{{ emp.department }}</span>
+                  
+                  <!-- Transfer Warning Badge -->
+                  <div *ngIf="emp.currentManagerName" class="transfer-warning-badge">
+                    <svg lucideAlertTriangle [size]="12" class="warning-icon"></svg>
+                    <span>Transfers from: {{ emp.currentManagerName }}</span>
+                  </div>
+                </div>
+              </div>
+              <button 
+                class="btn btn-secondary btn-sm btn-assign" 
+                [disabled]="assigningEmployeeId() === emp.id"
+                (click)="addEmployee(emp)">
+                <svg lucideLoader [size]="12" class="spinner-icon" *ngIf="assigningEmployeeId() === emp.id"></svg>
+                {{ emp.currentManagerName ? 'Transfer' : 'Assign' }}
+              </button>
+            </div>
+
+            <!-- Empty Lookup State -->
+            <div *ngIf="eligibleEmployees().length === 0" class="text-center py-4 text-gray">
+              No eligible active employees found matching the query.
+            </div>
+          </div>
+
+          <!-- Pagination Controls -->
+          <div class="lookup-pagination mt-4" *ngIf="eligibleTotalCount() > 0">
+            <button 
+              class="btn-pagination" 
+              [disabled]="eligiblePage() === 1" 
+              (click)="eligiblePrevPage()">
+              <svg lucideChevronLeft [size]="16"></svg>
+            </button>
+            <span class="pagination-info">
+              Page {{ eligiblePage() }} of {{ totalPages() }} (Total: {{ eligibleTotalCount() }})
+            </span>
+            <button 
+              class="btn-pagination" 
+              [disabled]="eligiblePage() * eligiblePageSize >= eligibleTotalCount()" 
+              (click)="eligibleNextPage()">
+              <svg lucideChevronRight [size]="16"></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Remove Team Member Confirmation Modal -->
+  <div class="modal-overlay" *ngIf="showRemoveConfirmModal()" (click)="closeRemoveConfirm()">
+    <div class="modal-panel confirm-remove-panel" (click)="$event.stopPropagation()">
+      <div class="modal-header bg-danger-light">
+        <h3 class="text-danger">Remove Team Member</h3>
+        <button class="modal-close" (click)="closeRemoveConfirm()">
+          <svg lucideX [size]="18"></svg>
+        </button>
+      </div>
+
+      <div class="modal-body text-center py-4" *ngIf="employeeToRemove()">
+        <svg lucideAlertTriangle [size]="48" class="text-danger mb-3"></svg>
+        <h4>Confirm Removal</h4>
+        <p class="confirm-text">
+          Are you sure you want to remove <strong>{{ employeeToRemove()!.fullName }}</strong> ({{ employeeToRemove()!.employeeCode }}) from your direct reports?
+        </p>
+        <p class="confirm-warning-desc text-secondary">
+          They will remain an active employee in the HRMS, but they will no longer be assigned to your team.
+        </p>
+
+        <div class="modal-footer px-0 pb-0 justify-content-center mt-4">
+          <button type="button" class="btn btn-secondary" (click)="closeRemoveConfirm()">Cancel</button>
+          <button 
+            type="button" 
+            class="btn btn-danger" 
+            [disabled]="removingEmployeeId() === employeeToRemove()!.id"
+            (click)="confirmRemoveEmployee()">
+            <svg lucideLoader [size]="14" class="spinner-icon" *ngIf="removingEmployeeId() === employeeToRemove()!.id"></svg>
+            Remove Employee
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,308 @@
+<div class="page-container">
+  <div class="page-header">
+    <div>
+      <h1>My Profile</h1>
+      <p class="subtitle">Your personal and professional information</p>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div class="loading-state" *ngIf="loading()">
+    <div class="spinner"></div>
+    <p>Loading your profile...</p>
+  </div>
+
+  <!-- Error -->
+  <div class="error-state" *ngIf="error()" style="display: flex; align-items: center; justify-content: center; gap: 6px;">
+    <svg lucideAlertTriangle [size]="18" [strokeWidth]="2"></svg> {{ error() }}
+  </div>
+
+  <div *ngIf="!loading() && !error() && profile()">
+    <!-- Profile Hero -->
+    <div class="profile-hero">
+      <div class="profile-avatar">{{ getInitials() }}</div>
+      <div class="profile-info">
+        <h2 class="profile-name">{{ profile()!.firstName }} {{ profile()!.lastName }}</h2>
+        <div class="profile-meta">
+          <span class="meta-chip">{{ profile()!.employeeCode }}</span>
+          <span class="meta-chip" *ngIf="profile()!.designation">{{ profile()!.designation }}</span>
+          <span class="meta-chip" *ngIf="profile()!.department">{{ profile()!.department }}</span>
+          <span class="meta-chip status-chip" *ngIf="profile()!.employmentStatus">{{ profile()!.employmentStatus }}</span>
+        </div>
+        <div class="profile-contact" style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
+          <span *ngIf="profile()!.email" style="display: inline-flex; align-items: center; gap: 4px;">
+            <svg lucideMail [size]="14" [strokeWidth]="2"></svg> {{ profile()!.email }}
+          </span>
+          <span *ngIf="profile()!.phone" style="display: inline-flex; align-items: center; gap: 4px;">
+            <svg lucidePhone [size]="14" [strokeWidth]="2"></svg> {{ profile()!.phone }}
+          </span>
+          <span *ngIf="profile()!.managerName" style="display: inline-flex; align-items: center; gap: 4px;">
+            <svg lucideUser [size]="14" [strokeWidth]="2"></svg> Manager: {{ profile()!.managerName }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs-bar">
+      <button class="tab-btn" [class.active]="activeTab() === 'overview'" (click)="setTab('overview')">Overview</button>
+      <button class="tab-btn" [class.active]="activeTab() === 'addresses'" (click)="setTab('addresses')">
+        Addresses <span class="tab-count" *ngIf="profile()!.addresses.length">{{ profile()!.addresses.length }}</span>
+      </button>
+      <button class="tab-btn" [class.active]="activeTab() === 'education'" (click)="setTab('education')">
+        Education <span class="tab-count" *ngIf="profile()!.educations.length">{{ profile()!.educations.length }}</span>
+      </button>
+      <button class="tab-btn" [class.active]="activeTab() === 'experience'" (click)="setTab('experience')">
+        Experience <span class="tab-count" *ngIf="profile()!.experiences.length">{{ profile()!.experiences.length }}</span>
+      </button>
+      <button class="tab-btn" [class.active]="activeTab() === 'emergency'" (click)="setTab('emergency')">
+        Emergency Contacts <span class="tab-count" *ngIf="profile()!.emergencyContacts.length">{{ profile()!.emergencyContacts.length }}</span>
+      </button>
+      <button class="tab-btn" [class.active]="activeTab() === 'documents'" (click)="setTab('documents')">
+        Documents <span class="tab-count" *ngIf="profile()!.documents.length">{{ profile()!.documents.length }}</span>
+      </button>
+      <button class="tab-btn" [class.active]="activeTab() === 'org'" (click)="setTab('org')">
+        Organization
+      </button>
+    </div>
+
+    <!-- Overview Tab -->
+    <div class="tab-content" *ngIf="activeTab() === 'overview'">
+      <div class="info-grid">
+        <div class="info-item">
+          <span class="info-label">Employee Code</span>
+          <span class="info-value">{{ profile()!.employeeCode }}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Full Name</span>
+          <span class="info-value">{{ profile()!.firstName }} {{ profile()!.lastName }}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Email Address</span>
+          <span class="info-value">{{ profile()!.email }}</span>
+        </div>
+        <div class="info-item" *ngIf="profile()!.phone">
+          <span class="info-label">Phone Number</span>
+          <span class="info-value">{{ profile()!.phone }}</span>
+        </div>
+        <div class="info-item" *ngIf="profile()!.designation">
+          <span class="info-label">Designation</span>
+          <span class="info-value">{{ profile()!.designation }}</span>
+        </div>
+        <div class="info-item" *ngIf="profile()!.department">
+          <span class="info-label">Department</span>
+          <span class="info-value">{{ profile()!.department }}</span>
+        </div>
+        <div class="info-item" *ngIf="profile()!.managerName">
+          <span class="info-label">Reporting Manager</span>
+          <span class="info-value">{{ profile()!.managerName }}</span>
+        </div>
+        <div class="info-item" *ngIf="profile()!.employmentStatus">
+          <span class="info-label">Employment Status</span>
+          <span class="info-value">{{ profile()!.employmentStatus }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Addresses Tab -->
+    <div class="tab-content" *ngIf="activeTab() === 'addresses'">
+      <div class="empty-tab" *ngIf="!profile()!.addresses.length">No addresses on record.</div>
+      <div class="cards-grid" *ngIf="profile()!.addresses.length">
+        <div class="info-card" *ngFor="let addr of profile()!.addresses">
+          <div class="card-tag">{{ addr.addressType }}</div>
+          <div class="card-body">
+            <p class="addr-line">{{ addr.addressLine1 }}</p>
+            <p class="addr-line" *ngIf="addr.addressLine2">{{ addr.addressLine2 }}</p>
+            <p class="addr-line">{{ addr.city }}, {{ addr.state }} {{ addr.postalCode }}</p>
+            <p class="addr-line">{{ addr.country }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Education Tab -->
+    <div class="tab-content" *ngIf="activeTab() === 'education'">
+      <div class="empty-tab" *ngIf="!profile()!.educations.length">No education records found.</div>
+      <div class="cards-grid" *ngIf="profile()!.educations.length">
+        <div class="info-card" *ngFor="let edu of profile()!.educations">
+          <div class="card-title">{{ edu.degree }}</div>
+          <div class="card-subtitle">{{ edu.specialization }}</div>
+          <div class="card-detail" style="display: flex; align-items: center; gap: 6px;">
+            <svg lucideSchool [size]="14" [strokeWidth]="2"></svg> {{ edu.institutionName }}
+          </div>
+          <div class="card-detail" style="display: flex; align-items: center; gap: 6px;">
+            <svg lucideGraduationCap [size]="14" [strokeWidth]="2"></svg> {{ edu.graduationYear }}<span *ngIf="edu.percentage"> · {{ edu.percentage }}%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Experience Tab -->
+    <div class="tab-content" *ngIf="activeTab() === 'experience'">
+      <div class="empty-tab" *ngIf="!profile()!.experiences.length">No experience records found.</div>
+      <div class="timeline" *ngIf="profile()!.experiences.length">
+        <div class="timeline-item" *ngFor="let exp of profile()!.experiences">
+          <div class="timeline-dot"></div>
+          <div class="timeline-content">
+            <div class="timeline-title">{{ exp.designation }}</div>
+            <div class="timeline-company">{{ exp.companyName }}</div>
+            <div class="timeline-dates" *ngIf="exp.startDate">
+              {{ exp.startDate | date:'MMM yyyy' }} – {{ exp.endDate ? (exp.endDate | date:'MMM yyyy') : 'Present' }}
+            </div>
+            <p class="timeline-desc" *ngIf="exp.responsibilities">{{ exp.responsibilities }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Emergency Contacts Tab -->
+    <div class="tab-content" *ngIf="activeTab() === 'emergency'">
+      <div class="empty-tab" *ngIf="!profile()!.emergencyContacts.length">No emergency contacts on record.</div>
+      <div class="cards-grid" *ngIf="profile()!.emergencyContacts.length">
+        <div class="info-card" *ngFor="let ec of profile()!.emergencyContacts">
+          <div class="ec-name">{{ ec.contactName }}</div>
+          <div class="ec-relation">{{ ec.relationship }}</div>
+          <div class="card-detail" style="display: flex; align-items: center; gap: 6px;">
+            <svg lucidePhone [size]="14" [strokeWidth]="2"></svg> {{ ec.phone }}
+          </div>
+          <div class="card-detail" style="display: flex; align-items: center; gap: 6px;">
+            <svg lucideMail [size]="14" [strokeWidth]="2"></svg> {{ ec.email }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Documents Tab -->
+    <div class="tab-content" *ngIf="activeTab() === 'documents'">
+      <div class="empty-tab" *ngIf="!profile()!.documents.length">No documents uploaded.</div>
+      <div class="doc-list" *ngIf="profile()!.documents.length">
+        <div class="doc-item" *ngFor="let doc of profile()!.documents">
+          <div class="doc-icon" style="display: flex; align-items: center; justify-content: center;">
+            <svg lucideFileText [size]="24" [strokeWidth]="1.8"></svg>
+          </div>
+          <div class="doc-info">
+            <div class="doc-name">{{ doc.documentName }}</div>
+            <div class="doc-type">{{ doc.documentType }}</div>
+            <div class="doc-date" *ngIf="doc.uploadedAt">Uploaded: {{ doc.uploadedAt | date:'mediumDate' }}</div>
+          </div>
+          <div class="doc-status">
+            <span class="badge" [ngClass]="doc.isVerified ? 'badge-success' : 'badge-secondary'" style="display: inline-flex; align-items: center; gap: 4px;">
+              <svg lucideCheckCircle [size]="12" [strokeWidth]="2" *ngIf="doc.isVerified"></svg>
+              {{ doc.isVerified ? 'Verified' : 'Pending' }}
+            </span>
+          </div>
+          <a [href]="doc.fileUrl" target="_blank" class="doc-download">Download</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Organization Tab -->
+    <div class="tab-content" *ngIf="activeTab() === 'org'">
+      <!-- Loading Org -->
+      <div class="loading-state" *ngIf="loadingOrg()">
+        <div class="spinner"></div>
+        <p>Loading organization structure...</p>
+      </div>
+
+      <!-- Error Org -->
+      <div class="error-state" *ngIf="orgError()" style="display: flex; align-items: center; justify-content: center; gap: 6px;">
+        <svg lucideAlertTriangle [size]="18" [strokeWidth]="2"></svg> {{ orgError() }}
+      </div>
+
+      <div *ngIf="!loadingOrg() && !orgError()" class="org-tab-layout">
+        <!-- Current Position Flow -->
+        <div class="org-section reporting-chain-section">
+          <h3>Your Reporting Chain</h3>
+          <div class="chain-flow">
+            <div 
+              *ngFor="let node of reportingChain(); let last = last" 
+              class="chain-node-wrapper"
+            >
+              <div 
+                class="chain-node-card" 
+                [class.highlight-node]="node.id === profile()!.id"
+              >
+                <div class="node-icon-avatar">
+                  <ng-container *ngIf="node.profilePhotoUrl; else initialAvatar">
+                    <img [src]="node.profilePhotoUrl" alt="{{ node.name }}" class="avatar-img" />
+                  </ng-container>
+                  <ng-template #initialAvatar>
+                    <div class="avatar-initials">{{ getInitialsForName(node.firstName, node.lastName) }}</div>
+                  </ng-template>
+                </div>
+                <div class="node-info">
+                  <div class="node-name">{{ node.name }}</div>
+                  <div class="node-title">{{ node.designation || 'Staff' }}</div>
+                  <div class="node-dept" *ngIf="node.departmentName">{{ node.departmentName }}</div>
+                </div>
+                <span class="you-badge" *ngIf="node.id === profile()!.id">YOU</span>
+              </div>
+              <div class="chain-connector" *ngIf="!last" style="display: flex; flex-direction: column; align-items: center;">
+                <div class="connector-line"></div>
+                <div class="connector-arrow" style="display: flex; align-items: center; justify-content: center; color: var(--text-muted);">
+                  <svg lucideArrowDown [size]="16" [strokeWidth]="2"></svg>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="org-side-grid">
+          <!-- Reports To -->
+          <div class="org-section manager-section">
+            <h3>Reports To</h3>
+            <div class="empty-card" *ngIf="!managerInfo()">
+              <p>No manager assigned (Top-level position)</p>
+            </div>
+            <div class="profile-manager-card" *ngIf="managerInfo()">
+              <div class="manager-avatar">
+                <ng-container *ngIf="managerInfo()!.profilePhotoUrl; else managerInitials">
+                  <img [src]="managerInfo()!.profilePhotoUrl" alt="{{ managerInfo()!.name }}" class="avatar-img" />
+                </ng-container>
+                <ng-template #managerInitials>
+                  <div class="avatar-initials">{{ getInitialsForName(managerInfo()!.name, '') }}</div>
+                </ng-template>
+              </div>
+              <div class="manager-details">
+                <div class="manager-name">{{ managerInfo()!.name }}</div>
+                <div class="manager-designation">{{ managerInfo()!.designation || 'Manager' }}</div>
+                <div class="manager-dept" *ngIf="managerInfo()!.department">{{ managerInfo()!.department }}</div>
+                <div class="manager-status-badge">
+                  <span class="status-chip">{{ managerInfo()!.employmentStatus || 'Active' }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Direct Reports -->
+          <div class="org-section reports-section">
+            <h3>Direct Reports ({{ directReports().length }})</h3>
+            <div class="empty-card" *ngIf="directReports().length === 0">
+              <p>No direct reports</p>
+            </div>
+            <div class="reports-grid" *ngIf="directReports().length > 0">
+              <div class="report-card" *ngFor="let rep of directReports()">
+                <div class="report-avatar">
+                  <ng-container *ngIf="rep.profilePhotoUrl; else repInitials">
+                    <img [src]="rep.profilePhotoUrl" alt="{{ rep.name }}" class="avatar-img" />
+                  </ng-container>
+                  <ng-template #repInitials>
+                    <div class="avatar-initials">{{ getInitialsForName(rep.firstName, rep.lastName) }}</div>
+                  </ng-template>
+                </div>
+                <div class="report-details">
+                  <div class="report-name">{{ rep.name }}</div>
+                  <div class="report-id">ID: {{ rep.employeeCode }}</div>
+                  <div class="report-designation">{{ rep.designation || 'Staff' }}</div>
+                  <div class="report-dept" *ngIf="rep.departmentName">{{ rep.departmentName }}</div>
+                  <span class="report-status-badge">{{ rep.employmentStatus || 'Active' }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>

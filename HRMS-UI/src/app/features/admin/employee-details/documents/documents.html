@@ -1,0 +1,124 @@
+<div class="sub-tab-container">
+  <div class="empty-state" *ngIf="!employeeStore.profile()">
+    <h2>Select an employee</h2>
+    <p>Choose an employee from the dropdown above to view and manage their documents.</p>
+  </div>
+
+  <div *ngIf="employeeStore.profile()">
+    <div class="sub-tab-header">
+      <div class="left-header">
+        <h3>Documents for {{ employeeStore.profile()?.firstName }} {{ employeeStore.profile()?.lastName }}</h3>
+      </div>
+      <div class="right-header">
+        <button class="btn-secondary" (click)="exportDocuments()" style="display: inline-flex; align-items: center; gap: 6px;">
+          <svg lucideDownload [size]="16" [strokeWidth]="2"></svg> Export Log
+        </button>
+        <button class="btn-primary" (click)="openUploadModal()" style="display: inline-flex; align-items: center; gap: 6px;">
+          <svg lucidePlus [size]="16" [strokeWidth]="2"></svg> Upload Document
+        </button>
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    <div class="loading-state" *ngIf="loading()">
+      <p>Processing document operations...</p>
+    </div>
+
+    <!-- Table View -->
+    <div class="table-card" *ngIf="!loading()">
+      <table class="custom-table">
+        <thead>
+          <tr>
+            <th>Document Name</th>
+            <th>Type</th>
+            <th>Uploaded At</th>
+            <th>Verification Status</th>
+            <th class="text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let doc of documents()">
+            <td class="font-medium document-name-cell" [title]="doc.documentName">{{ doc.documentName }}</td>
+            <td>
+              <span class="badge bg-secondary">{{ doc.documentType }}</span>
+            </td>
+            <td>{{ (doc.uploadedAt | date:'mediumDate') || '-' }}</td>
+            <td>
+              <span class="badge" [class.bg-success]="doc.isVerified" [class.bg-warning]="!doc.isVerified">
+                {{ doc.isVerified ? 'Verified' : 'Pending Verification' }}
+              </span>
+            </td>
+            <td class="text-right actions-cell">
+              <button class="btn-icon download" (click)="downloadDocument(doc)" [disabled]="submitting()" style="display: inline-flex; align-items: center; gap: 4px;">
+                <svg lucideDownload [size]="14" [strokeWidth]="2"></svg> Download
+              </button>
+              <button class="btn-icon approve" *ngIf="!doc.isVerified" (click)="verifyDocument(doc.id)" [disabled]="submitting()" style="display: inline-flex; align-items: center; gap: 4px;">
+                <svg lucideCheck [size]="14" [strokeWidth]="2"></svg> Verify
+              </button>
+              <button class="btn-icon delete" (click)="deleteDocument(doc.id)" [disabled]="submitting()" style="display: inline-flex; align-items: center; gap: 4px;">
+                <svg lucideTrash2 [size]="14" [strokeWidth]="2"></svg> Delete
+              </button>
+            </td>
+          </tr>
+          <tr *ngIf="documents().length === 0">
+            <td colspan="5" class="text-center text-gray py-4">No documents uploaded for this employee.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination" *ngIf="totalPages() > 1" style="display: inline-flex; align-items: center; gap: 12px;">
+      <button (click)="previousPage()" [disabled]="pageNumber() === 1" class="btn-page" style="display: inline-flex; align-items: center; gap: 4px;">
+        <svg lucideChevronLeft [size]="16" [strokeWidth]="2"></svg> Prev
+      </button>
+      <span class="page-info">Page {{ pageNumber() }} of {{ totalPages() }}</span>
+      <button (click)="nextPage()" [disabled]="pageNumber() === totalPages()" class="btn-page" style="display: inline-flex; align-items: center; gap: 4px;">
+        Next <svg lucideChevronRight [size]="16" [strokeWidth]="2"></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Upload Modal Dialog -->
+  <div class="modal-overlay" *ngIf="showUploadModal()">
+    <div class="custom-modal-box">
+      <div class="modal-header">
+        <h3>Upload Employee Document</h3>
+        <button class="close-btn" (click)="closeUploadModal()" aria-label="Close">
+          <svg lucideX [size]="16" [strokeWidth]="2"></svg>
+        </button>
+      </div>
+
+      <form [formGroup]="uploadForm" (ngSubmit)="submitUpload()">
+        <div class="form-body">
+          <!-- Document Type -->
+          <div class="form-group full-width">
+            <label for="docType">Document Type *</label>
+            <select id="docType" formControlName="documentType">
+              <option *ngFor="let dt of documentTypes" [value]="dt">{{ dt }}</option>
+            </select>
+          </div>
+
+          <!-- File Input -->
+          <div class="form-group full-width file-upload-group">
+            <label for="fileSelect">Select File *</label>
+            <input 
+              type="file" 
+              id="fileSelect" 
+              (change)="onFileSelected($event)" 
+              required
+            />
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" (click)="closeUploadModal()" [disabled]="submitting()">Cancel</button>
+          <button type="submit" class="btn-primary" [disabled]="uploadForm.invalid || !selectedFile() || submitting()" style="display: inline-flex; align-items: center; gap: 6px;">
+            <svg lucideLoader [size]="16" class="spin-loader" *ngIf="submitting()"></svg>
+            {{ submitting() ? 'Uploading...' : 'Upload Document' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

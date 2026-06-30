@@ -1,0 +1,164 @@
+<div class="sub-tab-container">
+  <div class="empty-state" *ngIf="!employeeStore.profile()">
+    <h2>Select an employee</h2>
+    <p>Choose an employee from the dropdown above to view and manage their work experience history.</p>
+  </div>
+
+  <div *ngIf="employeeStore.profile()">
+    <div class="sub-tab-header">
+      <div class="left-header">
+        <h3>Work Experience for {{ employeeStore.profile()?.firstName }} {{ employeeStore.profile()?.lastName }}</h3>
+      </div>
+      <div class="right-header">
+        <div class="import-section">
+          <input type="file" (change)="onFileSelected($event)" accept=".xlsx, .xls" class="file-input" />
+          <button class="btn-secondary" (click)="importExperiences()" [disabled]="submitting() || !selectedFile()" style="display: inline-flex; align-items: center; gap: 6px;">
+            <svg lucideLoader [size]="16" class="spin-loader" *ngIf="submitting()"></svg>
+            <svg lucideUpload [size]="16" [strokeWidth]="2" *ngIf="!submitting()"></svg>
+            {{ submitting() ? 'Importing...' : 'Import' }}
+          </button>
+        </div>
+        <button class="btn-secondary" (click)="exportExperiences()" style="display: inline-flex; align-items: center; gap: 6px;">
+          <svg lucideDownload [size]="16" [strokeWidth]="2"></svg> Export
+        </button>
+        <button class="btn-primary" (click)="openAddModal()" style="display: inline-flex; align-items: center; gap: 6px;">
+          <svg lucidePlus [size]="16" [strokeWidth]="2"></svg> Add Experience
+        </button>
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    <div class="loading-state" *ngIf="loading()">
+      <p>Loading experience records...</p>
+    </div>
+
+    <!-- Table View -->
+    <div class="table-card" *ngIf="!loading()">
+      <table class="custom-table">
+        <thead>
+          <tr>
+            <th>Company Name</th>
+            <th>Designation</th>
+            <th>Start Date</th>
+            <th>End Date</th>
+            <th>Responsibilities</th>
+            <th class="text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let exp of experiences()">
+            <td class="font-medium">{{ exp.companyName }}</td>
+            <td>{{ exp.designation }}</td>
+            <td>{{ (exp.startDate | date:'mediumDate') || '-' }}</td>
+            <td>{{ (exp.endDate | date:'mediumDate') || 'Present' }}</td>
+            <td class="responsibilities-cell" [title]="exp.responsibilities || ''">
+              {{ exp.responsibilities ? (exp.responsibilities | slice:0:50) + (exp.responsibilities.length > 50 ? '...' : '') : '-' }}
+            </td>
+            <td class="text-right actions-cell">
+              <button class="btn-icon edit" (click)="openEditModal(exp)" style="display: inline-flex; align-items: center; gap: 4px;">
+                <svg lucideEdit [size]="14" [strokeWidth]="2"></svg> Edit
+              </button>
+              <button class="btn-icon delete" (click)="deleteExperience(exp.id)" style="display: inline-flex; align-items: center; gap: 4px;">
+                <svg lucideTrash2 [size]="14" [strokeWidth]="2"></svg> Delete
+              </button>
+            </td>
+          </tr>
+          <tr *ngIf="experiences().length === 0">
+            <td colspan="6" class="text-center text-gray py-4">No experience records registered for this employee.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination" *ngIf="totalPages() > 1" style="display: inline-flex; align-items: center; gap: 12px;">
+      <button (click)="previousPage()" [disabled]="pageNumber() === 1" class="btn-page" style="display: inline-flex; align-items: center; gap: 4px;">
+        <svg lucideChevronLeft [size]="16" [strokeWidth]="2"></svg> Prev
+      </button>
+      <span class="page-info">Page {{ pageNumber() }} of {{ totalPages() }}</span>
+      <button (click)="nextPage()" [disabled]="pageNumber() === totalPages()" class="btn-page" style="display: inline-flex; align-items: center; gap: 4px;">
+        Next <svg lucideChevronRight [size]="16" [strokeWidth]="2"></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Modal Dialog -->
+  <div class="modal-overlay" *ngIf="showModal()">
+    <div class="custom-modal-box">
+      <div class="modal-header">
+        <h3>{{ editingId ? 'Edit Experience Record' : 'Add Experience Record' }}</h3>
+        <button class="close-btn" (click)="closeModal()" aria-label="Close">
+          <svg lucideX [size]="16" [strokeWidth]="2"></svg>
+        </button>
+      </div>
+
+      <form [formGroup]="experienceForm" (ngSubmit)="saveExperience()">
+        <div class="form-body">
+          <!-- Company Name -->
+          <div class="form-group full-width">
+            <label for="companyName">Company Name *</label>
+            <input 
+              type="text" 
+              id="companyName" 
+              formControlName="companyName" 
+              placeholder="e.g. Google LLC"
+              [class.error-border]="experienceForm.get('companyName')?.touched && experienceForm.get('companyName')?.invalid"
+            />
+          </div>
+
+          <!-- Designation -->
+          <div class="form-group full-width">
+            <label for="designation">Designation *</label>
+            <input 
+              type="text" 
+              id="designation" 
+              formControlName="designation" 
+              placeholder="e.g. Senior Software Engineer"
+              [class.error-border]="experienceForm.get('designation')?.touched && experienceForm.get('designation')?.invalid"
+            />
+          </div>
+
+          <!-- Start Date -->
+          <div class="form-group">
+            <label for="startDate">Start Date *</label>
+            <input 
+              type="date" 
+              id="startDate" 
+              formControlName="startDate" 
+              [class.error-border]="experienceForm.get('startDate')?.touched && experienceForm.get('startDate')?.invalid"
+            />
+          </div>
+
+          <!-- End Date -->
+          <div class="form-group">
+            <label for="endDate">End Date (Leave empty for Present)</label>
+            <input 
+              type="date" 
+              id="endDate" 
+              formControlName="endDate" 
+            />
+          </div>
+
+          <!-- Responsibilities -->
+          <div class="form-group full-width">
+            <label for="responsibilities">Responsibilities</label>
+            <textarea 
+              id="responsibilities" 
+              formControlName="responsibilities" 
+              placeholder="Describe roles, achievements, and responsibilities..."
+              rows="3"
+            ></textarea>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" (click)="closeModal()" [disabled]="submitting()">Cancel</button>
+          <button type="submit" class="btn-primary" [disabled]="experienceForm.invalid || submitting()" style="display: inline-flex; align-items: center; gap: 6px;">
+            <svg lucideLoader [size]="16" class="spin-loader" *ngIf="submitting()"></svg>
+            {{ submitting() ? (editingId ? 'Saving...' : 'Adding...') : (editingId ? 'Save Changes' : 'Add Experience') }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

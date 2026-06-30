@@ -1,0 +1,240 @@
+<div class="dashboard-container">
+  <!-- Top Title & Header -->
+  <div class="dashboard-header">
+    <div class="header-left">
+      <h1>Admin Dashboard</h1>
+      <p class="subtitle">Overview of company metrics, departments, leaves, and payroll</p>
+    </div>
+    <div class="header-right">
+      <button class="btn-refresh" (click)="loadData()" [disabled]="loading()">
+        <span *ngIf="!loading()" class="btn-content-flex" style="display: inline-flex; align-items: center; gap: 6px;">
+          <svg lucideRefreshCw [size]="16" [strokeWidth]="2"></svg> Refresh Data
+        </span>
+        <span *ngIf="loading()" class="btn-content-flex" style="display: inline-flex; align-items: center; gap: 6px;">
+          <svg lucideLoader [size]="16" [strokeWidth]="2" class="spinner"></svg> Loading...
+        </span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading Overlay -->
+  <div class="loading-overlay" *ngIf="loading() && !stats()">
+    <div class="spinner"></div>
+    <p>Fetching latest company metrics...</p>
+  </div>
+
+  <!-- Dashboard Content -->
+  <div *ngIf="stats()">
+    <!-- Stat Cards Grid -->
+    <div class="stats-grid">
+      <!-- Card 1: Total Employees -->
+      <div class="stat-card">
+        <div class="card-icon employees">
+          <svg lucideUsers [size]="24" [strokeWidth]="2"></svg>
+        </div>
+        <div class="card-details">
+          <h3>Total Employees</h3>
+          <p class="stat-value">{{ stats()!.totalEmployees }}</p>
+          <div class="stat-meta">
+            <span class="meta-label">Active: <strong>{{ stats()!.activeEmployees }}</strong></span>
+            <span class="meta-separator">|</span>
+            <span class="meta-label">Probation: <strong>{{ stats()!.probationEmployees }}</strong></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 2: Attendance Today -->
+      <div class="stat-card">
+        <div class="card-icon attendance">
+          <svg lucideCalendar [size]="24" [strokeWidth]="2"></svg>
+        </div>
+        <div class="card-details">
+          <h3>Today's Attendance</h3>
+          <p class="stat-value">{{ stats()!.attendancePercentage | number:'1.1-1' }}%</p>
+          <div class="stat-meta">
+            <span class="meta-label">Present: <strong>{{ stats()!.presentToday }}</strong></span>
+            <span class="meta-separator">|</span>
+            <span class="meta-label">Late: <strong>{{ stats()!.lateEmployees }}</strong></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 3: Leave Requests -->
+      <div class="stat-card">
+        <div class="card-icon leaves">
+          <svg lucideMail [size]="24" [strokeWidth]="2"></svg>
+        </div>
+        <div class="card-details">
+          <h3>Leaves Activity</h3>
+          <p class="stat-value">{{ stats()!.pendingLeaves }}</p>
+          <div class="stat-meta">
+            <span class="meta-label text-warning">Pending Requests</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 4: Monthly Payroll -->
+      <div class="stat-card">
+        <div class="card-icon payroll">
+          <svg lucideCoins [size]="24" [strokeWidth]="2"></svg>
+        </div>
+        <div class="card-details">
+          <h3>Monthly Payroll</h3>
+          <p class="stat-value">₹{{ stats()!.totalMonthlyPayroll | number:'1.0-0' }}</p>
+          <div class="stat-meta">
+            <span class="meta-label">Generated: <strong>{{ stats()!.payrollGeneratedThisMonth }}</strong></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Details Section -->
+    <div class="details-grid">
+      <!-- Left Column: Departments & Leaves -->
+      <div class="details-column-left">
+        <!-- Departments breakdown -->
+        <div class="details-card">
+          <div class="card-header-inline">
+            <h2>Department Breakdown</h2>
+            <span class="badge">{{ departments().length }} Departments</span>
+          </div>
+          <div class="card-body">
+            <div class="table-responsive">
+              <table class="dashboard-table">
+                <thead>
+                  <tr>
+                    <th>Department</th>
+                    <th>Employees</th>
+                    <th>Active</th>
+                    <th>On Leave</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let dept of departments()">
+                    <td class="font-semibold">{{ dept.departmentName }}</td>
+                    <td>
+                      <span class="badge-count">{{ dept.employeeCount }}</span>
+                    </td>
+                    <td>{{ dept.activeEmployees }}</td>
+                    <td>
+                      <span [class.text-danger]="dept.onLeaveEmployees > 0">{{ dept.onLeaveEmployees }}</span>
+                    </td>
+                  </tr>
+                  <tr *ngIf="departments().length === 0">
+                    <td colspan="4" class="text-center text-gray">No departments found.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Leave Summary Breakdown -->
+        <div class="details-card" *ngIf="leaveSummary()">
+          <div class="card-header-inline">
+            <h2>Leave Request Overview</h2>
+            <span class="badge bg-purple">Total: {{ leaveSummary()!.totalLeaves }}</span>
+          </div>
+          <div class="card-body">
+            <div class="progress-container">
+              <div class="progress-bar-group">
+                <div class="progress-bar-label">
+                  <span>Pending Requests</span>
+                  <strong>{{ leaveSummary()!.pendingLeaves }}</strong>
+                </div>
+                <div class="progress-track">
+                  <div class="progress-fill bg-warning" [style.width.%]="(leaveSummary()!.pendingLeaves / (leaveSummary()!.totalLeaves || 1)) * 100"></div>
+                </div>
+              </div>
+
+              <div class="progress-bar-group">
+                <div class="progress-bar-label">
+                  <span>Approved Requests</span>
+                  <strong>{{ leaveSummary()!.approvedLeaves }}</strong>
+                </div>
+                <div class="progress-track">
+                  <div class="progress-fill bg-success" [style.width.%]="(leaveSummary()!.approvedLeaves / (leaveSummary()!.totalLeaves || 1)) * 100"></div>
+                </div>
+              </div>
+
+              <div class="progress-bar-group">
+                <div class="progress-bar-label">
+                  <span>Rejected Requests</span>
+                  <strong>{{ leaveSummary()!.rejectedLeaves }}</strong>
+                </div>
+                <div class="progress-track">
+                  <div class="progress-fill bg-danger" [style.width.%]="(leaveSummary()!.rejectedLeaves / (leaveSummary()!.totalLeaves || 1)) * 100"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: Holidays & Admin Info -->
+      <div class="details-column-right">
+        <!-- Upcoming Holidays -->
+        <div class="details-card">
+          <div class="card-header-inline">
+            <h2>Upcoming Holidays</h2>
+            <span class="badge bg-blue">Holidays</span>
+          </div>
+          <div class="card-body">
+            <ul class="holiday-list">
+              <li *ngFor="let holiday of upcomingHolidays()" class="holiday-item">
+                <div class="holiday-date-badge">
+                  <span class="month">{{ holiday.holidayDate | date:'MMM' }}</span>
+                  <span class="day">{{ holiday.holidayDate | date:'dd' }}</span>
+                </div>
+                <div class="holiday-info">
+                  <h3>{{ holiday.name }}</h3>
+                  <p class="description">{{ holiday.description || 'Public Holiday' }}</p>
+                  <span class="badge-optional" *ngIf="holiday.isOptional">Optional</span>
+                  <span class="badge-mandatory" *ngIf="!holiday.isOptional">Mandatory</span>
+                </div>
+              </li>
+              <li *ngIf="upcomingHolidays().length === 0" class="text-center text-gray padding-16">
+                No upcoming holidays scheduled.
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Quick Actions Card -->
+        <div class="details-card">
+          <div class="card-header-inline">
+            <h2>Quick Shortcuts</h2>
+          </div>
+          <div class="card-body">
+            <div class="shortcuts-grid">
+              <a href="/admin/employees" class="shortcut-btn">
+                <span class="icon">
+                  <svg lucideUser [size]="20" [strokeWidth]="2"></svg>
+                </span>
+                <span class="label">Manage Employees</span>
+              </a>
+              <a href="/admin/payroll" class="shortcut-btn">
+                <span class="icon">
+                  <svg lucideCreditCard [size]="20" [strokeWidth]="2"></svg>
+                </span>
+                <span class="label">Process Payroll</span>
+              </a>
+              <a href="/admin/resignations" class="shortcut-btn">
+                <span class="icon">
+                  <svg lucideFileText [size]="20" [strokeWidth]="2"></svg>
+                </span>
+                <span class="label">Resignations</span>
+              </a>
+              <a href="/admin/holidays" class="shortcut-btn">
+                <span class="icon">
+                  <svg lucidePalmtree [size]="20" [strokeWidth]="2"></svg>
+                </span>
+                <span class="label">Holiday Schedule</span>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

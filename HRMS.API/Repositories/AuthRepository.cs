@@ -18,7 +18,16 @@ public class AuthRepository : IAuthRepository
     {
         return await _context.Users
             .Include(x => x.Roles)
+            .Include(x => x.Employee)
             .FirstOrDefaultAsync(x => x.Email == email);
+    }
+
+    public async Task<User?> GetUserById(Guid id)
+    {
+        return await _context.Users
+            .Include(x => x.Roles)
+            .Include(x => x.Employee)
+            .FirstOrDefaultAsync(x => x.Id == id);
     }
 
     public async Task<Role?> GetRoleByName(string roleName)
@@ -35,6 +44,18 @@ public class AuthRepository : IAuthRepository
     public async Task AddEmployee(Employee employee)
     {
         await _context.Employees.AddAsync(employee);
+    }
+
+    public async Task AddPasswordResetToken(PasswordResetToken token)
+    {
+        await _context.PasswordResetTokens.AddAsync(token);
+    }
+
+    public async Task<PasswordResetToken?> GetPasswordResetToken(string token)
+    {
+        return await _context.PasswordResetTokens
+            .Include(x => x.User)
+            .FirstOrDefaultAsync(x => x.Token == token);
     }
 
     public async Task SaveChanges()

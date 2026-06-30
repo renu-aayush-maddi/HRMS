@@ -1,0 +1,178 @@
+<div class="reviews-container">
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="header-title">
+      <h2>Performance Reviews</h2>
+      <p class="subtitle">Conduct and check performance evaluations of your team members</p>
+    </div>
+    <div class="header-actions">
+      <button class="btn-primary" (click)="openAddModal()" style="display: inline-flex; align-items: center; gap: 6px;">
+        <svg lucideFileText [size]="16" [strokeWidth]="2"></svg> Submit Evaluation
+      </button>
+    </div>
+  </div>
+
+  <!-- Success Notification -->
+  <div class="success-alert" *ngIf="successMessage()" style="display: flex; align-items: center; gap: 6px;">
+    <svg lucideCheckCircle [size]="16" [strokeWidth]="2"></svg> {{ successMessage() }}
+  </div>
+
+  <!-- Loading State -->
+  <div class="loading-state" *ngIf="loading()">
+    <p>Loading performance reviews...</p>
+  </div>
+
+  <!-- Error State -->
+  <div class="error-state" *ngIf="error()">
+    <p style="display: flex; align-items: center; justify-content: center; gap: 6px;">
+      <svg lucideAlertTriangle [size]="18" [strokeWidth]="2"></svg> {{ error() }}
+    </p>
+    <button class="btn-primary" (click)="loadReviews()">Retry</button>
+  </div>
+
+  <div *ngIf="!loading() && !error()">
+    <!-- Filter Bar -->
+    <div class="filters-card">
+      <div class="filters-grid">
+        <!-- Team Member Filter -->
+        <div class="filter-group">
+          <label for="filterEmployee">Team Member</label>
+          <select id="filterEmployee" [ngModel]="selectedEmployeeFilter()" (ngModelChange)="selectedEmployeeFilter.set($event); applyFilters()">
+            <option value="">All Direct Reports</option>
+            <option *ngFor="let member of team()" [value]="member.id">
+              {{ member.fullName }}
+            </option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Reviews Table -->
+    <div class="table-card">
+      <table class="custom-table">
+        <thead>
+          <tr>
+            <th>Employee Name</th>
+            <th class="text-center">Evaluation Date</th>
+            <th class="text-center">Rating Scale</th>
+            <th>Qualitative Feedback / Comments</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let review of filteredReviews()">
+            <td class="font-semibold">{{ review.employeeName }}</td>
+            <td class="text-center font-medium">{{ review.reviewDate | date:'mediumDate' }}</td>
+            <td class="text-center">
+              <div class="stars-display" style="display: inline-flex; align-items: center; gap: 2px;">
+                <!-- Render stars conditionally -->
+                <svg lucideStar *ngFor="let star of stars" [size]="16" [strokeWidth]="2" class="star" 
+                  [class.filled]="review.rating && review.rating >= star"
+                  [style.fill]="(review.rating && review.rating >= star) ? '#fbbf24' : 'none'"
+                  [style.color]="(review.rating && review.rating >= star) ? '#fbbf24' : '#cbd5e1'">
+                </svg>
+                <span class="rating-number font-semibold" style="margin-left: 4px;">({{ review.rating }}/5)</span>
+              </div>
+            </td>
+            <td class="comments-cell">{{ review.comments }}</td>
+          </tr>
+          <tr *ngIf="filteredReviews().length === 0">
+            <td colspan="4" class="text-center text-gray py-4">No reviews recorded. Click "Submit Evaluation" to write one!</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Add Evaluation Modal Overlay -->
+  <div class="modal-overlay" *ngIf="showAddModal()">
+    <div class="custom-modal-box">
+      <div class="modal-header">
+        <h3>Submit Performance Evaluation</h3>
+        <button class="close-btn" (click)="closeAddModal()" aria-label="Close">
+          <svg lucideX [size]="16" [strokeWidth]="2"></svg>
+        </button>
+      </div>
+
+      <form [formGroup]="reviewForm" (ngSubmit)="submitReview()">
+        <div class="form-body">
+          <!-- Select Direct Report -->
+          <div class="form-group">
+            <label for="employeeId">Evaluate Employee *</label>
+            <select 
+              id="employeeId" 
+              formControlName="employeeId"
+              [class.error-border]="reviewForm.get('employeeId')?.touched && reviewForm.get('employeeId')?.invalid">
+              <option value="">-- Choose Team Member --</option>
+              <option *ngFor="let member of team()" [value]="member.id">
+                {{ member.fullName }}
+              </option>
+            </select>
+            <span class="error-text" *ngIf="reviewForm.get('employeeId')?.touched && reviewForm.get('employeeId')?.invalid">
+              Please choose a team member to evaluate.
+            </span>
+          </div>
+
+          <!-- Select Performance Cycle -->
+          <div class="form-group">
+            <label for="performanceCycleId">Performance Evaluation Cycle *</label>
+            <select 
+              id="performanceCycleId" 
+              formControlName="performanceCycleId"
+              [class.error-border]="reviewForm.get('performanceCycleId')?.touched && reviewForm.get('performanceCycleId')?.invalid">
+              <option value="">-- Choose Active Cycle --</option>
+              <option *ngFor="let cycle of cycles()" [value]="cycle.id">
+                {{ cycle.name }}
+              </option>
+            </select>
+            <span class="error-text" *ngIf="reviewForm.get('performanceCycleId')?.touched && reviewForm.get('performanceCycleId')?.invalid">
+              Please select a performance cycle.
+            </span>
+          </div>
+
+          <!-- Rating Selector -->
+          <div class="form-group">
+            <label>Performance Rating Score *</label>
+            <div class="stars-selector-group">
+              <span *ngIf="stars" [class.hidden]="false" style="display: inline-flex; align-items: center; gap: 2px;">
+                <svg lucideStar *ngFor="let star of stars" 
+                  [size]="20" [strokeWidth]="2"
+                  class="interactive-star"
+                  [class.selected]="getSelectedRating() >= star"
+                  (click)="setRating(star)"
+                  [style.fill]="(getSelectedRating() >= star) ? '#fbbf24' : 'none'"
+                  [style.color]="(getSelectedRating() >= star) ? '#fbbf24' : '#cbd5e1'">
+                </svg>
+              </span>
+              <span class="selected-rating-lbl font-semibold">
+                {{ getSelectedRating() }} / 5 Stars
+              </span>
+            </div>
+          </div>
+
+          <!-- Comments / Qualitative Feedback -->
+          <div class="form-group">
+            <label for="comments">Qualitative Comments & Feedback *</label>
+            <textarea 
+              id="comments" 
+              rows="4" 
+              formControlName="comments" 
+              placeholder="Provide constructive feedback, accomplishments, and areas of growth..."
+              [class.error-border]="reviewForm.get('comments')?.touched && reviewForm.get('comments')?.invalid">
+            </textarea>
+            <span class="error-text" *ngIf="reviewForm.get('comments')?.touched && reviewForm.get('comments')?.invalid">
+              Comments are required (max 1000 characters).
+            </span>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" (click)="closeAddModal()" [disabled]="submitting()">Cancel</button>
+          <button type="submit" class="btn-primary" [disabled]="reviewForm.invalid || submitting()" style="display: inline-flex; align-items: center; gap: 6px;">
+            <svg lucideLoader [size]="16" class="spin-loader" *ngIf="submitting()"></svg>
+            {{ submitting() ? 'Submitting...' : 'Submit Evaluation' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

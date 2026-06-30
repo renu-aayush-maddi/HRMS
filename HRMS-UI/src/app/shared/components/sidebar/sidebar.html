@@ -1,0 +1,436 @@
+<div class="sidebar-wrapper" [class.collapsed]="collapsed()">
+  <div class="sidebar-header">
+    <div class="logo-area" *ngIf="!collapsed()">
+      <svg lucideBuilding [size]="20" [strokeWidth]="2" class="logo-icon"></svg>
+      <span class="logo-text">HRMS</span>
+    </div>
+    <div class="logo-area-collapsed" *ngIf="collapsed()">
+      <svg lucideBuilding [size]="20" [strokeWidth]="2" class="logo-icon"></svg>
+    </div>
+    
+    <button class="collapse-toggle-btn" (click)="toggleCollapse.emit()" aria-label="Toggle sidebar">
+      @if (collapsed()) {
+        <svg lucideChevronRight [size]="16" [strokeWidth]="2"></svg>
+      } @else {
+        <svg lucideChevronLeft [size]="16" [strokeWidth]="2"></svg>
+      }
+    </button>
+
+    <button class="mobile-close-btn" (click)="closeMobile.emit()" aria-label="Close menu">
+      <svg lucideX [size]="20" [strokeWidth]="2"></svg>
+    </button>
+  </div>
+
+  @let role = authStore.currentUser()?.role;
+
+  <div class="sidebar-scroll">
+    <ul class="nav-menu">
+      <!-- Admin Navigation -->
+      @if (role === 'Admin') {
+        <li class="menu-group-header" *ngIf="!collapsed()">Core HR</li>
+        
+        <li>
+          <a routerLink="/admin/dashboard" routerLinkActive="active-link" (click)="closeMobile.emit()">
+            <svg lucideLayoutDashboard [size]="18" [strokeWidth]="1.8" class="menu-icon"></svg>
+            <span class="menu-label">Dashboard</span>
+          </a>
+        </li>
+        <li>
+          <a routerLink="/org-chart" routerLinkActive="active-link" (click)="closeMobile.emit()">
+            <svg lucideNetwork [size]="18" [strokeWidth]="1.8" class="menu-icon"></svg>
+            <span class="menu-label">Org Chart</span>
+          </a>
+        </li>
+
+        <li [class.submenu-open]="employeesExpanded()">
+          <button class="menu-parent" (click)="toggleEmployees()">
+            <span class="menu-parent-left">
+              <svg lucideUsers [size]="18" [strokeWidth]="1.8" class="menu-icon"></svg>
+              <span class="menu-label">Employees</span>
+            </span>
+            <span class="submenu-arrow" *ngIf="!collapsed()">
+              @if(employeesExpanded()){
+                <svg lucideChevronDown [size]="14" [strokeWidth]="2"></svg>
+              } @else {
+                <svg lucideChevronRight [size]="14" [strokeWidth]="2"></svg>
+              }
+            </span>
+          </button>
+
+          @if(employeesExpanded()){
+            <ul class="submenu">
+              <li>
+                <a routerLink="/admin/employees" routerLinkActive="active-link" (click)="closeMobile.emit()">
+                  <span class="dot-indicator"></span>
+                  <span class="submenu-label">Manage Employees</span>
+                </a>
+              </li>
+              <li [class.submenu-open]="employeeDetailsExpanded()">
+                <button class="menu-parent submenu-parent" (click)="toggleEmployeeDetails()">
+                  <span class="menu-parent-left">
+                    <svg lucideUser [size]="16" [strokeWidth]="1.8" class="menu-icon"></svg>
+                    <span class="submenu-label">Employee Details</span>
+                  </span>
+                  <span class="submenu-arrow" *ngIf="!collapsed()">
+                    @if(employeeDetailsExpanded()){
+                      <svg lucideChevronDown [size]="12" [strokeWidth]="2"></svg>
+                    } @else {
+                      <svg lucideChevronRight [size]="12" [strokeWidth]="2"></svg>
+                    }
+                  </span>
+                </button>
+
+                @if(employeeDetailsExpanded()){
+                  <ul class="submenu submenu-level-2">
+                    <li><a routerLink="/admin/employee-details/overview" routerLinkActive="active-link" (click)="closeMobile.emit()"><span class="submenu-label">Overview</span></a></li>
+                    <li><a routerLink="/admin/employee-details/addresses" routerLinkActive="active-link" (click)="closeMobile.emit()"><span class="submenu-label">Addresses</span></a></li>
+                    <li><a routerLink="/admin/employee-details/educations" routerLinkActive="active-link" (click)="closeMobile.emit()"><span class="submenu-label">Educations</span></a></li>
+                    <li><a routerLink="/admin/employee-details/experiences" routerLinkActive="active-link" (click)="closeMobile.emit()"><span class="submenu-label">Experiences</span></a></li>
+                    <li><a routerLink="/admin/employee-details/emergency-contacts" routerLinkActive="active-link" (click)="closeMobile.emit()"><span class="submenu-label">Emergency Contacts</span></a></li>
+                    <li><a routerLink="/admin/employee-details/documents" routerLinkActive="active-link" (click)="closeMobile.emit()"><span class="submenu-label">Documents</span></a></li>
+                    <li><a routerLink="/admin/employee-details/salary" routerLinkActive="active-link" (click)="closeMobile.emit()"><span class="submenu-label">Salary</span></a></li>
+                    <li><a routerLink="/admin/employee-details/leave-balances" routerLinkActive="active-link" (click)="closeMobile.emit()"><span class="submenu-label">Leave Balances</span></a></li>
+                  </ul>
+                }
+              </li>
+            </ul>
+          }
+        </li>
+
+        <li>
+          <a routerLink="/admin/departments" routerLinkActive="active-link" (click)="closeMobile.emit()">
+            <svg lucideBuilding [size]="18" [strokeWidth]="1.8" class="menu-icon"></svg>
+            <span class="menu-label">Departments</span>
+          </a>
+        </li>
+
+        <li class="menu-group-header" *ngIf="!collapsed()">Time & Leaves</li>
+        <li>
+          <a routerLink="/admin/leave-types" routerLinkActive="active-link" (click)="closeMobile.emit()">
+            <svg lucideCalendarClock [size]="18" [strokeWidth]="1.8" class="menu-icon"></svg>
+            <span class="menu-label">Leave Types</span>
+          </a>
+        </li>
+        <li>
+          <a routerLink="/admin/holidays" routerLinkActive="active-link" (click)="closeMobile.emit()">
+            <svg lucidePalmtree [size]="18" [strokeWidth]="1.8" class="menu-icon"></svg>
+            <span class="menu-label">Holidays</span>
+          </a>
+        </li>
+
+        <li class="menu-group-header" *ngIf="!collapsed()">Performance</li>
+        <li>
+          <a routerLink="/admin/goals" routerLinkActive="active-link" (click)="closeMobile.emit()">
+            <svg lucideTarget [size]="18" [strokeWidth]="1.8" class="menu-icon"></svg>
+            <span class="menu-label">Goals</span>
+          </a>
+        </li>
+        <li>
+          <a routerLink="/admin/reviews" routerLinkActive="active-link" (click)="closeMobile.emit()">
+            <svg lucideClipboardCheck [size]="18" [strokeWidth]="1.8" class="menu-icon"></svg>
+            <span class="menu-label">Reviews</span>
+          </a>
+        </li>
+        <li>
+          <a routerLink="/admin/resignations" routerLinkActive="active-link" (click)="closeMobile.emit()">
+            <svg lucideUserMinus [size]="18" [strokeWidth]="1.8" class="menu-icon"></svg>
+            <span class="menu-label">Resignations</span>
+          </a>
+        </li>
+
+        <li class="menu-group-header" *ngIf="!collapsed()">Payroll & Compensation</li>
+        <li>
+          <a routerLink="/admin/payroll" routerLinkActive="active-link" (click)="closeMobile.emit()">
+            <svg lucideCoins [size]="18" [strokeWidth]="1.8" class="menu-icon"></svg>
+            <span class="menu-label">Payroll</span>
+          </a>
+        </li>
+        <li>
+          <a routerLink="/admin/employee-salaries" routerLinkActive="active-link" (click)="closeMobile.emit()">
+            <svg lucideWallet [size]="18" [strokeWidth]="1.8" class="menu-icon"></svg>
+            <span class="menu-label">Employee Salaries</span>
+          </a>
+        </li>
+        <li>
+          <a routerLink="/admin/salary-structures" routerLinkActive="active-link" (click)="closeMobile.emit()">
+            <svg lucideReceipt [size]="18" [strokeWidth]="1.8" class="menu-icon"></svg>
+            <span class="menu-label">Salary Structures</span>
+          </a>
+        </li>
+        <li>
+          <a routerLink="/admin/additions-deductions" routerLinkActive="active-link" (click)="closeMobile.emit()">
+            <svg lucideCalculator [size]="18" [strokeWidth]="1.8" class="menu-icon"></svg>
+            <span class="menu-label">Additions & Deductions</span>
+          </a>
+        </li>
+        <li>
+          <a routerLink="/admin/performance-bonus" routerLinkActive="active-link" (click)="closeMobile.emit()">
+            <svg lucideSparkles [size]="18" [strokeWidth]="1.8" class="menu-icon"></svg>
+            <span class="menu-label">Performance Bonus</span>
+          </a>
+        </li>
+      }
+
+      <!-- HR Navigation -->
+      @if (role === 'HR') {
+        <li class="menu-group-header" *ngIf="!collapsed()">Core HR</li>
+        
+        <li>
+          <a routerLink="/hr/dashboard" routerLinkActive="active-link" (click)="closeMobile.emit()">
+            <svg lucideLayoutDashboard [size]="18" [strokeWidth]="1.8" class="menu-icon"></svg>
+            <span class="menu-label">Dashboard</span>
+          </a>
+        </li>
+        <li>
+          <a routerLink="/org-chart" routerLinkActive="active-link" (click)="closeMobile.emit()">
+            <svg lucideNetwork [size]="18" [strokeWidth]="1.8" class="menu-icon"></svg>
+            <span class="menu-label">Org Chart</span>
+          </a>
+        </li>
+
+        <li [class.submenu-open]="employeesExpanded()">
+          <button class="menu-parent" (click)="toggleEmployees()">
+            <span class="menu-parent-left">
+              <svg lucideUsers [size]="18" [strokeWidth]="1.8" class="menu-icon"></svg>
+              <span class="menu-label">Employees</span>
+            </span>
+            <span class="submenu-arrow" *ngIf="!collapsed()">
+              @if(employeesExpanded()){
+                <svg lucideChevronDown [size]="14" [strokeWidth]="2"></svg>
+              } @else {
+                <svg lucideChevronRight [size]="14" [strokeWidth]="2"></svg>
+              }
+            </span>
+          </button>
+
+          @if(employeesExpanded()){
+            <ul class="submenu">
+              <li>
+                <a routerLink="/hr/employees" routerLinkActive="active-link" (click)="closeMobile.emit()">
+                  <span class="dot-indicator"></span>
+                  <span class="submenu-label">Manage Employees</span>
+                </a>
+              </li>
+              <li [class.submenu-open]="employeeDetailsExpanded()">
+                <button class="menu-parent submenu-parent" (click)="toggleEmployeeDetails()">
+                  <span class="menu-parent-left">
+                    <svg lucideUser [size]="16" [strokeWidth]="1.8" class="menu-icon"></svg>
+                    <span class="submenu-label">Employee Details</span>
+                  </span>
+                  <span class="submenu-arrow" *ngIf="!collapsed()">
+                    @if(employeeDetailsExpanded()){
+                      <svg lucideChevronDown [size]="12" [strokeWidth]="2"></svg>
+                    } @else {
+                      <svg lucideChevronRight [size]="12" [strokeWidth]="2"></svg>
+                    }
+                  </span>
+                </button>
+
+                @if(employeeDetailsExpanded()){
+                  <ul class="submenu submenu-level-2">
+                    <li><a routerLink="/hr/employee-details/overview" routerLinkActive="active-link" (click)="closeMobile.emit()"><span class="submenu-label">Overview</span></a></li>
+                    <li><a routerLink="/hr/employee-details/addresses" routerLinkActive="active-link" (click)="closeMobile.emit()"><span class="submenu-label">Addresses</span></a></li>
+                    <li><a routerLink="/hr/employee-details/educations" routerLinkActive="active-link" (click)="closeMobile.emit()"><span class="submenu-label">Educations</span></a></li>
+                    <li><a routerLink="/hr/employee-details/experiences" routerLinkActive="active-link" (click)="closeMobile.emit()"><span class="submenu-label">Experiences</span></a></li>
+                    <li><a routerLink="/hr/employee-details/emergency-contacts" routerLinkActive="active-link" (click)="closeMobile.emit()"><span class="submenu-label">Emergency Contacts</span></a></li>
+                    <li><a routerLink="/hr/employee-details/documents" routerLinkActive="active-link" (click)="closeMobile.emit()"><span class="submenu-label">Documents</span></a></li>
+                    <li><a routerLink="/hr/employee-details/salary" routerLinkActive="active-link" (click)="closeMobile.emit()"><span class="submenu-label">Salary</span></a></li>
+                    <li><a routerLink="/hr/employee-details/leave-balances" routerLinkActive="active-link" (click)="closeMobile.emit()"><span class="submenu-label">Leave Balances</span></a></li>
+                  </ul>
+                }
+              </li>
+            </ul>
+          }
+        </li>
+
+        <li class="menu-group-header" *ngIf="!collapsed()">Time & Attendance</li>
+        <li>
+          <a routerLink="/hr/attendance" routerLinkActive="active-link" (click)="closeMobile.emit()">
+            <svg lucideClock [size]="18" [strokeWidth]="1.8" class="menu-icon"></svg>
+            <span class="menu-label">Attendance</span>
+          </a>
+        </li>
+        <li>
+          <a routerLink="/hr/leave" routerLinkActive="active-link" (click)="closeMobile.emit()">
+            <svg lucideCalendarClock [size]="18" [strokeWidth]="1.8" class="menu-icon"></svg>
+            <span class="menu-label">Leave Requests</span>
+          </a>
+        </li>
+        <li>
+          <a routerLink="/hr/holidays" routerLinkActive="active-link" (click)="closeMobile.emit()">
+            <svg lucidePalmtree [size]="18" [strokeWidth]="1.8" class="menu-icon"></svg>
+            <span class="menu-label">Holidays</span>
+          </a>
+        </li>
+        <li>
+          <a routerLink="/hr/leave-types" routerLinkActive="active-link" (click)="closeMobile.emit()">
+            <svg lucideCalendarClock [size]="18" [strokeWidth]="1.8" class="menu-icon"></svg>
+            <span class="menu-label">Leave Types</span>
+          </a>
+        </li>
+
+        <li class="menu-group-header" *ngIf="!collapsed()">Performance</li>
+        <li>
+          <a routerLink="/hr/reviews" routerLinkActive="active-link" (click)="closeMobile.emit()">
+            <svg lucideClipboardCheck [size]="18" [strokeWidth]="1.8" class="menu-icon"></svg>
+            <span class="menu-label">Reviews</span>
+          </a>
+        </li>
+        <li>
+          <a routerLink="/hr/resignations" routerLinkActive="active-link" (click)="closeMobile.emit()">
+            <svg lucideUserMinus [size]="18" [strokeWidth]="1.8" class="menu-icon"></svg>
+            <span class="menu-label">Resignations</span>
+          </a>
+        </li>
+
+        <li class="menu-group-header" *ngIf="!collapsed()">Payroll & Compensation</li>
+        <li>
+          <a routerLink="/hr/payroll" routerLinkActive="active-link" (click)="closeMobile.emit()">
+            <svg lucideCoins [size]="18" [strokeWidth]="1.8" class="menu-icon"></svg>
+            <span class="menu-label">Payroll</span>
+          </a>
+        </li>
+        <li>
+          <a routerLink="/hr/employee-salaries" routerLinkActive="active-link" (click)="closeMobile.emit()">
+            <svg lucideWallet [size]="18" [strokeWidth]="1.8" class="menu-icon"></svg>
+            <span class="menu-label">Employee Salaries</span>
+          </a>
+        </li>
+        <li>
+          <a routerLink="/hr/salary-structures" routerLinkActive="active-link" (click)="closeMobile.emit()">
+            <svg lucideReceipt [size]="18" [strokeWidth]="1.8" class="menu-icon"></svg>
+            <span class="menu-label">Salary Structures</span>
+          </a>
+        </li>
+        <li>
+          <a routerLink="/hr/additions-deductions" routerLinkActive="active-link" (click)="closeMobile.emit()">
+            <svg lucideCalculator [size]="18" [strokeWidth]="1.8" class="menu-icon"></svg>
+            <span class="menu-label">Additions & Deductions</span>
+          </a>
+        </li>
+        <li>
+          <a routerLink="/hr/performance-bonus" routerLinkActive="active-link" (click)="closeMobile.emit()">
+            <svg lucideSparkles [size]="18" [strokeWidth]="1.8" class="menu-icon"></svg>
+            <span class="menu-label">Performance Bonus</span>
+          </a>
+        </li>
+      }
+
+      <!-- Manager Navigation -->
+      @if (role === 'Manager') {
+        <li class="menu-group-header" *ngIf="!collapsed()">Team Space</li>
+        
+        <li>
+          <a routerLink="/manager/dashboard" routerLinkActive="active-link" (click)="closeMobile.emit()">
+            <svg lucideLayoutDashboard [size]="18" [strokeWidth]="1.8" class="menu-icon"></svg>
+            <span class="menu-label">Dashboard</span>
+          </a>
+        </li>
+        <li>
+          <a routerLink="/manager/team" routerLinkActive="active-link" (click)="closeMobile.emit()">
+            <svg lucideUsers [size]="18" [strokeWidth]="1.8" class="menu-icon"></svg>
+            <span class="menu-label">Team Directory</span>
+          </a>
+        </li>
+        <li>
+          <a routerLink="/org-chart" routerLinkActive="active-link" (click)="closeMobile.emit()">
+            <svg lucideNetwork [size]="18" [strokeWidth]="1.8" class="menu-icon"></svg>
+            <span class="menu-label">Org Chart</span>
+          </a>
+        </li>
+
+        <li class="menu-group-header" *ngIf="!collapsed()">Operations</li>
+        <li>
+          <a routerLink="/manager/team-attendance" routerLinkActive="active-link" (click)="closeMobile.emit()">
+            <svg lucideClock [size]="18" [strokeWidth]="1.8" class="menu-icon"></svg>
+            <span class="menu-label">Team Attendance</span>
+          </a>
+        </li>
+        <li>
+          <a routerLink="/manager/leave-approvals" routerLinkActive="active-link" (click)="closeMobile.emit()">
+            <svg lucideCalendarClock [size]="18" [strokeWidth]="1.8" class="menu-icon"></svg>
+            <span class="menu-label">Leave Approvals</span>
+          </a>
+        </li>
+
+        <li class="menu-group-header" *ngIf="!collapsed()">Performance</li>
+        <li>
+          <a routerLink="/manager/goals" routerLinkActive="active-link" (click)="closeMobile.emit()">
+            <svg lucideTarget [size]="18" [strokeWidth]="1.8" class="menu-icon"></svg>
+            <span class="menu-label">Performance Goals</span>
+          </a>
+        </li>
+        <li>
+          <a routerLink="/manager/reviews" routerLinkActive="active-link" (click)="closeMobile.emit()">
+            <svg lucideClipboardCheck [size]="18" [strokeWidth]="1.8" class="menu-icon"></svg>
+            <span class="menu-label">Performance Reviews</span>
+          </a>
+        </li>
+      }
+
+      <!-- Employee Navigation -->
+      @if (role === 'Employee') {
+        <li class="menu-group-header" *ngIf="!collapsed()">Self Service</li>
+        
+        <li>
+          <a routerLink="/employee/dashboard" routerLinkActive="active-link" (click)="closeMobile.emit()">
+            <svg lucideLayoutDashboard [size]="18" [strokeWidth]="1.8" class="menu-icon"></svg>
+            <span class="menu-label">Dashboard</span>
+          </a>
+        </li>
+        <li>
+          <a routerLink="/employee/profile" routerLinkActive="active-link" (click)="closeMobile.emit()">
+            <svg lucideUser [size]="18" [strokeWidth]="1.8" class="menu-icon"></svg>
+            <span class="menu-label">My Profile</span>
+          </a>
+        </li>
+        <li>
+          <a routerLink="/org-chart" routerLinkActive="active-link" (click)="closeMobile.emit()">
+            <svg lucideNetwork [size]="18" [strokeWidth]="1.8" class="menu-icon"></svg>
+            <span class="menu-label">Org Chart</span>
+          </a>
+        </li>
+
+        <li class="menu-group-header" *ngIf="!collapsed()">Time & Finance</li>
+        <li>
+          <a routerLink="/employee/attendance" routerLinkActive="active-link" (click)="closeMobile.emit()">
+            <svg lucideClock [size]="18" [strokeWidth]="1.8" class="menu-icon"></svg>
+            <span class="menu-label">My Attendance</span>
+          </a>
+        </li>
+        <li>
+          <a routerLink="/employee/leave" routerLinkActive="active-link" (click)="closeMobile.emit()">
+            <svg lucideCalendarClock [size]="18" [strokeWidth]="1.8" class="menu-icon"></svg>
+            <span class="menu-label">My Leave</span>
+          </a>
+        </li>
+        <li>
+          <a routerLink="/employee/payroll" routerLinkActive="active-link" (click)="closeMobile.emit()">
+            <svg lucideCoins [size]="18" [strokeWidth]="1.8" class="menu-icon"></svg>
+            <span class="menu-label">My Payroll</span>
+          </a>
+        </li>
+
+        <li class="menu-group-header" *ngIf="!collapsed()">Talent</li>
+        <li>
+          <a routerLink="/employee/goals" routerLinkActive="active-link" (click)="closeMobile.emit()">
+            <svg lucideTarget [size]="18" [strokeWidth]="1.8" class="menu-icon"></svg>
+            <span class="menu-label">My Goals</span>
+          </a>
+        </li>
+        <li>
+          <a routerLink="/employee/reviews" routerLinkActive="active-link" (click)="closeMobile.emit()">
+            <svg lucideClipboardCheck [size]="18" [strokeWidth]="1.8" class="menu-icon"></svg>
+            <span class="menu-label">My Reviews</span>
+          </a>
+        </li>
+        <li>
+          <a routerLink="/employee/resignation" routerLinkActive="active-link" (click)="closeMobile.emit()">
+            <svg lucideUserMinus [size]="18" [strokeWidth]="1.8" class="menu-icon"></svg>
+            <span class="menu-label">My Resignation</span>
+          </a>
+        </li>
+      }
+    </ul>
+  </div>
+</div>

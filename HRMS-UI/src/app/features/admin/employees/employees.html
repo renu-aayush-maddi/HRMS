@@ -1,0 +1,444 @@
+<div class="page-header">
+  <div class="header-title">
+    <h2>Employees</h2>
+  </div>
+
+<div class="header-actions">
+
+  <div class="search-bar">
+
+    <input
+      type="text"
+      placeholder="Search employees..."
+      [ngModel]="search()"
+      (ngModelChange)="search.set($event)">
+
+    <button
+      class="btn-secondary"
+      (click)="searchEmployees()">
+
+      Search
+
+    </button>
+
+  </div>
+
+  <input
+    type="file"
+    (change)="onFileSelected($event)">
+
+  <button
+    class="btn-secondary"
+    (click)="importEmployees()">
+
+    Import Excel
+
+  </button>
+
+  <button
+    class="btn-secondary"
+    (click)="exportEmployees()">
+
+    Export Excel
+
+  </button>
+
+  <button
+    class="btn-primary"
+    (click)="openAddEmployee()">
+
+    + Add Employee
+
+  </button>
+
+</div>
+</div>
+
+@if (loading()) {
+  <div class="loading-state">
+    <p>Loading employees...</p>
+  </div>
+}
+
+@if (!loading()) {
+  <div class="table-card">
+    <table>
+      <thead>
+        <tr>
+          <th>Code</th>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Department</th>
+          <th>Designation</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for(employee of employees(); track employee.id){
+          <tr>
+
+            <td><span class="badge-code">{{ employee.employeeCode }}</span></td>
+
+            <td class="font-medium">
+              {{ employee.firstName }} {{ employee.lastName }}
+            </td>
+
+            <td class="text-gray">{{ employee.email }}</td>
+
+            <td>{{ employee.department }}</td>
+
+            <td>{{ employee.designation }}</td>
+
+            <td>
+
+          <select
+            [value]="employee.employmentStatus"
+            (change)="updateStatus(
+              employee.id,
+              $event
+            )">
+
+            <option value="Active">
+              Active
+            </option>
+
+            <option value="Inactive">
+              Inactive
+            </option>
+
+            <option value="NoticePeriod">
+              Notice Period
+            </option>
+
+            <option value="Resigned">
+              Resigned
+            </option>
+
+          </select>
+
+        </td>
+
+            <td>
+
+          <button
+            class="btn-secondary"
+            (click)="openEditEmployee(employee)">
+
+            Edit
+
+          </button>
+
+            </td>
+
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <div class="pagination">
+    <button class="btn-secondary" (click)="previousPage()">Previous</button>
+    <span class="page-info">Page {{ pageNumber() }} of {{ totalPages() }}</span>
+    <button class="btn-secondary" (click)="nextPage()">Next</button>
+  </div>
+}
+
+@if(showAddModal()){
+<div class="modal-overlay">
+  <div class="custom-modal-box">
+    
+    <div class="modal-header">
+      <h3>Add New Employee</h3>
+      <button class="close-btn" (click)="closeAddEmployee()">&times;</button>
+    </div>
+
+    <form [formGroup]="employeeForm" (ngSubmit)="createEmployee()">
+      
+      <!-- 2-Column Grid Layout -->
+      <div class="form-grid">
+        <div class="form-group">
+          <label>First Name</label>
+          <input placeholder="e.g. John" formControlName="firstName">
+        </div>
+
+        <div class="form-group">
+          <label>Last Name</label>
+          <input placeholder="e.g. Doe" formControlName="lastName">
+        </div>
+
+        <div class="form-group full-width">
+          <label>Email Address</label>
+          <input placeholder="john.doe@company.com" formControlName="email">
+        </div>
+
+        <div class="form-group">
+          <label>Phone Number</label>
+          <input placeholder="(555) 000-0000" formControlName="phone">
+        </div>
+
+        <div class="form-group">
+          <label>Salary</label>
+          <input type="number" placeholder="60000" formControlName="salary">
+        </div>
+
+        <div class="form-group">
+          <label>Designation</label>
+          <input placeholder="e.g. Software Engineer" formControlName="designation">
+        </div>
+
+        <div class="form-group">
+          <label>Role</label>
+          <select formControlName="role">
+            <option value="Employee">Employee</option>
+            <option value="Manager">Manager</option>
+            <option value="HR">HR</option>
+            <option value="Admin">Admin</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Department</label>
+          <select formControlName="departmentId">
+            <option value="">Select Department</option>
+            @for(department of departments(); track department.id){
+              <option [value]="department.id">{{ department.name }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="form-group full-width">
+          <label>Direct Manager</label>
+          <select formControlName="managerId">
+            <option value="">No Manager</option>
+            @for(manager of managers(); track manager.id){
+              <option [value]="manager.id">{{ manager.fullName }}</option>
+            }
+          </select>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button type="button" class="btn-secondary" (click)="closeAddEmployee()" [disabled]="submitting()">Cancel</button>
+        <button type="submit" class="btn-primary" [disabled]="employeeForm.invalid || submitting()" style="display: inline-flex; align-items: center; gap: 6px;">
+          <svg lucideLoader [size]="16" class="spin-loader" *ngIf="submitting()"></svg>
+          {{ submitting() ? 'Creating...' : 'Create Employee' }}
+        </button>
+      </div>
+
+    </form>
+  </div>
+</div>
+}
+
+@if(showProfileDrawer()){
+
+<div class="drawer-overlay">
+
+  <div class="drawer">
+
+    <div class="drawer-header">
+
+      <h2>
+
+        Employee Profile
+
+      </h2>
+
+      <button (click)="closeProfileDrawer()" aria-label="Close">
+        <svg lucideX [size]="20" [strokeWidth]="2"></svg>
+      </button>
+    </div>
+
+    @if(selectedProfile(); as profile){
+
+      <div class="profile-section">
+
+        <h3>Personal Information</h3>
+
+        <p>
+          Name:
+          {{ profile.firstName }}
+          {{ profile.lastName }}
+        </p>
+
+        <p>
+          Email:
+          {{ profile.email }}
+        </p>
+
+        <p>
+          Phone:
+          {{ profile.phone }}
+        </p>
+
+      </div>
+
+      <div class="profile-section">
+
+        <h3>Employment</h3>
+
+        <p>
+          Employee Code:
+          {{ profile.employeeCode }}
+        </p>
+
+        <p>
+          Department:
+          {{ profile.department }}
+        </p>
+
+        <p>
+          Designation:
+          {{ profile.designation }}
+        </p>
+
+        <p>
+          Manager:
+          {{ profile.managerName }}
+        </p>
+
+        <p>
+          Status:
+          {{ profile.employmentStatus }}
+        </p>
+
+      </div>
+
+      <div class="profile-section">
+
+        <h3>Education</h3>
+
+        @for(
+          education of profile.educations;
+          track education.id
+        ){
+
+          <p>
+
+            {{ education.degree }}
+
+            -
+
+            {{ education.institutionName }}
+
+            ({{ education.graduationYear }})
+
+          </p>
+
+        }
+
+      </div>
+
+      <div class="profile-section">
+
+        <h3>Experience</h3>
+
+        @for(
+          experience of profile.experiences;
+          track experience.id
+        ){
+
+          <p>
+
+            {{ experience.companyName }}
+
+            -
+
+            {{ experience.designation }}
+
+          </p>
+
+        }
+
+      </div>
+
+    }
+
+  </div>
+
+</div>
+
+}
+
+@if(showEditModal()){
+
+<div class="modal-overlay">
+
+  <div class="custom-modal-box">
+
+    <div class="modal-header">
+
+      <h3>
+        Edit Employee
+      </h3>
+
+      <button class="close-btn" (click)="closeEditEmployee()" aria-label="Close">
+        <svg lucideX [size]="20" [strokeWidth]="2"></svg>
+      </button>
+    </div>
+
+    <form
+      [formGroup]="editEmployeeForm"
+      (ngSubmit)="updateEmployee()">
+
+      <div class="form-grid">
+
+        <div class="form-group">
+          <label>First Name</label>
+          <input
+            formControlName="firstName">
+        </div>
+
+        <div class="form-group">
+          <label>Last Name</label>
+          <input
+            formControlName="lastName">
+        </div>
+
+        <div class="form-group">
+          <label>Phone</label>
+          <input
+            formControlName="phone">
+        </div>
+
+        <div class="form-group">
+          <label>Designation</label>
+          <input
+            formControlName="designation">
+        </div>
+
+        <div class="form-group full-width">
+          <label>Salary</label>
+          <input
+            type="number"
+            formControlName="salary">
+        </div>
+
+      </div>
+
+      <div class="actions">
+        <button
+          type="button"
+          class="btn-secondary"
+          (click)="closeEditEmployee()"
+          [disabled]="submitting()">
+          Cancel
+        </button>
+        <button
+          type="submit"
+          class="btn-primary"
+          [disabled]="editEmployeeForm.invalid || submitting()"
+          style="display: inline-flex; align-items: center; gap: 6px;">
+          <svg lucideLoader [size]="16" class="spin-loader" *ngIf="submitting()"></svg>
+          {{ submitting() ? 'Updating...' : 'Update Employee' }}
+        </button>
+      </div>
+
+    </form>
+
+  </div>
+
+</div>
+
+}

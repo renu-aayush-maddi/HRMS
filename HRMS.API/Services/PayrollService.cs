@@ -48,7 +48,7 @@ public class PayrollService : IPayrollService
         }
 
         var payrollDate = new DateOnly(dto.PayYear, dto.PayMonth, 1);
-        var currentMonth = new DateOnly(DateTime.UtcNow.Year, DateTime.Now.Month, 1);
+        var currentMonth = new DateOnly(DateTime.Now.Year, DateTime.Now.Month, 1);
 
         if (payrollDate > currentMonth)
         {
@@ -134,7 +134,7 @@ public class PayrollService : IPayrollService
             PresentDays = presentDays,
             LopDays = lopDays,
             LopDeduction = lopDeduction,
-            GeneratedAt = DateTime.UtcNow,
+            GeneratedAt = DateTime.Now,
             Status = PayrollStatuses.Generated
         };
 

@@ -1,0 +1,114 @@
+<div class="leave-approvals-container">
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="header-title">
+      <h2>Pending Leave Approvals</h2>
+      <p class="subtitle">Review and decide on leave requests submitted by your team</p>
+    </div>
+  </div>
+
+  <!-- Success Notification -->
+  <div class="success-alert" *ngIf="successMessage()" style="display: flex; align-items: center; gap: 6px;">
+    <svg lucideCheckCircle [size]="16" [strokeWidth]="2"></svg> {{ successMessage() }}
+  </div>
+
+  <!-- Loading State -->
+  <div class="loading-state" *ngIf="loading()">
+    <p>Loading pending leave requests...</p>
+  </div>
+
+  <!-- Error State -->
+  <div class="error-state" *ngIf="error()">
+    <p style="display: flex; align-items: center; justify-content: center; gap: 6px;">
+      <svg lucideAlertTriangle [size]="18" [strokeWidth]="2"></svg> {{ error() }}
+    </p>
+    <button class="btn-primary" (click)="loadPendingRequests()">Retry</button>
+  </div>
+
+  <div *ngIf="!loading() && !error()">
+    <!-- Leaves Table -->
+    <div class="table-card">
+      <table class="custom-table">
+        <thead>
+          <tr>
+            <th>Employee Name</th>
+            <th>Duration Dates</th>
+            <th class="text-center">Total Days</th>
+            <th>Reason Description</th>
+            <th class="text-center">Status</th>
+            <th class="text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let request of pendingRequests()">
+            <td class="font-semibold">{{ request.employeeName }}</td>
+            <td class="font-medium">
+              {{ request.fromDate | date:'mediumDate' }} &rarr; {{ request.toDate | date:'mediumDate' }}
+            </td>
+            <td class="text-center font-semibold">
+              {{ getLeaveDuration(request.fromDate, request.toDate) }} Days
+            </td>
+            <td class="reason-cell">{{ request.reason || '-' }}</td>
+            <td class="text-center">
+              <span class="badge bg-warning">Pending Approval</span>
+            </td>
+            <td class="text-right actions-cell">
+              <button class="btn-action approve-btn" (click)="openActionModal(request, 'approve')" [disabled]="submitting()">Approve</button>
+              <button class="btn-action reject-btn" (click)="openActionModal(request, 'reject')" [disabled]="submitting()">Reject</button>
+            </td>
+          </tr>
+          <tr *ngIf="pendingRequests().length === 0">
+            <td colspan="6" class="text-center text-gray py-4" style="display: flex; align-items: center; justify-content: center; gap: 6px;">
+              <svg lucideCoffee [size]="18" [strokeWidth]="2"></svg> No pending leave approval requests found. All clear!
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Action Modal Overlay -->
+  <div class="modal-overlay" *ngIf="selectedRequest()">
+    <div class="custom-modal-box">
+      <div class="modal-header">
+        <h3>Confirm Leave {{ actionType() === 'approve' ? 'Approval' : 'Rejection' }}</h3>
+        <button class="close-btn" (click)="closeModal()" aria-label="Close">
+          <svg lucideX [size]="16" [strokeWidth]="2"></svg>
+        </button>
+      </div>
+
+      <div class="modal-body" *ngIf="selectedRequest()">
+        <p class="modal-instruction">
+          Are you sure you want to <strong>{{ actionType() }}</strong> the leave request for
+          <strong>{{ selectedRequest()!.employeeName }}</strong> from {{ selectedRequest()!.fromDate | date:'mediumDate' }} to {{ selectedRequest()!.toDate | date:'mediumDate' }}?
+        </p>
+
+        <!-- Comments Form -->
+        <div class="form-group">
+          <label for="comments">Comments (Optional)</label>
+          <textarea 
+            id="comments" 
+            rows="3" 
+            placeholder="Add comments or instructions..." 
+            [ngModel]="comments()"
+            (ngModelChange)="comments.set($event)">
+          </textarea>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn-secondary" (click)="closeModal()" [disabled]="submitting()">Cancel</button>
+        <button 
+          class="btn-primary" 
+          [class.btn-danger]="actionType() === 'reject'"
+          [class.btn-success]="actionType() === 'approve'"
+          (click)="submitAction()" 
+          [disabled]="submitting()"
+          style="display: inline-flex; align-items: center; gap: 6px;">
+          <svg lucideLoader [size]="16" class="spin-loader" *ngIf="submitting()"></svg>
+          {{ submitting() ? 'Processing...' : (actionType() === 'approve' ? 'Approve Request' : 'Reject Request') }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

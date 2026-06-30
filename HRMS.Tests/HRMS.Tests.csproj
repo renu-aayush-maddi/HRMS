@@ -24,4 +24,9 @@
     <ProjectReference Include="..\HRMS.API\HRMS.API.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Remove="**/*.cs" />
+    <Compile Include="Services/HierarchyServiceTests.cs" />
+  </ItemGroup>
+
 </Project>

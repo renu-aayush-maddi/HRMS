@@ -1,0 +1,93 @@
+<div class="page-container">
+  <div class="page-header">
+    <div>
+      <h1>My Performance Goals</h1>
+      <p class="subtitle">Track and update the status of your assigned performance goals</p>
+    </div>
+  </div>
+
+  <div class="toast toast-success" *ngIf="successMessage()" style="display: flex; align-items: center; gap: 6px;">
+    <svg lucideCheckCircle [size]="16" [strokeWidth]="2"></svg> {{ successMessage() }}
+  </div>
+  <div class="toast toast-error" *ngIf="errorMessage()" style="display: flex; align-items: center; gap: 6px;">
+    <svg lucideAlertTriangle [size]="16" [strokeWidth]="2"></svg> {{ errorMessage() }}
+  </div>
+
+  <!-- Stats Row -->
+  <div class="goal-stats" *ngIf="!loading() && goals().length > 0">
+    <div class="goal-stat-item pending-stat">
+      <span class="stat-num">{{ stats().pending }}</span>
+      <span class="stat-lbl">Pending</span>
+    </div>
+    <div class="goal-stat-divider"></div>
+    <div class="goal-stat-item progress-stat">
+      <span class="stat-num">{{ stats().inProgress }}</span>
+      <span class="stat-lbl">In Progress</span>
+    </div>
+    <div class="goal-stat-divider"></div>
+    <div class="goal-stat-item completed-stat">
+      <span class="stat-num">{{ stats().completed }}</span>
+      <span class="stat-lbl">Completed</span>
+    </div>
+  </div>
+
+  <!-- Filter -->
+  <div class="filters-bar">
+    <div class="filter-group">
+      <label>Filter by Status</label>
+      <select [ngModel]="statusFilter()" (ngModelChange)="statusFilter.set($event); applyFilter()" class="form-control">
+        <option value="">All Goals</option>
+        <option value="Pending">Pending</option>
+        <option value="In Progress">In Progress</option>
+        <option value="Completed">Completed</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div class="loading-state" *ngIf="loading()">
+    <div class="spinner"></div>
+    <p>Loading your goals...</p>
+  </div>
+
+  <!-- Empty -->
+  <div class="empty-state-card" *ngIf="!loading() && filteredGoals().length === 0" style="display: flex; align-items: center; justify-content: center; gap: 6px;">
+    <svg lucideTarget [size]="18" [strokeWidth]="2"></svg> No goals found. Your manager will assign goals here.
+  </div>
+
+  <!-- Goals Cards -->
+  <div class="goals-grid" *ngIf="!loading() && filteredGoals().length > 0">
+    <div class="goal-card" *ngFor="let goal of filteredGoals()">
+      <div class="goal-card-top">
+        <div class="goal-title">{{ goal.title }}</div>
+        <span class="badge" [ngClass]="getStatusClass(goal.status)">{{ goal.status }}</span>
+      </div>
+
+      <p class="goal-description">{{ goal.description }}</p>
+
+      <div class="goal-meta">
+        <span class="goal-date" style="display: inline-flex; align-items: center; gap: 4px;">
+          <svg lucideCalendar [size]="14" [strokeWidth]="2"></svg> Target: {{ goal.targetDate | date:'mediumDate' }}
+        </span>
+      </div>
+
+      <!-- Status Selector -->
+      <div class="goal-actions">
+        <label class="action-label">Update Status:</label>
+        <div class="status-buttons">
+          <button
+            *ngFor="let s of statusOptions"
+            class="status-btn"
+            [class.active]="goal.status === s"
+            [disabled]="updatingId() === goal.id || goal.status === s"
+            (click)="updateStatus(goal.id, s)">
+            {{ s }}
+          </button>
+          <div class="updating-indicator" *ngIf="updatingId() === goal.id">
+            <div class="mini-spinner"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

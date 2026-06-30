@@ -1,0 +1,267 @@
+<div class="page-container">
+  <div class="page-header">
+    <div class="header-title">
+      <h2>Payroll Adjustments (Additions & Deductions)</h2>
+      <p class="subtitle">Assign ad-hoc adjustments (bonuses, overrides, claims) and check deduction penalties</p>
+    </div>
+    <div class="header-actions">
+      <button class="btn-secondary" (click)="exportReport()" style="display: inline-flex; align-items: center; gap: 6px;">
+        <svg lucideDownload [size]="16" [strokeWidth]="2"></svg> Export Excel
+      </button>
+      <button class="btn-primary" (click)="openAddModal()" style="display: inline-flex; align-items: center; gap: 6px;">
+        <svg lucidePlus [size]="16" [strokeWidth]="2"></svg> Add Adjustment Request
+      </button>
+    </div>
+  </div>
+
+  <!-- Tab Bar -->
+  <div class="tabs-navigation">
+    <button 
+      class="tab-btn" 
+      [class.active]="activeTab() === 'bonuses'" 
+      (click)="setTab('bonuses')">
+      Salary Additions (Bonuses)
+    </button>
+    <button 
+      class="tab-btn" 
+      [class.active]="activeTab() === 'deductions'" 
+      (click)="setTab('deductions')">
+      Salary Deductions
+    </button>
+  </div>
+
+  <!-- Filter Bar -->
+  <div class="filters-card">
+    <div class="filters-grid">
+      <!-- Employee filter -->
+      <div class="filter-group">
+        <label for="filterEmployee">Employee</label>
+        <select 
+          id="filterEmployee" 
+          [ngModel]="activeTab() === 'bonuses' ? bonusEmployeeId() : deductionEmployeeId()"
+          (ngModelChange)="onEmployeeFilterChange($event)">
+          <option value="">All Employees</option>
+          <option *ngFor="let emp of employees()" [value]="emp.id">
+            {{ emp.firstName }} {{ emp.lastName }}
+          </option>
+        </select>
+      </div>
+
+      <!-- Status Filter -->
+      <div class="filter-group">
+        <label for="filterStatus">Status</label>
+        <select 
+          id="filterStatus" 
+          [ngModel]="activeTab() === 'bonuses' ? bonusStatus() : deductionStatus()"
+          (ngModelChange)="onStatusFilterChange($event)">
+          <option value="">All Statuses</option>
+          <option value="Pending">Pending</option>
+          <option value="Approved">Approved</option>
+          <option value="Rejected">Rejected</option>
+        </select>
+      </div>
+
+      <!-- Month Filter -->
+      <div class="filter-group">
+        <label for="filterMonth">Month</label>
+        <select 
+          id="filterMonth" 
+          [ngModel]="activeTab() === 'bonuses' ? bonusMonth() : deductionMonth()"
+          (ngModelChange)="onMonthFilterChange($event)">
+          <option [value]="undefined">All Months</option>
+          <option *ngFor="let m of months" [value]="m.value">{{ m.name }}</option>
+        </select>
+      </div>
+
+      <!-- Year Filter -->
+      <div class="filter-group">
+        <label for="filterYear">Year</label>
+        <input 
+          type="number" 
+          id="filterYear" 
+          placeholder="e.g. 2026"
+          [ngModel]="activeTab() === 'bonuses' ? bonusYear() : deductionYear()"
+          (ngModelChange)="onYearFilterChange($event)"
+        />
+      </div>
+
+      <div class="filter-group button-align">
+        <button class="btn-clear" (click)="resetFilters()">Clear Filters</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div class="loading-state" *ngIf="loading()">
+    <p>Loading payroll adjustments...</p>
+  </div>
+
+  <!-- Data Display -->
+  <div *ngIf="!loading()">
+    <div class="table-card">
+      <table class="custom-table" *ngIf="activeTab() === 'bonuses'">
+        <thead>
+          <tr>
+            <th>Employee</th>
+            <th>Amount</th>
+            <th>Month / Year</th>
+            <th>Reason</th>
+            <th>Status</th>
+            <th class="text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let bonus of bonuses()">
+            <td class="font-semibold">{{ bonus.employeeName }}</td>
+            <td class="font-semibold text-green">${{ bonus.amount | number:'1.2-2' }}</td>
+            <td>{{ months[bonus.bonusMonth - 1].name }} {{ bonus.bonusYear }}</td>
+            <td>{{ bonus.reason }}</td>
+            <td>
+              <span class="badge" 
+                [class.bg-warning]="bonus.status === 'Pending'" 
+                [class.bg-success]="bonus.status === 'Approved'"
+                [class.bg-danger]="bonus.status === 'Rejected'">
+                {{ bonus.status }}
+              </span>
+            </td>
+            <td class="text-right actions-cell">
+              <ng-container *ngIf="bonus.status === 'Pending'">
+                <button class="btn-icon approve" (click)="approveRequest(bonus.id)" [disabled]="submitting()">Approve</button>
+                <button class="btn-icon reject" (click)="rejectRequest(bonus.id)" [disabled]="submitting()">Reject</button>
+              </ng-container>
+              <span class="text-gray" *ngIf="bonus.status !== 'Pending'">Processed</span>
+            </td>
+          </tr>
+          <tr *ngIf="bonuses().length === 0">
+            <td colspan="6" class="text-center text-gray py-4">No bonuses requested.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <table class="custom-table" *ngIf="activeTab() === 'deductions'">
+        <thead>
+          <tr>
+            <th>Employee</th>
+            <th>Amount</th>
+            <th>Month / Year</th>
+            <th>Reason</th>
+            <th>Status</th>
+            <th class="text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let ded of deductions()">
+            <td class="font-semibold">{{ ded.employeeName }}</td>
+            <td class="font-semibold text-red">${{ ded.amount | number:'1.2-2' }}</td>
+            <td>{{ months[ded.deductionMonth - 1].name }} {{ ded.deductionYear }}</td>
+            <td>{{ ded.reason }}</td>
+            <td>
+              <span class="badge" 
+                [class.bg-warning]="ded.status === 'Pending'" 
+                [class.bg-success]="ded.status === 'Approved'"
+                [class.bg-danger]="ded.status === 'Rejected'">
+                {{ ded.status }}
+              </span>
+            </td>
+            <td class="text-right actions-cell">
+              <ng-container *ngIf="ded.status === 'Pending'">
+                <button class="btn-icon approve" (click)="approveRequest(ded.id)" [disabled]="submitting()">Approve</button>
+                <button class="btn-icon reject" (click)="rejectRequest(ded.id)" [disabled]="submitting()">Reject</button>
+              </ng-container>
+              <span class="text-gray" *ngIf="ded.status !== 'Pending'">Processed</span>
+            </td>
+          </tr>
+          <tr *ngIf="deductions().length === 0">
+            <td colspan="6" class="text-center text-gray py-4">No deductions requested.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination" *ngIf="activeTab() === 'bonuses' ? bonusTotalPages() > 1 : deductionTotalPages() > 1" style="display: inline-flex; align-items: center; gap: 12px;">
+      <button (click)="previousPage()" [disabled]="activeTab() === 'bonuses' ? bonusPage() === 1 : deductionPage() === 1" class="btn-page" style="display: inline-flex; align-items: center; gap: 4px;">
+        <svg lucideChevronLeft [size]="16" [strokeWidth]="2"></svg> Prev
+      </button>
+      <span class="page-info">
+        Page {{ activeTab() === 'bonuses' ? bonusPage() : deductionPage() }} of {{ activeTab() === 'bonuses' ? bonusTotalPages() : deductionTotalPages() }}
+      </span>
+      <button (click)="nextPage()" [disabled]="activeTab() === 'bonuses' ? bonusPage() === bonusTotalPages() : deductionPage() === deductionTotalPages()" class="btn-page" style="display: inline-flex; align-items: center; gap: 4px;">
+        Next <svg lucideChevronRight [size]="16" [strokeWidth]="2"></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Modal Dialog (Add Request) -->
+  <div class="modal-overlay" *ngIf="showModal()">
+    <div class="custom-modal-box">
+      <div class="modal-header">
+        <h3>Request {{ activeTab() === 'bonuses' ? 'Salary Addition (Bonus)' : 'Salary Deduction' }}</h3>
+        <button class="close-btn" (click)="closeModal()" aria-label="Close">
+          <svg lucideX [size]="16" [strokeWidth]="2"></svg>
+        </button>
+      </div>
+
+      <form [formGroup]="requestForm" (ngSubmit)="submitRequest()">
+        <div class="form-body">
+          <div class="form-group full-width">
+            <label for="employeeId">Select Employee *</label>
+            <select 
+              id="employeeId" 
+              formControlName="employeeId"
+              [class.error-border]="requestForm.get('employeeId')?.touched && requestForm.get('employeeId')?.invalid">
+              <option value="">-- Choose Employee --</option>
+              <option *ngFor="let emp of employees()" [value]="emp.id">
+                {{ emp.firstName }} {{ emp.lastName }} ({{ emp.employeeCode }})
+              </option>
+            </select>
+            <span class="error-text" *ngIf="requestForm.get('employeeId')?.touched && requestForm.get('employeeId')?.invalid">
+              Employee selection is required.
+            </span>
+          </div>
+
+          <div class="grid-2-cols">
+            <div class="form-group">
+              <label for="amount">Amount ($) *</label>
+              <input type="number" id="amount" formControlName="amount" min="1" />
+            </div>
+
+            <div class="form-group">
+              <label for="month">Period Month *</label>
+              <select id="month" formControlName="month">
+                <option *ngFor="let m of months" [value]="m.value">{{ m.name }}</option>
+              </select>
+            </div>
+
+            <div class="form-group full-width">
+              <label for="year">Period Year *</label>
+              <input type="number" id="year" formControlName="year" />
+            </div>
+          </div>
+
+          <div class="form-group full-width">
+            <label for="reason">Reason / Comments *</label>
+            <textarea 
+              id="reason" 
+              formControlName="reason" 
+              rows="3"
+              placeholder="e.g. Sales performance bonus Q1, Laptop breakage recovery..."
+              [class.error-border]="requestForm.get('reason')?.touched && requestForm.get('reason')?.invalid"
+            ></textarea>
+            <span class="error-text" *ngIf="requestForm.get('reason')?.touched && requestForm.get('reason')?.invalid">
+              Reason is required (max 300 characters).
+            </span>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" (click)="closeModal()" [disabled]="submitting()">Cancel</button>
+          <button type="submit" class="btn-primary" [disabled]="requestForm.invalid || submitting()" style="display: inline-flex; align-items: center; gap: 6px;">
+            <svg lucideLoader [size]="16" class="spin-loader" *ngIf="submitting()"></svg>
+            {{ submitting() ? 'Submitting...' : 'Submit Request' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
