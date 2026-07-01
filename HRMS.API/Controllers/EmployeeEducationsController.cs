@@ -54,7 +54,7 @@ public class EmployeeEducationsController : ControllerBase
         });
     }
 
-    [Authorize(Roles = "Admin,HR")]
+    [Authorize(Roles = "Admin,HR,Manager,Employee")]
     [HttpGet("export")]
     public async Task<IActionResult> ExportEducations([FromQuery] EmployeeEducationFilterDto filter, CancellationToken cancellationToken)
     {
@@ -66,7 +66,7 @@ public class EmployeeEducationsController : ControllerBase
             $"employee-educations-{DateTime.Now:yyyyMMddHHmmss}.xlsx");
     }
 
-    [Authorize(Roles = "Admin,HR")]
+    [Authorize(Roles = "Admin,HR,Manager,Employee")]
     [HttpPost("import")]
     public async Task<IActionResult> ImportEducations(IFormFile file, CancellationToken cancellationToken)
     {

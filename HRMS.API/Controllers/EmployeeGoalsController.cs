@@ -8,7 +8,7 @@ namespace HRMS.API.Controllers;
 
 [Route("api/employee/goals")]
 [ApiController]
-[Authorize(Roles = "Employee")]
+[Authorize(Roles = "Employee,HR,Manager")]
 public class EmployeeGoalsController : ControllerBase
 {
     private readonly IGoalService service;

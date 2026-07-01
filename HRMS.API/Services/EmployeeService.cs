@@ -807,6 +807,9 @@ public class EmployeeService : IEmployeeService
                 : $"{employee.Manager.FirstName} {employee.Manager.LastName}",
             EmploymentStatus = employee.EmploymentStatus,
             Salary = employee.Salary,
+            ProfilePhotoUrl = employee.ProfilePhotoUrl,
+            Role = employee.User?.Roles.FirstOrDefault()?.Name,
+            JoiningDate = employee.JoiningDate,
 
             Educations = employee.EmployeeEducations
                 .Select(x => new EmployeeEducationResponseDto
@@ -1001,5 +1004,201 @@ public class EmployeeService : IEmployeeService
         return result;
     }
 
+    public async Task UpdateMyProfileAsync(
+        Guid userId,
+        UpdateMyProfileDto dto,
+        CancellationToken cancellationToken = default)
+    {
+        var employeeId = await userContextService.GetEmployeeIdAsync(cancellationToken);
+        if (employeeId == null)
+        {
+            throw new NotFoundException("Employee profile not found.");
+        }
 
+        var employee = await employeeRepository.GetEmployeeByIdAsync(employeeId.Value, cancellationToken);
+        if (employee == null)
+        {
+            throw new NotFoundException("Employee not found.");
+        }
+
+        employee.Phone = dto.Phone;
+        employee.UpdatedAt = DateTime.Now;
+        employee.UpdatedBy = userId;
+
+        employeeRepository.UpdateEmployee(employee);
+        await employeeRepository.SaveChangesAsync(cancellationToken);
+
+        await auditLogService.LogAsync(
+            "Update",
+            nameof(Employee),
+            employee.Id,
+            $"Employee {employee.EmployeeCode} updated phone: {dto.Phone}",
+            cancellationToken);
+
+        logger.LogInformation("Employee {EmployeeId} updated their own phone number.", employee.Id);
+    }
+
+    public async Task<string> UploadProfilePhotoAsync(
+        Guid userId,
+        IFormFile file,
+        CancellationToken cancellationToken = default)
+    {
+        if (file == null || file.Length == 0)
+        {
+            throw new BusinessException("No file uploaded.");
+        }
+
+        var employeeId = await userContextService.GetEmployeeIdAsync(cancellationToken);
+        if (employeeId == null)
+        {
+            throw new NotFoundException("Employee profile not found.");
+        }
+
+        var employee = await employeeRepository.GetEmployeeByIdAsync(employeeId.Value, cancellationToken);
+        if (employee == null)
+        {
+            throw new NotFoundException("Employee not found.");
+        }
+
+        var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+        var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".webp" };
+        if (!allowedExtensions.Contains(extension))
+        {
+            throw new BusinessException("Invalid file format. Supported formats: JPG, JPEG, PNG, WEBP.");
+        }
+
+        if (file.Length > 5 * 1024 * 1024)
+        {
+            throw new BusinessException("File size exceeds the limit of 5 MB.");
+        }
+
+        // Validate image magic numbers
+        using (var stream = file.OpenReadStream())
+        {
+            var header = new byte[8];
+            var read = await stream.ReadAsync(header, 0, header.Length, cancellationToken);
+            bool isValid = false;
+
+            if (read >= 3 && header[0] == 0xFF && header[1] == 0xD8 && header[2] == 0xFF) // JPEG/JPG
+            {
+                isValid = true;
+            }
+            else if (read >= 8 && header.Take(8).SequenceEqual(new byte[] { 137, 80, 78, 71, 13, 10, 26, 10 })) // PNG
+            {
+                isValid = true;
+            }
+            else if (read >= 4 && header[0] == 0x52 && header[1] == 0x49 && header[2] == 0x46 && header[3] == 0x46) // RIFF/WEBP
+            {
+                isValid = true;
+            }
+
+            if (!isValid)
+            {
+                throw new BusinessException("Invalid image content. The file is not a valid image.");
+            }
+        }
+
+        // Create directory
+        var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "Uploads");
+        Directory.CreateDirectory(uploadsFolder);
+
+        // Delete old profile picture if exists on disk
+        if (!string.IsNullOrEmpty(employee.ProfilePhotoUrl))
+        {
+            var oldFileName = Path.GetFileName(employee.ProfilePhotoUrl);
+            var oldFilePath = Path.Combine(uploadsFolder, oldFileName);
+            if (File.Exists(oldFilePath))
+            {
+                try
+                {
+                    File.Delete(oldFilePath);
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, "Failed to delete old profile photo at {Path}", oldFilePath);
+                }
+            }
+        }
+
+        var fileName = $"{Guid.NewGuid()}{extension}";
+        var filePath = Path.Combine(uploadsFolder, fileName);
+
+        await using (var fileStream = new FileStream(filePath, FileMode.Create))
+        {
+            await file.CopyToAsync(fileStream, cancellationToken);
+        }
+
+        var photoUrl = $"/Uploads/{fileName}";
+        employee.ProfilePhotoUrl = photoUrl;
+        employee.UpdatedAt = DateTime.Now;
+        employee.UpdatedBy = userId;
+
+        employeeRepository.UpdateEmployee(employee);
+        await employeeRepository.SaveChangesAsync(cancellationToken);
+
+        await auditLogService.LogAsync(
+            "Update Photo",
+            nameof(Employee),
+            employee.Id,
+            $"Uploaded new profile photo: {photoUrl}",
+            cancellationToken);
+
+        logger.LogInformation("Employee {EmployeeId} uploaded a new profile photo.", employee.Id);
+
+        return photoUrl;
+    }
+
+    public async Task DeleteProfilePhotoAsync(
+        Guid userId,
+        CancellationToken cancellationToken = default)
+    {
+        var employeeId = await userContextService.GetEmployeeIdAsync(cancellationToken);
+        if (employeeId == null)
+        {
+            throw new NotFoundException("Employee profile not found.");
+        }
+
+        var employee = await employeeRepository.GetEmployeeByIdAsync(employeeId.Value, cancellationToken);
+        if (employee == null)
+        {
+            throw new NotFoundException("Employee not found.");
+        }
+
+        if (string.IsNullOrEmpty(employee.ProfilePhotoUrl))
+        {
+            return;
+        }
+
+        var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "Uploads");
+        var fileName = Path.GetFileName(employee.ProfilePhotoUrl);
+        var filePath = Path.Combine(uploadsFolder, fileName);
+
+        if (File.Exists(filePath))
+        {
+            try
+            {
+                File.Delete(filePath);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Failed to delete profile photo file at {Path}", filePath);
+            }
+        }
+
+        employee.ProfilePhotoUrl = null;
+        employee.UpdatedAt = DateTime.Now;
+        employee.UpdatedBy = userId;
+
+        employeeRepository.UpdateEmployee(employee);
+        await employeeRepository.SaveChangesAsync(cancellationToken);
+
+        await auditLogService.LogAsync(
+            "Delete Photo",
+            nameof(Employee),
+            employee.Id,
+            "Deleted profile photo",
+            cancellationToken);
+
+        logger.LogInformation("Employee {EmployeeId} deleted their profile photo.", employee.Id);
+    }
 }

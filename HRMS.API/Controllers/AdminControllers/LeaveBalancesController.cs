@@ -2,6 +2,9 @@ using HRMS.API.Interfaces;
 using HRMS.API.Models.DTOs.LeaveBalance;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace HRMS.API.Controllers;
 
@@ -16,28 +19,27 @@ public class LeaveBalancesController : ControllerBase
     {
         this.service = service;
     }
-    
 
-    [Authorize(Roles = "Admin,HR")]
+    [Authorize(Roles = "Admin,HR,Manager,Employee")]
     [HttpPost("allocate")]
-    public async Task<IActionResult> Allocate(AllocateLeaveBalanceDto dto)
+    public async Task<IActionResult> Allocate(AllocateLeaveBalanceDto dto, CancellationToken cancellationToken)
     {
-        await service.AllocateAsync(dto);
+        await service.AllocateAsync(dto, cancellationToken);
 
         return Ok("Leave Balance Allocated");
     }
 
     [Authorize(Roles = "Admin,HR")]
     [HttpGet]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
     {
-        return Ok(await service.GetAllBalancesAsync());
+        return Ok(await service.GetAllBalancesAsync(cancellationToken));
     }
 
-    [Authorize(Roles = "Admin,HR")]
+    [Authorize(Roles = "Admin,HR,Manager,Employee")]
     [HttpGet("{employeeId}")]
-    public async Task<IActionResult> GetEmployeeBalances(Guid employeeId)
+    public async Task<IActionResult> GetEmployeeBalances(Guid employeeId, CancellationToken cancellationToken)
     {
-        return Ok(await service.GetEmployeeBalancesAsync(employeeId));
+        return Ok(await service.GetEmployeeBalancesAsync(employeeId, cancellationToken));
     }
 }

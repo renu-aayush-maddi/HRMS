@@ -6,9 +6,9 @@ public class CreateAttendanceRegularizationDto
 
     public DateOnly AttendanceDate { get; set; }
 
-    public DateTime RequestedCheckIn { get; set; }
+    public DateTime? RequestedCheckIn { get; set; }
 
-    public DateTime RequestedCheckOut { get; set; }
+    public DateTime? RequestedCheckOut { get; set; }
 
     public string Reason { get; set; } = string.Empty;
 }

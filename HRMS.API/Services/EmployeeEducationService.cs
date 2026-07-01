@@ -136,15 +136,13 @@ public class EmployeeEducationService : IEmployeeEducationService
 
     public async Task<byte[]> ExportEducationsAsync(EmployeeEducationFilterDto filter, CancellationToken cancellationToken = default)
     {
-        // var employeeId = await accessResolver.ResolveEmployeeIdAsync(filter.EmployeeId, cancellationToken);
-        // await accessResolver.ValidateEmployeeOwnershipAsync(employeeId, cancellationToken);
+        var employeeId = await accessResolver.ResolveEmployeeIdAsync(filter.EmployeeId, cancellationToken);
+        await accessResolver.ValidateEmployeeOwnershipAsync(employeeId, cancellationToken);
 
         var educations = await repository.GetEducations()
-                                        .OrderByDescending(x => x.GraduationYear)
+                                         .Where(x => x.EmployeeId == employeeId)
+                                         .OrderByDescending(x => x.GraduationYear)
                                          .ToListAsync(cancellationToken);
-                                        //  .Where(x => x.EmployeeId == employeeId)
-                                        //  .OrderByDescending(x => x.GraduationYear)
-                                        //  .ToListAsync(cancellationToken);
 
         using var workbook = new XLWorkbook();
         var worksheet = workbook.Worksheets.Add("Educations");

@@ -57,10 +57,20 @@ public class EmployeeController : ControllerBase
         return Ok(result);
     }
 
-    [Authorize(Roles = "Admin,HR,Manager")]
+    [Authorize(Roles = "Admin,HR,Manager,Employee")]
     [HttpGet("{employeeId:guid}/profile")]
     public async Task<IActionResult> GetEmployeeProfile(Guid employeeId, CancellationToken cancellationToken)
     {
+        var userRole = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+        if (userRole == "Employee")
+        {
+            var loggedInEmployeeIdClaim = User.FindFirst("EmployeeId")?.Value;
+            if (string.IsNullOrEmpty(loggedInEmployeeIdClaim) || Guid.Parse(loggedInEmployeeIdClaim) != employeeId)
+            {
+                return Forbid();
+            }
+        }
+
         var result = await employeeService.GetEmployeeFullProfileAsync(employeeId, cancellationToken);
         return Ok(result);
     }
@@ -74,8 +84,11 @@ public class EmployeeController : ControllerBase
     }
 
     [Authorize(Roles = "Admin,HR")]
-    [HttpPut("{employeeId:guid}/status")]
-    public async Task<IActionResult> UpdateStatus(Guid employeeId, [FromBody] UpdateEmployeeStatusDto dto, CancellationToken cancellationToken)
+    [HttpPatch("{employeeId:guid}/status")]
+    public async Task<IActionResult> UpdateStatus(
+        Guid employeeId,
+        [FromBody] UpdateEmployeeStatusDto dto,
+        CancellationToken cancellationToken)
     {
         await employeeService.UpdateEmployeeStatusAsync(employeeId, dto, cancellationToken);
         return Ok("Employee status updated successfully.");
@@ -107,5 +120,48 @@ public class EmployeeController : ControllerBase
     {
         var result = await employeeService.ImportEmployeesAsync(file, cancellationToken);
         return Ok(result);
+    }
+
+    [Authorize]
+    [HttpPut("my-profile")]
+    public async Task<IActionResult> UpdateMyProfile([FromBody] UpdateMyProfileDto dto, CancellationToken cancellationToken)
+    {
+        var userIdStr = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userIdStr) || !Guid.TryParse(userIdStr, out var userId))
+        {
+            return Unauthorized();
+        }
+
+        await employeeService.UpdateMyProfileAsync(userId, dto, cancellationToken);
+        return Ok(new { Message = "Profile updated successfully." });
+    }
+
+    [Authorize]
+    [HttpPost("my-profile/photo")]
+    [Consumes("multipart/form-data")]
+    public async Task<IActionResult> UploadProfilePhoto(IFormFile file, CancellationToken cancellationToken)
+    {
+        var userIdStr = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userIdStr) || !Guid.TryParse(userIdStr, out var userId))
+        {
+            return Unauthorized();
+        }
+
+        var photoUrl = await employeeService.UploadProfilePhotoAsync(userId, file, cancellationToken);
+        return Ok(new { ProfilePhotoUrl = photoUrl, Message = "Profile photo uploaded successfully." });
+    }
+
+    [Authorize]
+    [HttpDelete("my-profile/photo")]
+    public async Task<IActionResult> DeleteProfilePhoto(CancellationToken cancellationToken)
+    {
+        var userIdStr = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userIdStr) || !Guid.TryParse(userIdStr, out var userId))
+        {
+            return Unauthorized();
+        }
+
+        await employeeService.DeleteProfilePhotoAsync(userId, cancellationToken);
+        return Ok(new { Message = "Profile photo deleted successfully." });
     }
 }

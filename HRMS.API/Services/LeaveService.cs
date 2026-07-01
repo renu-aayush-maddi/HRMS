@@ -299,13 +299,8 @@ public class LeaveService : ILeaveService
     {
         Guid employeeId;
 
-        if (userContextService.IsAdminOrHr())
+        if (dto.EmployeeId.HasValue)
         {
-            if (!dto.EmployeeId.HasValue)
-            {
-                throw new BusinessException("EmployeeId is required.");
-            }
-
             employeeId = dto.EmployeeId.Value;
         }
         else
@@ -323,6 +318,11 @@ public class LeaveService : ILeaveService
         if (employee == null)
         {
             throw new NotFoundException("Employee not found.");
+        }
+
+        if (employee.EmploymentStatus == "Resigned" || employee.EmploymentStatus == "Terminated" || employee.EmploymentStatus == "Inactive")
+        {
+            throw new BusinessException("Leave requests can only be created for active employees.");
         }
 
         var leaveType = await repository.GetLeaveTypeAsync(dto.LeaveTypeId, cancellationToken);
@@ -383,6 +383,14 @@ public class LeaveService : ILeaveService
             cancellationToken);
 
         logger.LogInformation("Leave {LeaveId} applied by employee {EmployeeId}", leave.Id, employeeId);
+
+        if (employee.Manager?.UserId != null)
+        {
+            notificationService.CreateNotification(
+                employee.Manager.UserId.Value,
+                "Leave Applied",
+                $"Leave request applied by {employee.FirstName} {employee.LastName} is pending your approval.");
+        }
     }
 
     public async Task<List<LeaveBalanceDto>> GetMyLeaveBalancesAsync(
@@ -617,22 +625,43 @@ public class LeaveService : ILeaveService
             throw new BusinessException("Leave request already processed.");
         }
 
-        if (!userContextService.IsAdminOrHr())
+        // Prevent self-approval
+        var currentEmployeeId = await userContextService.GetEmployeeIdAsync(cancellationToken);
+        if (currentEmployeeId.HasValue && currentEmployeeId.Value == leave.EmployeeId)
         {
-            var role = userContextService.GetRole();
-            if (role != "Manager")
+            throw new BusinessException("You cannot approve your own leave request.");
+        }
+
+        var currentRole = userContextService.GetRole();
+        var isRequesterHr = leave.Employee?.User?.Roles.Any(r => r.Name == "HR") == true;
+
+        if (isRequesterHr)
+        {
+            // HR leave requests can ONLY be approved by their assigned manager or Admin.
+            // Other HR users cannot approve.
+            var isCurrentUserManager = currentEmployeeId.HasValue && leave.Employee.ManagerId.HasValue && currentEmployeeId.Value == leave.Employee.ManagerId.Value;
+            var isCurrentUserAdmin = currentRole == "Admin";
+
+            if (!isCurrentUserManager && !isCurrentUserAdmin)
+            {
+                throw new BusinessException("HR leave requests can only be approved/rejected by their assigned Manager or Admin.");
+            }
+        }
+        else if (!userContextService.IsAdminOrHr())
+        {
+            // Non-HR, non-Admin users (i.e. Managers) must be the assigned manager.
+            if (currentRole != "Manager")
             {
                 throw new BusinessException("Access denied.");
             }
 
-            var managerEmployeeId = await userContextService.GetEmployeeIdAsync(cancellationToken);
-            if (managerEmployeeId == null)
+            if (currentEmployeeId == null)
             {
                 throw new NotFoundException("Manager profile not found.");
             }
 
             var isManager = await repository.IsManagerOfEmployeeAsync(
-                managerEmployeeId.Value,
+                currentEmployeeId.Value,
                 leave.EmployeeId ?? Guid.Empty,
                 cancellationToken);
 
@@ -713,22 +742,43 @@ public class LeaveService : ILeaveService
             throw new BusinessException("Leave request already processed.");
         }
 
-        if (!userContextService.IsAdminOrHr())
+        // Prevent self-rejection
+        var currentEmployeeId = await userContextService.GetEmployeeIdAsync(cancellationToken);
+        if (currentEmployeeId.HasValue && currentEmployeeId.Value == leave.EmployeeId)
         {
-            var role = userContextService.GetRole();
-            if (role != "Manager")
+            throw new BusinessException("You cannot reject your own leave request.");
+        }
+
+        var currentRole = userContextService.GetRole();
+        var isRequesterHr = leave.Employee?.User?.Roles.Any(r => r.Name == "HR") == true;
+
+        if (isRequesterHr)
+        {
+            // HR leave requests can ONLY be rejected by their assigned manager or Admin.
+            // Other HR users cannot reject.
+            var isCurrentUserManager = currentEmployeeId.HasValue && leave.Employee.ManagerId.HasValue && currentEmployeeId.Value == leave.Employee.ManagerId.Value;
+            var isCurrentUserAdmin = currentRole == "Admin";
+
+            if (!isCurrentUserManager && !isCurrentUserAdmin)
+            {
+                throw new BusinessException("HR leave requests can only be approved/rejected by their assigned Manager or Admin.");
+            }
+        }
+        else if (!userContextService.IsAdminOrHr())
+        {
+            // Non-HR, non-Admin users (i.e. Managers) must be the assigned manager.
+            if (currentRole != "Manager")
             {
                 throw new BusinessException("Access denied.");
             }
 
-            var managerEmployeeId = await userContextService.GetEmployeeIdAsync(cancellationToken);
-            if (managerEmployeeId == null)
+            if (currentEmployeeId == null)
             {
                 throw new NotFoundException("Manager profile not found.");
             }
 
             var isManager = await repository.IsManagerOfEmployeeAsync(
-                managerEmployeeId.Value,
+                currentEmployeeId.Value,
                 leave.EmployeeId ?? Guid.Empty,
                 cancellationToken);
 
@@ -814,6 +864,13 @@ public class LeaveService : ILeaveService
         if (leave == null)
         {
             throw new NotFoundException("Leave request not found.");
+        }
+
+        // Prevent self-cancellation
+        var currentEmployeeId = await userContextService.GetEmployeeIdAsync(cancellationToken);
+        if (currentEmployeeId.HasValue && currentEmployeeId.Value == leave.EmployeeId)
+        {
+            throw new BusinessException("You cannot cancel your own approved leave request.");
         }
 
         if (leave.Status != "Approved")

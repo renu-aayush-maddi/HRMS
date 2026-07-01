@@ -18,4 +18,10 @@ export interface ReviewFilter {
   reviewerId?: string;
   rating?: number;
   search?: string;
+  minRating?: number;
+  maxRating?: number;
+  fromReviewDate?: string;
+  toReviewDate?: string;
+  sortBy?: string;
+  descending?: boolean;
 }

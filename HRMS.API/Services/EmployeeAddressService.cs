@@ -221,7 +221,10 @@ public class EmployeeAddressService : IEmployeeAddressService
 
     public async Task<byte[]> ExportAddressesAsync(EmployeeAddressFilterDto filter, CancellationToken cancellationToken = default)
     {
-        var query = repository.GetAddresses();
+        var employeeId = await accessResolver.ResolveEmployeeIdAsync(filter.EmployeeId, cancellationToken);
+        await accessResolver.ValidateEmployeeOwnershipAsync(employeeId, cancellationToken);
+
+        var query = repository.GetAddresses().Where(x => x.EmployeeId == employeeId);
 
         if (!string.IsNullOrWhiteSpace(filter.City))
             query = query.Where(x => x.City != null && x.City.Contains(filter.City));

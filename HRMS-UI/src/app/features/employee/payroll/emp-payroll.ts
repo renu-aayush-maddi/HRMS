@@ -1,9 +1,12 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { EmployeeSelfService } from '../../../core/services/employee-self.service';
-import { PayrollResponse } from '../../../core/models/payroll.model';
+import { PayrollResponse, PayrollFilter } from '../../../core/models/payroll.model';
 import { BonusResponse, DeductionResponse } from '../../../core/models/bonus-deduction.model';
+import { ActivatedRoute, Router } from '@angular/router';
+import { FilterBarComponent } from '../../../shared/components/filter-bar/filter-bar';
+import { FilterField, SortOption } from '../../../shared/components/filter-bar/filter-bar.model';
 
 type ActiveTab = 'payroll' | 'bonuses' | 'deductions';
 
@@ -27,7 +30,8 @@ import {
     LucideCoins,
     LucideGift,
     LucideTrendingDown,
-    LucideDownload
+    LucideDownload,
+    FilterBarComponent
   ],
   templateUrl: './emp-payroll.html',
   styleUrl: './emp-payroll.css',
@@ -38,7 +42,6 @@ export class EmpPayroll implements OnInit {
   // Payroll
   readonly payrolls = signal<PayrollResponse[]>([]);
   readonly payrollsLoading = signal(false);
-  readonly payYearFilter = signal('');
 
   // Bonuses
   readonly bonuses = signal<BonusResponse[]>([]);
@@ -56,12 +59,40 @@ export class EmpPayroll implements OnInit {
   readonly successMessage = signal<string | null>(null);
   readonly errorMessage = signal<string | null>(null);
 
+  private router = inject(Router);
+  private route = inject(ActivatedRoute);
+
+  // Reusable Filter bar config & state
+  filterFields: FilterField[] = [
+    { key: 'payYear', label: 'Pay Year', type: 'number', placeholder: 'Enter year (e.g. 2026)...' }
+  ];
+
+  sortOptions: SortOption[] = [
+    { value: 'PayMonth', label: 'Pay Month' },
+    { value: 'PayYear', label: 'Pay Year' },
+    { value: 'NetSalary', label: 'Net Salary' }
+  ];
+
+  filters: { [key: string]: any } = {};
+  sortBy = 'PayMonth';
+  descending = false;
+
   constructor(private empService: EmployeeSelfService) {}
 
   ngOnInit(): void {
-    this.loadPayrolls();
     this.loadBonuses();
     this.loadDeductions();
+
+    this.route.queryParams.subscribe(params => {
+      const newFilters: any = {};
+      if (params['payYear']) newFilters['payYear'] = parseInt(params['payYear'], 10);
+
+      this.filters = newFilters;
+      this.sortBy = params['sortBy'] || 'PayMonth';
+      this.descending = params['descending'] === 'true';
+
+      this.loadPayrolls();
+    });
   }
 
   setTab(tab: ActiveTab): void {
@@ -70,7 +101,12 @@ export class EmpPayroll implements OnInit {
 
   loadPayrolls(): void {
     this.payrollsLoading.set(true);
-    const filter = this.payYearFilter() ? { payYear: +this.payYearFilter() } : undefined;
+    const filter: PayrollFilter = {
+      sortBy: this.sortBy,
+      descending: this.descending
+    };
+    if (this.filters['payYear']) filter.payYear = this.filters['payYear'];
+
     this.empService.getMyPayrolls(filter).subscribe({
       next: (data: any) => {
         const items = data?.data || (Array.isArray(data) ? data : []);
@@ -78,6 +114,32 @@ export class EmpPayroll implements OnInit {
         this.payrollsLoading.set(false);
       },
       error: () => { this.payrollsLoading.set(false); }
+    });
+  }
+
+  onFiltersChanged(updatedFilters: any): void {
+    const queryParams: any = { ...updatedFilters };
+    Object.keys(queryParams).forEach(k => {
+      if (queryParams[k] === null || queryParams[k] === undefined || queryParams[k] === '') {
+        delete queryParams[k];
+      }
+    });
+
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams,
+      queryParamsHandling: 'merge'
+    });
+  }
+
+  onSortChanged(event: { sortBy: string; descending: boolean }): void {
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: {
+        sortBy: event.sortBy,
+        descending: event.descending.toString()
+      },
+      queryParamsHandling: 'merge'
     });
   }
 

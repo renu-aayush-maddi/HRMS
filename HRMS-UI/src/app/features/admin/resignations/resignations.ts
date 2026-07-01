@@ -4,6 +4,9 @@ import { FormsModule, ReactiveFormsModule, FormBuilder, Validators } from '@angu
 import { ResignationService } from '../../../core/services/resignation.service';
 import { EmployeeResignation, ResignationFilter } from '../../../core/models/resignation.model';
 import { ToastrService } from 'ngx-toastr';
+import { ActivatedRoute, Router } from '@angular/router';
+import { FilterBarComponent } from '../../../shared/components/filter-bar/filter-bar';
+import { FilterField, SortOption } from '../../../shared/components/filter-bar/filter-bar.model';
 
 import {
   LucideDownload,
@@ -20,7 +23,8 @@ import {
     ReactiveFormsModule,
     LucideDownload,
     LucideX,
-    LucideLoader
+    LucideLoader,
+    FilterBarComponent
   ],
   templateUrl: './resignations.html',
   styleUrl: './resignations.css',
@@ -30,10 +34,33 @@ export class Resignations implements OnInit {
   readonly loading = signal(false);
   readonly submitting = signal(false);
 
-  // Filters
-  readonly searchQuery = signal('');
-  readonly selectedStatus = signal('');
-  readonly selectedSettlementStatus = signal('');
+  // Reusable Filter Config & State
+  filterFields: FilterField[] = [
+    { key: 'searchTerm', label: 'Search', type: 'text', placeholder: 'Search employee name...' },
+    { key: 'employeeId', label: 'Employee ID', type: 'text', placeholder: 'Employee GUID...' },
+    { key: 'status', label: 'Status', type: 'select', options: [
+      { value: 'Pending', label: 'Pending' },
+      { value: 'Approved', label: 'Approved' },
+      { value: 'Rejected', label: 'Rejected' },
+      { value: 'Withdrawn', label: 'Withdrawn' }
+    ]},
+    { key: 'finalSettlementStatus', label: 'Settlement Status', type: 'select', options: [
+      { value: 'Pending', label: 'Pending' },
+      { value: 'Processing', label: 'Processing' },
+      { value: 'Completed', label: 'Completed' }
+    ]},
+    { key: 'fromResignationDate', label: 'From Date', type: 'date' },
+    { key: 'toResignationDate', label: 'To Date', type: 'date' }
+  ];
+
+  sortOptions: SortOption[] = [
+    { value: 'ResignationDate', label: 'Resignation Date' },
+    { value: 'LastWorkingDay', label: 'Last Working Day' }
+  ];
+
+  filters: { [key: string]: any } = {};
+  sortBy = 'ResignationDate';
+  descending = true;
 
   // Reject Modal
   readonly showRejectModal = signal(false);
@@ -46,6 +73,8 @@ export class Resignations implements OnInit {
   settlementForm;
   
   private toastr = inject(ToastrService);
+  private router = inject(Router);
+  private route = inject(ActivatedRoute);
 
   settlementStatuses = ['Pending', 'Processing', 'Completed'];
 
@@ -63,15 +92,35 @@ export class Resignations implements OnInit {
   }
 
   ngOnInit(): void {
-    this.loadResignations();
+    this.route.queryParams.subscribe(params => {
+      const newFilters: any = {};
+      if (params['searchTerm']) newFilters['searchTerm'] = params['searchTerm'];
+      if (params['employeeId']) newFilters['employeeId'] = params['employeeId'];
+      if (params['status']) newFilters['status'] = params['status'];
+      if (params['finalSettlementStatus']) newFilters['finalSettlementStatus'] = params['finalSettlementStatus'];
+      if (params['fromResignationDate']) newFilters['fromResignationDate'] = params['fromResignationDate'];
+      if (params['toResignationDate']) newFilters['toResignationDate'] = params['toResignationDate'];
+
+      this.filters = newFilters;
+      this.sortBy = params['sortBy'] || 'ResignationDate';
+      this.descending = params['descending'] === 'true' || params['descending'] === undefined;
+
+      this.loadResignations();
+    });
   }
 
   loadResignations(): void {
     this.loading.set(true);
-    const filter: ResignationFilter = {};
-    if (this.searchQuery()) filter.search = this.searchQuery();
-    if (this.selectedStatus()) filter.status = this.selectedStatus();
-    if (this.selectedSettlementStatus()) filter.finalSettlementStatus = this.selectedSettlementStatus();
+    const filter: ResignationFilter = {
+      sortBy: this.sortBy,
+      descending: this.descending
+    };
+    if (this.filters['searchTerm']) filter.search = this.filters['searchTerm'];
+    if (this.filters['employeeId']) filter.employeeId = this.filters['employeeId'];
+    if (this.filters['status']) filter.status = this.filters['status'];
+    if (this.filters['finalSettlementStatus']) filter.finalSettlementStatus = this.filters['finalSettlementStatus'];
+    if (this.filters['fromResignationDate']) filter.fromResignationDate = this.filters['fromResignationDate'];
+    if (this.filters['toResignationDate']) filter.toResignationDate = this.filters['toResignationDate'];
 
     this.resignationService.getResignations(filter).subscribe({
       next: (data: any) => {
@@ -86,15 +135,30 @@ export class Resignations implements OnInit {
     });
   }
 
-  applyFilters(): void {
-    this.loadResignations();
+  onFiltersChanged(updatedFilters: any): void {
+    const queryParams: any = { ...updatedFilters };
+    Object.keys(queryParams).forEach(k => {
+      if (queryParams[k] === null || queryParams[k] === undefined || queryParams[k] === '') {
+        delete queryParams[k];
+      }
+    });
+
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams,
+      queryParamsHandling: 'merge'
+    });
   }
 
-  resetFilters(): void {
-    this.searchQuery.set('');
-    this.selectedStatus.set('');
-    this.selectedSettlementStatus.set('');
-    this.loadResignations();
+  onSortChanged(event: { sortBy: string; descending: boolean }): void {
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: {
+        sortBy: event.sortBy,
+        descending: event.descending.toString()
+      },
+      queryParamsHandling: 'merge'
+    });
   }
 
   approveResignation(id: string): void {
@@ -183,9 +247,12 @@ export class Resignations implements OnInit {
 
   exportResignations(): void {
     const filter: ResignationFilter = {};
-    if (this.searchQuery()) filter.search = this.searchQuery();
-    if (this.selectedStatus()) filter.status = this.selectedStatus();
-    if (this.selectedSettlementStatus()) filter.finalSettlementStatus = this.selectedSettlementStatus();
+    if (this.filters['searchTerm']) filter.search = this.filters['searchTerm'];
+    if (this.filters['employeeId']) filter.employeeId = this.filters['employeeId'];
+    if (this.filters['status']) filter.status = this.filters['status'];
+    if (this.filters['finalSettlementStatus']) filter.finalSettlementStatus = this.filters['finalSettlementStatus'];
+    if (this.filters['fromResignationDate']) filter.fromResignationDate = this.filters['fromResignationDate'];
+    if (this.filters['toResignationDate']) filter.toResignationDate = this.filters['toResignationDate'];
 
     this.resignationService.exportResignations(filter).subscribe({
       next: (blob) => {

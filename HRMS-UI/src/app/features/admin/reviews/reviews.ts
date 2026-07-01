@@ -6,6 +6,9 @@ import { PerformanceCycleService } from '../../../core/services/performance-cycl
 import { Review, ReviewFilter } from '../../../core/models/review.model';
 import { PerformanceCycle } from '../../../core/models/performance-cycle.model';
 import { ToastrService } from 'ngx-toastr';
+import { ActivatedRoute, Router } from '@angular/router';
+import { FilterBarComponent } from '../../../shared/components/filter-bar/filter-bar';
+import { FilterField, SortOption } from '../../../shared/components/filter-bar/filter-bar.model';
 
 import {
   LucideDownload,
@@ -21,7 +24,8 @@ import {
     FormsModule,
     LucideDownload,
     LucideStar,
-    LucideTrash
+    LucideTrash,
+    FilterBarComponent
   ],
   templateUrl: './reviews.html',
   styleUrl: './reviews.css',
@@ -31,12 +35,19 @@ export class Reviews implements OnInit {
   readonly cycles = signal<PerformanceCycle[]>([]);
   readonly loading = signal(false);
 
-  // Filter bindings
-  readonly selectedCycleId = signal('');
-  readonly searchQuery = signal('');
-  readonly selectedRating = signal<number | null>(null);
+  // Reusable Filter Config & State
+  filterFields: FilterField[] = [];
+  sortOptions: SortOption[] = [
+    { value: 'ReviewDate', label: 'Review Date' },
+    { value: 'Rating', label: 'Rating' }
+  ];
+  filters: { [key: string]: any } = {};
+  sortBy = 'ReviewDate';
+  descending = true;
 
   private toastr = inject(ToastrService);
+  private router = inject(Router);
+  private route = inject(ActivatedRoute);
 
   constructor(
     private reviewService: ReviewService,
@@ -45,13 +56,32 @@ export class Reviews implements OnInit {
 
   ngOnInit(): void {
     this.loadCycles();
-    this.loadReviews();
+    this.setupFilterFields();
+
+    this.route.queryParams.subscribe(params => {
+      const newFilters: any = {};
+      if (params['searchTerm']) newFilters['searchTerm'] = params['searchTerm'];
+      if (params['employeeId']) newFilters['employeeId'] = params['employeeId'];
+      if (params['reviewerId']) newFilters['reviewerId'] = params['reviewerId'];
+      if (params['performanceCycleId']) newFilters['performanceCycleId'] = params['performanceCycleId'];
+      if (params['minRating']) newFilters['minRating'] = parseInt(params['minRating'], 10);
+      if (params['maxRating']) newFilters['maxRating'] = parseInt(params['maxRating'], 10);
+      if (params['fromReviewDate']) newFilters['fromReviewDate'] = params['fromReviewDate'];
+      if (params['toReviewDate']) newFilters['toReviewDate'] = params['toReviewDate'];
+
+      this.filters = newFilters;
+      this.sortBy = params['sortBy'] || 'ReviewDate';
+      this.descending = params['descending'] === 'true' || params['descending'] === undefined;
+
+      this.loadReviews();
+    });
   }
 
   loadCycles(): void {
     this.cycleService.getCycles().subscribe({
       next: (data) => {
         this.cycles.set(data);
+        this.setupFilterFields();
       },
       error: (error) => {
         console.warn('Performance cycles could not be loaded (likely due to role permissions).', error);
@@ -60,12 +90,34 @@ export class Reviews implements OnInit {
     });
   }
 
+  setupFilterFields(): void {
+    const cycleOpts = this.cycles().map(c => ({ value: c.id, label: c.name }));
+    this.filterFields = [
+      { key: 'searchTerm', label: 'Search', type: 'text', placeholder: 'Search employee name...' },
+      { key: 'employeeId', label: 'Employee ID', type: 'text', placeholder: 'Employee GUID...' },
+      { key: 'reviewerId', label: 'Reviewer ID', type: 'text', placeholder: 'Reviewer GUID...' },
+      { key: 'performanceCycleId', label: 'Performance Cycle', type: 'select', options: cycleOpts },
+      { key: 'minRating', label: 'Min Rating', type: 'number', placeholder: 'Min rating (1-5)...' },
+      { key: 'maxRating', label: 'Max Rating', type: 'number', placeholder: 'Max rating (1-5)...' },
+      { key: 'fromReviewDate', label: 'From Date', type: 'date' },
+      { key: 'toReviewDate', label: 'To Date', type: 'date' }
+    ];
+  }
+
   loadReviews(): void {
     this.loading.set(true);
-    const filter: ReviewFilter = {};
-    if (this.selectedCycleId()) filter.performanceCycleId = this.selectedCycleId();
-    if (this.searchQuery()) filter.search = this.searchQuery();
-    if (this.selectedRating() !== null) filter.rating = this.selectedRating()!;
+    const filter: ReviewFilter = {
+      sortBy: this.sortBy,
+      descending: this.descending
+    };
+    if (this.filters['searchTerm']) filter.search = this.filters['searchTerm'];
+    if (this.filters['employeeId']) filter.employeeId = this.filters['employeeId'];
+    if (this.filters['reviewerId']) filter.reviewerId = this.filters['reviewerId'];
+    if (this.filters['performanceCycleId']) filter.performanceCycleId = this.filters['performanceCycleId'];
+    if (this.filters['minRating']) filter.minRating = this.filters['minRating'];
+    if (this.filters['maxRating']) filter.maxRating = this.filters['maxRating'];
+    if (this.filters['fromReviewDate']) filter.fromReviewDate = this.filters['fromReviewDate'];
+    if (this.filters['toReviewDate']) filter.toReviewDate = this.filters['toReviewDate'];
 
     this.reviewService.getReviews(filter).subscribe({
       next: (data: any) => {
@@ -80,15 +132,30 @@ export class Reviews implements OnInit {
     });
   }
 
-  applyFilters(): void {
-    this.loadReviews();
+  onFiltersChanged(updatedFilters: any): void {
+    const queryParams: any = { ...updatedFilters };
+    Object.keys(queryParams).forEach(k => {
+      if (queryParams[k] === null || queryParams[k] === undefined || queryParams[k] === '') {
+        delete queryParams[k];
+      }
+    });
+
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams,
+      queryParamsHandling: 'merge'
+    });
   }
 
-  resetFilters(): void {
-    this.selectedCycleId.set('');
-    this.searchQuery.set('');
-    this.selectedRating.set(null);
-    this.loadReviews();
+  onSortChanged(event: { sortBy: string; descending: boolean }): void {
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: {
+        sortBy: event.sortBy,
+        descending: event.descending.toString()
+      },
+      queryParamsHandling: 'merge'
+    });
   }
 
   deleteReview(id: string): void {
@@ -107,9 +174,14 @@ export class Reviews implements OnInit {
 
   exportReviews(): void {
     const filter: ReviewFilter = {};
-    if (this.selectedCycleId()) filter.performanceCycleId = this.selectedCycleId();
-    if (this.searchQuery()) filter.search = this.searchQuery();
-    if (this.selectedRating() !== null) filter.rating = this.selectedRating()!;
+    if (this.filters['searchTerm']) filter.search = this.filters['searchTerm'];
+    if (this.filters['employeeId']) filter.employeeId = this.filters['employeeId'];
+    if (this.filters['reviewerId']) filter.reviewerId = this.filters['reviewerId'];
+    if (this.filters['performanceCycleId']) filter.performanceCycleId = this.filters['performanceCycleId'];
+    if (this.filters['minRating']) filter.minRating = this.filters['minRating'];
+    if (this.filters['maxRating']) filter.maxRating = this.filters['maxRating'];
+    if (this.filters['fromReviewDate']) filter.fromReviewDate = this.filters['fromReviewDate'];
+    if (this.filters['toReviewDate']) filter.toReviewDate = this.filters['toReviewDate'];
 
     this.reviewService.exportReviews(filter).subscribe({
       next: (blob) => {

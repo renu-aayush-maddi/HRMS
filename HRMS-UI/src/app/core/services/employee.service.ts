@@ -5,7 +5,7 @@ import { Observable } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 
-import { Employee } from '../models/employee.model';
+import { Employee, EmployeeFilter } from '../models/employee.model';
 import { PagedResponse } from '../models/paged-response.model';
 
 import { AddEmployee } from '../models/add-employee.model';
@@ -25,15 +25,19 @@ export class EmployeeService {
   ) {}
 
   getEmployees(
-    pageNumber: number,
-    pageSize: number,
-    search: string = ''
+    filter: EmployeeFilter
   ): Observable<PagedResponse<Employee>> {
 
-    const params = new HttpParams()
-      .set('pageNumber', pageNumber)
-      .set('pageSize', pageSize)
-      .set('search', search);
+    let params = new HttpParams();
+    if (filter.pageNumber) params = params.set('pageNumber', filter.pageNumber.toString());
+    if (filter.pageSize) params = params.set('pageSize', filter.pageSize.toString());
+    if (filter.search) params = params.set('search', filter.search);
+    if (filter.departmentId) params = params.set('departmentId', filter.departmentId);
+    if (filter.managerId) params = params.set('managerId', filter.managerId);
+    if (filter.employmentStatus) params = params.set('employmentStatus', filter.employmentStatus);
+    if (filter.designation) params = params.set('designation', filter.designation);
+    if (filter.sortBy) params = params.set('sortBy', filter.sortBy);
+    if (filter.descending !== undefined) params = params.set('descending', filter.descending.toString());
 
     return this.http.get<PagedResponse<Employee>>(
       `${environment.apiUrl}/Employee`,
@@ -77,7 +81,7 @@ updateEmployeeStatus(
   employeeId: string,
   status: string
 ) {
-  return this.http.put(
+  return this.http.patch(
     `${environment.apiUrl}/Employee/${employeeId}/status`,
     { status },
     {

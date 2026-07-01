@@ -32,20 +32,15 @@
 
   <div *ngIf="!loading() && !error()">
     <!-- Filter Bar -->
-    <div class="filters-card">
-      <div class="filters-grid">
-        <!-- Team Member Filter -->
-        <div class="filter-group">
-          <label for="filterEmployee">Team Member</label>
-          <select id="filterEmployee" [ngModel]="selectedEmployeeFilter()" (ngModelChange)="selectedEmployeeFilter.set($event); applyFilters()">
-            <option value="">All Direct Reports</option>
-            <option *ngFor="let member of team()" [value]="member.id">
-              {{ member.fullName }}
-            </option>
-          </select>
-        </div>
-      </div>
-    </div>
+    <app-filter-bar
+      [fields]="filterFields"
+      [sortOptions]="sortOptions"
+      [currentFilters]="filters"
+      [sortBy]="sortBy"
+      [descending]="descending"
+      (filterChange)="onFiltersChanged($event)"
+      (sortChange)="onSortChanged($event)"
+    ></app-filter-bar>
 
     <!-- Reviews Table -->
     <div class="table-card">

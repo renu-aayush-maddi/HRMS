@@ -6,6 +6,9 @@ import { LeaveTypeService } from '../../core/services/leave-type.service';
 import { LeaveResponse, LeaveFilter, PagedLeaveResult } from '../../core/models/leave.model';
 import { LeaveType } from '../../core/models/leave-type.model';
 import { ToastrService } from 'ngx-toastr';
+import { ActivatedRoute, Router } from '@angular/router';
+import { FilterBarComponent } from '../../shared/components/filter-bar/filter-bar';
+import { FilterField, SortOption } from '../../shared/components/filter-bar/filter-bar.model';
 
 import {
   LucideChevronLeft,
@@ -24,7 +27,8 @@ import {
     LucideChevronLeft,
     LucideChevronRight,
     LucideX,
-    LucideLoader
+    LucideLoader,
+    FilterBarComponent
   ],
   templateUrl: './leave.html',
   styleUrl: './leave.css'
@@ -41,12 +45,16 @@ export class Leave implements OnInit {
   readonly totalPages = signal(0);
   readonly totalRecords = signal(0);
 
-  // Filters
-  readonly searchQuery = signal('');
-  readonly selectedLeaveTypeId = signal('');
-  readonly selectedStatus = signal('');
-  readonly filterFromDate = signal('');
-  readonly filterToDate = signal('');
+  // Reusable Filter State and Configuration
+  filterFields: FilterField[] = [];
+  sortOptions: SortOption[] = [
+    { value: 'StartDate', label: 'Start Date' },
+    { value: 'EndDate', label: 'End Date' },
+    { value: 'CreatedAt', label: 'Requested Date' }
+  ];
+  filters: { [key: string]: any } = {};
+  sortBy = 'CreatedAt';
+  descending = true;
 
   // Action Modal (Approve/Reject)
   readonly showActionModal = signal(false);
@@ -55,6 +63,8 @@ export class Leave implements OnInit {
   actionForm;
 
   private toastr = inject(ToastrService);
+  private router = inject(Router);
+  private route = inject(ActivatedRoute);
 
   constructor(
     private leaveService: LeaveService,
@@ -68,29 +78,65 @@ export class Leave implements OnInit {
 
   ngOnInit(): void {
     this.loadLeaveTypes();
-    this.loadLeaves();
+    this.setupFilterFields();
+
+    this.route.queryParams.subscribe(params => {
+      const newFilters: any = {};
+      if (params['employeeId']) newFilters['employeeId'] = params['employeeId'];
+      if (params['leaveTypeId']) newFilters['leaveTypeId'] = params['leaveTypeId'];
+      if (params['status']) newFilters['status'] = params['status'];
+      if (params['fromDate']) newFilters['fromDate'] = params['fromDate'];
+      if (params['toDate']) newFilters['toDate'] = params['toDate'];
+
+      this.filters = newFilters;
+      this.sortBy = params['sortBy'] || 'CreatedAt';
+      this.descending = params['descending'] === 'true' || params['descending'] === undefined;
+      this.pageNumber.set(params['pageNumber'] ? parseInt(params['pageNumber'], 10) : 1);
+
+      this.loadLeaves();
+    });
   }
 
   loadLeaveTypes(): void {
     this.leaveTypeService.getLeaveTypes().subscribe({
       next: (data: LeaveType[]) => {
         this.leaveTypes.set(data);
+        this.setupFilterFields();
       },
       error: (err: any) => console.error('Error loading leave types', err)
     });
+  }
+
+  setupFilterFields(): void {
+    const leaveTypeOpts = this.leaveTypes().map(t => ({ value: t.id, label: t.name }));
+    this.filterFields = [
+      { key: 'employeeId', label: 'Employee ID', type: 'text', placeholder: 'Search Employee ID...' },
+      { key: 'leaveTypeId', label: 'Leave Type', type: 'select', options: leaveTypeOpts },
+      { key: 'status', label: 'Status', type: 'select', options: [
+        { value: 'Pending', label: 'Pending' },
+        { value: 'Approved', label: 'Approved' },
+        { value: 'Rejected', label: 'Rejected' },
+        { value: 'Cancelled', label: 'Cancelled' }
+      ]},
+      { key: 'fromDate', label: 'From Date', type: 'date' },
+      { key: 'toDate', label: 'To Date', type: 'date' }
+    ];
   }
 
   loadLeaves(): void {
     this.loading.set(true);
     const filter: LeaveFilter = {
       pageNumber: this.pageNumber(),
-      pageSize: this.pageSize()
+      pageSize: this.pageSize(),
+      sortBy: this.sortBy,
+      descending: this.descending
     };
 
-    if (this.selectedLeaveTypeId()) filter.leaveTypeId = this.selectedLeaveTypeId();
-    if (this.selectedStatus()) filter.status = this.selectedStatus();
-    if (this.filterFromDate()) filter.fromDate = this.filterFromDate();
-    if (this.filterToDate()) filter.toDate = this.filterToDate();
+    if (this.filters['employeeId']) filter.employeeId = this.filters['employeeId'];
+    if (this.filters['leaveTypeId']) filter.leaveTypeId = this.filters['leaveTypeId'];
+    if (this.filters['status']) filter.status = this.filters['status'];
+    if (this.filters['fromDate']) filter.fromDate = this.filters['fromDate'];
+    if (this.filters['toDate']) filter.toDate = this.filters['toDate'];
 
     this.leaveService.getLeaves(filter).subscribe({
       next: (res: PagedLeaveResult) => {
@@ -106,30 +152,49 @@ export class Leave implements OnInit {
     });
   }
 
-  applyFilters(): void {
-    this.pageNumber.set(1);
-    this.loadLeaves();
+  onFiltersChanged(updatedFilters: any): void {
+    const queryParams: any = { ...updatedFilters, pageNumber: 1 };
+    Object.keys(queryParams).forEach(k => {
+      if (queryParams[k] === null || queryParams[k] === undefined || queryParams[k] === '') {
+        delete queryParams[k];
+      }
+    });
+
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams,
+      queryParamsHandling: 'merge'
+    });
   }
 
-  resetFilters(): void {
-    this.selectedLeaveTypeId.set('');
-    this.selectedStatus.set('');
-    this.filterFromDate.set('');
-    this.filterToDate.set('');
-    this.pageNumber.set(1);
-    this.loadLeaves();
+  onSortChanged(event: { sortBy: string; descending: boolean }): void {
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: {
+        sortBy: event.sortBy,
+        descending: event.descending.toString(),
+        pageNumber: 1
+      },
+      queryParamsHandling: 'merge'
+    });
   }
 
   previousPage(): void {
     if (this.pageNumber() <= 1) return;
-    this.pageNumber.update(p => p - 1);
-    this.loadLeaves();
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { pageNumber: this.pageNumber() - 1 },
+      queryParamsHandling: 'merge'
+    });
   }
 
   nextPage(): void {
     if (this.pageNumber() >= this.totalPages()) return;
-    this.pageNumber.update(p => p + 1);
-    this.loadLeaves();
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { pageNumber: this.pageNumber() + 1 },
+      queryParamsHandling: 'merge'
+    });
   }
 
   openActionModal(leaveId: string, approve: boolean): void {

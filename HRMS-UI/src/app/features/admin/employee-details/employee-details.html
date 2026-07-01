@@ -1,49 +1,41 @@
-<div class="employee-details-header">
+@if (showSelector()) {
+  <div class="employee-details-header">
+    <h2>
+      Employee Details
+    </h2>
 
-  <h2>
+    <div class="employee-selector">
+      <label>
+        Employee
+      </label>
 
-    Employee Details
-
-  </h2>
-
-  <div class="employee-selector">
-
-    <label>
-
-      Employee
-
-    </label>
-
-    <select
-      [(ngModel)]="selectedEmployeeId"
-      (change)="employeeChanged()">
-
-      <option value="">
-
-        Select Employee
-
-      </option>
-
-      @for(employee of employees; track employee.id){
-
-        <option
-          [value]="employee.id">
-
-          {{ employee.employeeCode }}
-          -
-          {{ employee.firstName }}
-          {{ employee.lastName }}
-
+      <select
+        [(ngModel)]="selectedEmployeeId"
+        (change)="employeeChanged()">
+        <option value="">
+          Select Employee
         </option>
 
-      }
-
-    </select>
-
+        @for(employee of employees; track employee.id){
+          <option
+            [value]="employee.id">
+            {{ employee.employeeCode }}
+            -
+            {{ employee.firstName }}
+            {{ employee.lastName }}
+          </option>
+        }
+      </select>
+    </div>
   </div>
-
-</div>
-
-<hr>
+  <hr>
+} @else {
+  <div class="employee-details-header">
+    <h2>
+      My Details & Credentials
+    </h2>
+  </div>
+  <hr>
+}
 
 <router-outlet></router-outlet>

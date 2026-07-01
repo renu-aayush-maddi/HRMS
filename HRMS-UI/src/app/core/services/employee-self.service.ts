@@ -195,4 +195,18 @@ export class EmployeeSelfService {
   getMyProfile(): Observable<EmployeeProfile> {
     return this.http.get<EmployeeProfile>(`${this.api}/Employee/my-profile`);
   }
+
+  updateMyProfile(dto: { phone?: string }): Observable<any> {
+    return this.http.put(`${this.api}/Employee/my-profile`, dto);
+  }
+
+  uploadProfilePhoto(file: File): Observable<{ profilePhotoUrl: string, message?: string }> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post<{ profilePhotoUrl: string, message?: string }>(`${this.api}/Employee/my-profile/photo`, formData);
+  }
+
+  deleteProfilePhoto(): Observable<any> {
+    return this.http.delete(`${this.api}/Employee/my-profile/photo`);
+  }
 }

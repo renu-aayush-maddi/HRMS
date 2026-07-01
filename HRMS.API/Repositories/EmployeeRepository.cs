@@ -42,6 +42,8 @@ public class EmployeeRepository : IEmployeeRepository
             .Include(x => x.EmployeeExperiences)
             .Include(x => x.EmployeeEmergencyContacts)
             .Include(x => x.EmployeeDocuments)
+            .Include(x => x.User)
+                .ThenInclude(u => u.Roles)
             .FirstOrDefaultAsync(x => x.Id == employeeId && !x.IsDeleted, cancellationToken);
     }
 

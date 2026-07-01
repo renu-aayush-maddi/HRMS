@@ -1,10 +1,13 @@
-import { Component, OnInit, signal, computed } from '@angular/core';
+import { Component, OnInit, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { EmployeeSelfService, LeaveBalanceItem } from '../../../core/services/employee-self.service';
 import { LeaveResponse } from '../../../core/models/leave.model';
 import { LeaveTypeService } from '../../../core/services/leave-type.service';
 import { LeaveType } from '../../../core/models/leave-type.model';
+import { ActivatedRoute, Router } from '@angular/router';
+import { FilterBarComponent } from '../../../shared/components/filter-bar/filter-bar';
+import { FilterField, SortOption } from '../../../shared/components/filter-bar/filter-bar.model';
 
 import {
   LucideCheckCircle,
@@ -28,7 +31,8 @@ import {
     LucideChevronLeft,
     LucideChevronRight,
     LucideX,
-    LucideCalendar
+    LucideCalendar,
+    FilterBarComponent
   ],
   templateUrl: './emp-leave.html',
   styleUrl: './emp-leave.css',
@@ -43,7 +47,6 @@ export class EmpLeave implements OnInit {
   readonly totalLeaves = signal(0);
   readonly leavesPage = signal(1);
   readonly leavesPageSize = signal(10);
-  readonly statusFilter = signal('');
   readonly leavesLoading = signal(false);
 
   // Leave types
@@ -63,6 +66,20 @@ export class EmpLeave implements OnInit {
   readonly successMessage = signal<string | null>(null);
   readonly errorMessage = signal<string | null>(null);
 
+  private router = inject(Router);
+  private route = inject(ActivatedRoute);
+
+  // Reusable Filter Config
+  filterFields: FilterField[] = [];
+  sortOptions: SortOption[] = [
+    { value: 'StartDate', label: 'Start Date' },
+    { value: 'EndDate', label: 'End Date' },
+    { value: 'CreatedAt', label: 'Requested Date' }
+  ];
+  filters: { [key: string]: any } = {};
+  sortBy = 'CreatedAt';
+  descending = true;
+
   readonly totalPages = computed(() => {
     return Math.ceil(this.totalLeaves() / this.leavesPageSize());
   });
@@ -74,8 +91,23 @@ export class EmpLeave implements OnInit {
 
   ngOnInit(): void {
     this.loadBalances();
-    this.loadLeaves();
     this.loadLeaveTypes();
+    this.setupFilterFields();
+
+    this.route.queryParams.subscribe(params => {
+      const newFilters: any = {};
+      if (params['leaveTypeId']) newFilters['leaveTypeId'] = params['leaveTypeId'];
+      if (params['status']) newFilters['status'] = params['status'];
+      if (params['fromDate']) newFilters['fromDate'] = params['fromDate'];
+      if (params['toDate']) newFilters['toDate'] = params['toDate'];
+
+      this.filters = newFilters;
+      this.sortBy = params['sortBy'] || 'CreatedAt';
+      this.descending = params['descending'] === 'true' || params['descending'] === undefined;
+      this.leavesPage.set(params['pageNumber'] ? parseInt(params['pageNumber'], 10) : 1);
+
+      this.loadLeaves();
+    });
   }
 
   loadBalances(): void {
@@ -92,9 +124,14 @@ export class EmpLeave implements OnInit {
   loadLeaves(): void {
     this.leavesLoading.set(true);
     this.empService.getMyLeaves({
-      status: this.statusFilter() || undefined,
+      leaveTypeId: this.filters['leaveTypeId'] || undefined,
+      status: this.filters['status'] || undefined,
+      fromDate: this.filters['fromDate'] || undefined,
+      toDate: this.filters['toDate'] || undefined,
       pageNumber: this.leavesPage(),
-      pageSize: this.leavesPageSize()
+      pageSize: this.leavesPageSize(),
+      sortBy: this.sortBy,
+      descending: this.descending
     }).subscribe({
       next: (result) => {
         this.leaves.set(result.data ?? []);
@@ -107,8 +144,53 @@ export class EmpLeave implements OnInit {
 
   loadLeaveTypes(): void {
     this.leaveTypeService.getLeaveTypes().subscribe({
-      next: (types) => { this.leaveTypes.set(types); },
+      next: (types) => {
+        this.leaveTypes.set(types);
+        this.setupFilterFields();
+      },
       error: () => {}
+    });
+  }
+
+  setupFilterFields(): void {
+    const leaveTypeOpts = this.leaveTypes().map(t => ({ value: t.id, label: t.name }));
+    this.filterFields = [
+      { key: 'leaveTypeId', label: 'Leave Type', type: 'select', options: leaveTypeOpts },
+      { key: 'status', label: 'Status', type: 'select', options: [
+        { value: 'Pending', label: 'Pending' },
+        { value: 'Approved', label: 'Approved' },
+        { value: 'Rejected', label: 'Rejected' },
+        { value: 'Cancelled', label: 'Cancelled' }
+      ]},
+      { key: 'fromDate', label: 'From Date', type: 'date' },
+      { key: 'toDate', label: 'To Date', type: 'date' }
+    ];
+  }
+
+  onFiltersChanged(updatedFilters: any): void {
+    const queryParams: any = { ...updatedFilters, pageNumber: 1 };
+    Object.keys(queryParams).forEach(k => {
+      if (queryParams[k] === null || queryParams[k] === undefined || queryParams[k] === '') {
+        delete queryParams[k];
+      }
+    });
+
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams,
+      queryParamsHandling: 'merge'
+    });
+  }
+
+  onSortChanged(event: { sortBy: string; descending: boolean }): void {
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: {
+        sortBy: event.sortBy,
+        descending: event.descending.toString(),
+        pageNumber: 1
+      },
+      queryParamsHandling: 'merge'
     });
   }
 
@@ -171,23 +253,22 @@ export class EmpLeave implements OnInit {
     });
   }
 
-  applyStatusFilter(): void {
-    this.leavesPage.set(1);
-    this.loadLeaves();
-  }
-
   prevPage(): void {
-    if (this.leavesPage() > 1) {
-      this.leavesPage.update(p => p - 1);
-      this.loadLeaves();
-    }
+    if (this.leavesPage() <= 1) return;
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { pageNumber: this.leavesPage() - 1 },
+      queryParamsHandling: 'merge'
+    });
   }
 
   nextPage(): void {
-    if (this.leavesPage() < this.totalPages()) {
-      this.leavesPage.update(p => p + 1);
-      this.loadLeaves();
-    }
+    if (this.leavesPage() >= this.totalPages()) return;
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { pageNumber: this.leavesPage() + 1 },
+      queryParamsHandling: 'merge'
+    });
   }
 
   getLeaveDuration(fromDate: string, toDate: string): number {

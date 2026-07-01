@@ -18,7 +18,7 @@ public class CreateAttendanceRegularizationValidator
             .NotEmpty();
 
         RuleFor(x => x)
-            .Must(x => x.RequestedCheckIn < x.RequestedCheckOut)
+            .Must(x => !x.RequestedCheckIn.HasValue || !x.RequestedCheckOut.HasValue || x.RequestedCheckIn.Value < x.RequestedCheckOut.Value)
             .WithMessage(
                 "RequestedCheckIn must be earlier than RequestedCheckOut.");
 

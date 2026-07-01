@@ -4,17 +4,17 @@ namespace HRMS.API.Interfaces;
 
 public interface IEmployeeSalaryService
 {
-    void AssignSalary(
-        AssignEmployeeSalaryDto dto);
+    Task AssignSalaryAsync(
+        AssignEmployeeSalaryDto dto, CancellationToken cancellationToken = default);
 
-    EmployeeSalaryResponseDto
-        GetActiveSalary(
-            Guid employeeId);
+    Task<EmployeeSalaryResponseDto>
+        GetActiveSalaryAsync(
+            Guid employeeId, CancellationToken cancellationToken = default);
 
-    List<EmployeeSalaryResponseDto>
-        GetAll();
+    Task<List<EmployeeSalaryResponseDto>>
+        GetAllAsync(CancellationToken cancellationToken = default);
 
-        List<SalaryHistoryResponseDto>
-    GetSalaryHistory(
-        Guid employeeId);
+    Task<List<SalaryHistoryResponseDto>>
+        GetSalaryHistoryAsync(
+            Guid employeeId, CancellationToken cancellationToken = default);
 }

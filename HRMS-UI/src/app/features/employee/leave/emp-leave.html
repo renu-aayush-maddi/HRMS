@@ -48,18 +48,15 @@
   </div>
 
   <!-- Leave History Filter -->
-  <div class="filters-bar">
-    <div class="filter-group">
-      <label>Filter by Status</label>
-      <select [ngModel]="statusFilter()" (ngModelChange)="statusFilter.set($event); applyStatusFilter()" class="form-control">
-        <option value="">All Requests</option>
-        <option value="Pending">Pending</option>
-        <option value="Approved">Approved</option>
-        <option value="Rejected">Rejected</option>
-        <option value="Withdrawn">Withdrawn</option>
-      </select>
-    </div>
-  </div>
+  <app-filter-bar
+    [fields]="filterFields"
+    [sortOptions]="sortOptions"
+    [currentFilters]="filters"
+    [sortBy]="sortBy"
+    [descending]="descending"
+    (filterChange)="onFiltersChanged($event)"
+    (sortChange)="onSortChanged($event)"
+  ></app-filter-bar>
 
   <!-- Leave History Table -->
   <div class="table-card">

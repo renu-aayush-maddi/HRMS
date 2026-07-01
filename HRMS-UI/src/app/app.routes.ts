@@ -471,49 +471,94 @@ export const routes: Routes = [
       path: 'employee/dashboard',
       component: EmployeeDashboard,
       canActivate: [roleGuard],
-      data: { roles: ['Employee'] }
+      data: { roles: ['HR', 'Manager', 'Employee'] }
     },
     {
       path: 'employee/attendance',
       component: EmpAttendance,
       canActivate: [roleGuard],
-      data: { roles: ['Employee'] }
+      data: { roles: ['HR', 'Manager', 'Employee'] }
     },
     {
       path: 'employee/leave',
       component: EmpLeave,
       canActivate: [roleGuard],
-      data: { roles: ['Employee'] }
+      data: { roles: ['HR', 'Manager', 'Employee'] }
     },
     {
       path: 'employee/payroll',
       component: EmpPayroll,
       canActivate: [roleGuard],
-      data: { roles: ['Employee'] }
+      data: { roles: ['HR', 'Manager', 'Employee'] }
     },
     {
       path: 'employee/goals',
       component: EmpGoals,
       canActivate: [roleGuard],
-      data: { roles: ['Employee'] }
+      data: { roles: ['HR', 'Manager', 'Employee'] }
     },
     {
       path: 'employee/reviews',
       component: EmpReviews,
       canActivate: [roleGuard],
-      data: { roles: ['Employee'] }
+      data: { roles: ['HR', 'Manager', 'Employee'] }
     },
     {
       path: 'employee/resignation',
       component: EmpResignation,
       canActivate: [roleGuard],
-      data: { roles: ['Employee'] }
+      data: { roles: ['HR', 'Manager', 'Employee'] }
     },
     {
       path: 'employee/profile',
       component: EmpProfile,
       canActivate: [roleGuard],
-      data: { roles: ['Employee'] }
+      data: { roles: ['Admin', 'HR', 'Manager', 'Employee'] }
+    },
+    {
+      path: 'employee/employee-details',
+      component: EmployeeDetails,
+      canActivate: [roleGuard],
+      data: { roles: ['HR', 'Manager', 'Employee'] },
+      children: [
+        {
+          path: '',
+          redirectTo: 'overview',
+          pathMatch: 'full'
+        },
+        {
+          path: 'overview',
+          component: Overview
+        },
+        {
+          path: 'addresses',
+          component: Addresses
+        },
+        {
+          path: 'educations',
+          component: Educations
+        },
+        {
+          path: 'experiences',
+          component: Experiences
+        },
+        {
+          path: 'emergency-contacts',
+          component: EmergencyContacts
+        },
+        {
+          path: 'documents',
+          component: Documents
+        },
+        {
+          path: 'salary',
+          component: Salary
+        },
+        {
+          path: 'leave-balances',
+          component: LeaveBalances
+        }
+      ]
     },
     {
       path: 'org-chart',

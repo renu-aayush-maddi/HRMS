@@ -15,6 +15,7 @@ public class AttendanceService : IAttendanceService
     private readonly IUserContextService userContextService;
     private readonly IEmployeeAccessResolver accessResolver;
     private readonly IAuditLogService auditLogService;
+    private readonly INotificationService notificationService;
     private readonly ILogger<AttendanceService> logger;
 
     public AttendanceService(
@@ -22,12 +23,14 @@ public class AttendanceService : IAttendanceService
         IUserContextService userContextService,
         IEmployeeAccessResolver accessResolver,
         IAuditLogService auditLogService,
+        INotificationService notificationService,
         ILogger<AttendanceService> logger)
     {
         this.repository = repository;
         this.userContextService = userContextService;
         this.accessResolver = accessResolver;
         this.auditLogService = auditLogService;
+        this.notificationService = notificationService;
         this.logger = logger;
     }
 
@@ -37,6 +40,9 @@ public class AttendanceService : IAttendanceService
         var employee = await repository.GetEmployeeByUserIdAsync(userId, cancellationToken);
 
         if (employee == null) throw new NotFoundException("Employee not found.");
+
+        if (employee.EmploymentStatus == "Resigned" || employee.EmploymentStatus == "Terminated" || employee.EmploymentStatus == "Inactive")
+            throw new BusinessException("Attendance actions are only allowed for active employees.");
 
         var existingAttendance = await repository.GetTodayAttendanceAsync(employee.Id, cancellationToken);
         if (existingAttendance != null) throw new BusinessException("You have already checked in today.");
@@ -62,6 +68,14 @@ public class AttendanceService : IAttendanceService
 
         await auditLogService.LogAsync("CheckIn", nameof(AttendanceLog), attendance.Id, $"Employee {employee.Id} checked in.", cancellationToken);
         logger.LogInformation("Employee {EmployeeId} checked in. AttendanceId: {AttendanceId}", employee.Id, attendance.Id);
+
+        if (employee.Manager?.UserId != null)
+        {
+            notificationService.CreateNotification(
+                employee.Manager.UserId.Value,
+                "Attendance Check-In",
+                $"{employee.FirstName} {employee.LastName} has checked in.");
+        }
     }
 
     public async Task CheckOutAsync(CancellationToken cancellationToken = default)
@@ -70,6 +84,9 @@ public class AttendanceService : IAttendanceService
         var employee = await repository.GetEmployeeByUserIdAsync(userId, cancellationToken);
 
         if (employee == null) throw new NotFoundException("Employee not found.");
+
+        if (employee.EmploymentStatus == "Resigned" || employee.EmploymentStatus == "Terminated" || employee.EmploymentStatus == "Inactive")
+            throw new BusinessException("Attendance actions are only allowed for active employees.");
 
         var attendance = await repository.GetTodayAttendanceAsync(employee.Id, cancellationToken);
         if (attendance == null) throw new NotFoundException("Check-in record not found.");
@@ -96,6 +113,14 @@ public class AttendanceService : IAttendanceService
 
         await auditLogService.LogAsync("CheckOut", nameof(AttendanceLog), attendance.Id, $"Employee {employee.Id} checked out.", cancellationToken);
         logger.LogInformation("Employee {EmployeeId} checked out. AttendanceId: {AttendanceId}", employee.Id, attendance.Id);
+
+        if (employee.Manager?.UserId != null)
+        {
+            notificationService.CreateNotification(
+                employee.Manager.UserId.Value,
+                "Attendance Check-Out",
+                $"{employee.FirstName} {employee.LastName} has checked out.");
+        }
     }
 
     public async Task<PagedResponse<AttendanceResponseDto>> GetAttendanceAsync(AttendanceFilterDto filter, CancellationToken cancellationToken = default)

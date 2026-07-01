@@ -34,6 +34,12 @@ public class EmployeeFullProfileDto
 
     public decimal? Salary { get; set; }
 
+    public string? ProfilePhotoUrl { get; set; }
+
+    public string? Role { get; set; }
+
+    public DateOnly JoiningDate { get; set; }
+
     public List<EmployeeEducationResponseDto>
         Educations { get; set; } = [];
 

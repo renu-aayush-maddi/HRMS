@@ -65,13 +65,57 @@
           </div>
         </div>
 
-        <button class="change-pwd-btn" (click)="openChangePasswordModal()">
-          <svg lucideKey [size]="16" [strokeWidth]="2" class="key-icon-svg"></svg> Change Password
-        </button>
+        <!-- Profile Dropdown Container -->
+        <div class="profile-section-container" [class.open]="isProfileDropdownOpen()">
+          <button class="profile-section-btn" (click)="toggleProfileDropdown($event)" aria-label="User profile menu">
+            <div class="profile-section-avatar">
+              <ng-container *ngIf="authStore.currentUser()?.profilePhotoUrl; else initialsAvatar">
+                <img [src]="getFullImageUrl(authStore.currentUser()?.profilePhotoUrl)" alt="Profile photo" class="avatar-img" />
+              </ng-container>
+              <ng-template #initialsAvatar>
+                <div class="avatar-initials">{{ getInitials() }}</div>
+              </ng-template>
+            </div>
+            <div class="profile-section-info">
+              <span class="profile-section-name">{{ getUserName() }}</span>
+              <span class="profile-section-role">{{ authStore.currentUser()?.role }}</span>
+            </div>
+            <svg lucideChevronDown [size]="16" [strokeWidth]="2" class="chevron-icon"></svg>
+          </button>
 
-        <button class="logout-btn" (click)="logout()">
-          <svg lucideLogOut [size]="16" [strokeWidth]="2" class="logout-icon-svg"></svg> Logout
-        </button>
+          <div class="dropdown-overlay-backdrop" *ngIf="isProfileDropdownOpen()" (click)="closeProfileDropdown()"></div>
+
+          <div class="profile-dropdown-menu">
+            <div class="profile-dropdown-header">
+              <p class="dropdown-user-name">{{ getUserName() }}</p>
+              <p class="dropdown-user-email">{{ authStore.currentUser()?.email }}</p>
+            </div>
+            <div class="profile-dropdown-divider"></div>
+            <ul class="profile-dropdown-list">
+              <li>
+                <a routerLink="/employee/profile" (click)="closeProfileDropdown()" class="dropdown-item">
+                  <svg lucideUser [size]="16" [strokeWidth]="2" class="dropdown-item-icon"></svg> View Profile
+                </a>
+              </li>
+              <li>
+                <a routerLink="/employee/profile" (click)="closeProfileDropdown()" class="dropdown-item">
+                  <svg lucideSettings [size]="16" [strokeWidth]="2" class="dropdown-item-icon"></svg> My Account
+                </a>
+              </li>
+              <li>
+                <button (click)="closeProfileDropdown(); openChangePasswordModal()" class="dropdown-item">
+                  <svg lucideKey [size]="16" [strokeWidth]="2" class="dropdown-item-icon"></svg> Change Password
+                </button>
+              </li>
+              <div class="profile-dropdown-divider"></div>
+              <li>
+                <button (click)="closeProfileDropdown(); logout()" class="dropdown-item logout-item">
+                  <svg lucideLogOut [size]="16" [strokeWidth]="2" class="dropdown-item-icon"></svg> Logout
+                </button>
+              </li>
+            </ul>
+          </div>
+        </div>
       </div>
     </header>
 

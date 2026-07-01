@@ -3,24 +3,37 @@ using HRMS.API.Interfaces;
 using HRMS.API.Models.DTOs.LeaveBalance;
 using HRMS.API.Models.Entities;
 using HRMS.API.Validators;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace HRMS.API.Services;
 
 public class LeaveBalanceService : ILeaveBalanceService
 {
     private readonly ILeaveBalanceRepository repository;
+    private readonly IEmployeeAccessResolver accessResolver;
     private readonly LeaveBalanceValidator validator;
 
     public LeaveBalanceService(
         ILeaveBalanceRepository repository,
+        IEmployeeAccessResolver accessResolver,
         LeaveBalanceValidator validator)
     {
         this.repository = repository;
+        this.accessResolver = accessResolver;
         this.validator = validator;
     }
 
-    public async Task AllocateAsync(AllocateLeaveBalanceDto dto)
+    public async Task AllocateAsync(AllocateLeaveBalanceDto dto, CancellationToken cancellationToken = default)
     {
+        var employeeId = await accessResolver.ResolveEmployeeIdAsync(dto.EmployeeId, cancellationToken);
+        await accessResolver.ValidateEmployeeOwnershipAsync(employeeId, cancellationToken);
+
+        dto.EmployeeId = employeeId;
+
         await validator.ValidateAllocationAsync(dto);
 
         var employee =
@@ -74,7 +87,7 @@ public class LeaveBalanceService : ILeaveBalanceService
         await repository.SaveChangesAsync();
     }
 
-    public async Task<List<LeaveBalanceResponseDto>> GetAllBalancesAsync()
+    public async Task<List<LeaveBalanceResponseDto>> GetAllBalancesAsync(CancellationToken cancellationToken = default)
     {
         var balances =
             await repository.GetAllBalancesAsync();
@@ -93,10 +106,13 @@ public class LeaveBalanceService : ILeaveBalanceService
             .ToList();
     }
 
-    public async Task<List<LeaveBalanceResponseDto>> GetEmployeeBalancesAsync(Guid employeeId)
+    public async Task<List<LeaveBalanceResponseDto>> GetEmployeeBalancesAsync(Guid employeeId, CancellationToken cancellationToken = default)
     {
+        var resolvedEmployeeId = await accessResolver.ResolveEmployeeIdAsync(employeeId, cancellationToken);
+        await accessResolver.ValidateEmployeeOwnershipAsync(resolvedEmployeeId, cancellationToken);
+
         var balances =
-            await repository.GetEmployeeBalancesAsync(employeeId);
+            await repository.GetEmployeeBalancesAsync(resolvedEmployeeId);
 
         return balances
             .Select(x => new LeaveBalanceResponseDto
@@ -112,7 +128,7 @@ public class LeaveBalanceService : ILeaveBalanceService
             .ToList();
     }
 
-    public async Task AllocateDefaultBalancesAsync(Guid employeeId)
+    public async Task AllocateDefaultBalancesAsync(Guid employeeId, CancellationToken cancellationToken = default)
     {
         var employee =
             await repository.GetEmployeeAsync(

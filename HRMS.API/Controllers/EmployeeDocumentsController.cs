@@ -55,7 +55,7 @@ public class EmployeeDocumentsController : ControllerBase
         return Ok(new ApiResponse { Message = "Document deleted successfully." });
     }
 
-    [Authorize(Roles = "Admin,HR")]
+    [Authorize(Roles = "Admin,HR,Manager,Employee")]
     [HttpGet("export")]
     public async Task<IActionResult> ExportDocuments([FromQuery] EmployeeDocumentFilterDto filter, CancellationToken cancellationToken)
     {

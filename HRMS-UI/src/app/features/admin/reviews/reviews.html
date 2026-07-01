@@ -13,48 +13,15 @@
   </div>
 
   <!-- Filters Panel -->
-  <div class="filters-card">
-    <div class="filters-grid">
-      <!-- Search -->
-      <div class="filter-group">
-        <label for="search">Search Employee/Reviewer</label>
-        <input 
-          type="text" 
-          id="search" 
-          placeholder="Type name..." 
-          [ngModel]="searchQuery()" 
-          (ngModelChange)="searchQuery.set($event); applyFilters()"
-        />
-      </div>
-
-      <!-- Performance Cycle -->
-      <div class="filter-group">
-        <label for="cycle">Performance Cycle</label>
-        <select id="cycle" [ngModel]="selectedCycleId()" (ngModelChange)="selectedCycleId.set($event); applyFilters()">
-          <option value="">All Cycles</option>
-          <option *ngFor="let cycle of cycles()" [value]="cycle.id">{{ cycle.name }}</option>
-        </select>
-      </div>
-
-      <!-- Rating filter -->
-      <div class="filter-group">
-        <label for="rating">Rating</label>
-        <select id="rating" [ngModel]="selectedRating()" (ngModelChange)="selectedRating.set($event); applyFilters()">
-          <option [ngValue]="null">All Ratings</option>
-          <option [ngValue]="1">1 Star</option>
-          <option [ngValue]="2">2 Stars</option>
-          <option [ngValue]="3">3 Stars</option>
-          <option [ngValue]="4">4 Stars</option>
-          <option [ngValue]="5">5 Stars</option>
-        </select>
-      </div>
-
-      <!-- Reset -->
-      <div class="filter-group button-align">
-        <button class="btn-clear" (click)="resetFilters()">Clear Filters</button>
-      </div>
-    </div>
-  </div>
+  <app-filter-bar
+    [fields]="filterFields"
+    [sortOptions]="sortOptions"
+    [currentFilters]="filters"
+    [sortBy]="sortBy"
+    [descending]="descending"
+    (filterChange)="onFiltersChanged($event)"
+    (sortChange)="onSortChanged($event)"
+  ></app-filter-bar>
 
   <!-- Loading State -->
   <div class="loading-state" *ngIf="loading()">

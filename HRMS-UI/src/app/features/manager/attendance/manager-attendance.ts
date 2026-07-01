@@ -3,13 +3,15 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ManagerService } from '../../../core/services/manager.service';
 import { TeamAttendance } from '../../../core/models/manager.model';
+import { FilterBarComponent } from '../../../shared/components/filter-bar/filter-bar';
+import { FilterField, SortOption } from '../../../shared/components/filter-bar/filter-bar.model';
 
 import { LucideAlertTriangle } from '@lucide/angular';
 
 @Component({
   selector: 'app-manager-attendance',
   standalone: true,
-  imports: [CommonModule, FormsModule, LucideAlertTriangle],
+  imports: [CommonModule, FormsModule, LucideAlertTriangle, FilterBarComponent],
   templateUrl: './manager-attendance.html',
   styleUrl: './manager-attendance.css'
 })
@@ -20,10 +22,29 @@ export class ManagerAttendance implements OnInit {
   readonly loading = signal(true);
   readonly error = signal<string | null>(null);
   
-  // Filters
-  readonly employeeQuery = signal('');
-  readonly statusFilter = signal('');
-  readonly dateFilter = signal('');
+  // Reusable Filter Bar Config
+  filterFields: FilterField[] = [
+    { key: 'employeeName', label: 'Employee Name', type: 'text', placeholder: 'Search by employee...' },
+    { key: 'status', label: 'Status', type: 'select', options: [
+      { value: 'Present', label: 'Present' },
+      { value: 'Absent', label: 'Absent' },
+      { value: 'Late', label: 'Late' },
+      { value: 'On Leave', label: 'On Leave' },
+      { value: 'Half Day', label: 'Half Day' }
+    ]},
+    { key: 'date', label: 'Date', type: 'date' }
+  ];
+
+  sortOptions: SortOption[] = [
+    { value: 'employeeName', label: 'Employee Name' },
+    { value: 'attendanceDate', label: 'Attendance Date' },
+    { value: 'checkInTime', label: 'Check In Time' },
+    { value: 'checkOutTime', label: 'Check Out Time' }
+  ];
+
+  filters: { [key: string]: any } = {};
+  sortBy = 'attendanceDate';
+  descending = true;
 
   constructor(private managerService: ManagerService) {}
 
@@ -48,29 +69,51 @@ export class ManagerAttendance implements OnInit {
     });
   }
 
+  onFiltersChanged(updatedFilters: any): void {
+    this.filters = updatedFilters;
+    this.applyFilters();
+  }
+
+  onSortChanged(event: { sortBy: string; descending: boolean }): void {
+    this.sortBy = event.sortBy;
+    this.descending = event.descending;
+    this.applyFilters();
+  }
+
   applyFilters(): void {
     let result = [...this.logs()];
 
-    if (this.employeeQuery().trim()) {
-      const q = this.employeeQuery().toLowerCase();
+    const query = this.filters['employeeName'] || this.filters['search'];
+    if (query) {
+      const q = query.toLowerCase();
       result = result.filter(log => log.employeeName.toLowerCase().includes(q));
     }
 
-    if (this.statusFilter()) {
-      result = result.filter(log => log.status === this.statusFilter());
+    if (this.filters['status']) {
+      result = result.filter(log => log.status === this.filters['status']);
     }
 
-    if (this.dateFilter()) {
-      result = result.filter(log => log.attendanceDate.toString().startsWith(this.dateFilter()));
+    if (this.filters['date']) {
+      result = result.filter(log => log.attendanceDate.toString().startsWith(this.filters['date']));
     }
+
+    // Client-side sort
+    result.sort((a: any, b: any) => {
+      let valA = a[this.sortBy];
+      let valB = b[this.sortBy];
+      if (valA === undefined || valA === null) return 1;
+      if (valB === undefined || valB === null) return -1;
+      if (typeof valA === 'string') {
+        return this.descending ? valB.localeCompare(valA) : valA.localeCompare(valB);
+      }
+      return this.descending ? valB - valA : valA - valB;
+    });
 
     this.filteredLogs.set(result);
   }
 
   resetFilters(): void {
-    this.employeeQuery.set('');
-    this.statusFilter.set('');
-    this.dateFilter.set('');
+    this.filters = {};
     this.applyFilters();
   }
 

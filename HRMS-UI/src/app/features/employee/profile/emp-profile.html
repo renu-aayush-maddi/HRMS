@@ -20,7 +20,31 @@
   <div *ngIf="!loading() && !error() && profile()">
     <!-- Profile Hero -->
     <div class="profile-hero">
-      <div class="profile-avatar">{{ getInitials() }}</div>
+      <div class="profile-avatar-container">
+        <div class="profile-avatar" (click)="openPreviewModal()" [class.has-photo]="!!profile()!.profilePhotoUrl" title="Click to view full size">
+          <ng-container *ngIf="profile()!.profilePhotoUrl; else initialsFallback">
+            <img [src]="getFullImageUrl(profile()!.profilePhotoUrl)" alt="Profile photo" class="avatar-img" />
+          </ng-container>
+          <ng-template #initialsFallback>
+            <span class="avatar-initials">{{ getInitials() }}</span>
+          </ng-template>
+          
+          <!-- Upload overlay -->
+          <div class="avatar-overlay" (click)="$event.stopPropagation(); fileInput.click()">
+            <svg lucideCamera [size]="20" [strokeWidth]="2"></svg>
+            <span>Change</span>
+          </div>
+        </div>
+
+        <input type="file" #fileInput (change)="onFileSelected($event)" accept=".jpg,.jpeg,.png,.webp" style="display: none;">
+        
+        <div class="avatar-actions" *ngIf="profile()!.profilePhotoUrl">
+          <button class="delete-photo-btn" (click)="deletePhoto($event)" title="Delete Photo">
+            <svg lucideTrash2 [size]="14" [strokeWidth]="2"></svg> Delete
+          </button>
+        </div>
+      </div>
+
       <div class="profile-info">
         <h2 class="profile-name">{{ profile()!.firstName }} {{ profile()!.lastName }}</h2>
         <div class="profile-meta">
@@ -70,7 +94,7 @@
     <div class="tab-content" *ngIf="activeTab() === 'overview'">
       <div class="info-grid">
         <div class="info-item">
-          <span class="info-label">Employee Code</span>
+          <span class="info-label">Employee ID / Code</span>
           <span class="info-value">{{ profile()!.employeeCode }}</span>
         </div>
         <div class="info-item">
@@ -81,10 +105,31 @@
           <span class="info-label">Email Address</span>
           <span class="info-value">{{ profile()!.email }}</span>
         </div>
-        <div class="info-item" *ngIf="profile()!.phone">
+        
+        <!-- Editable Phone Number -->
+        <div class="info-item editable-info-item">
           <span class="info-label">Phone Number</span>
-          <span class="info-value">{{ profile()!.phone }}</span>
+          <div class="phone-edit-container" *ngIf="isEditingPhone(); else displayPhone">
+            <input type="text" [(ngModel)]="phoneInput" class="phone-edit-input form-control" placeholder="Enter phone number" [disabled]="savingPhone()" />
+            <div class="phone-edit-actions">
+              <button class="phone-btn save-btn" (click)="savePhone()" [disabled]="savingPhone()">
+                {{ savingPhone() ? 'Saving...' : 'Save' }}
+              </button>
+              <button class="phone-btn cancel-btn" (click)="cancelEditPhone()" [disabled]="savingPhone()">
+                Cancel
+              </button>
+            </div>
+          </div>
+          <ng-template #displayPhone>
+            <div class="phone-display-wrapper">
+              <span class="info-value">{{ profile()!.phone || 'Not provided' }}</span>
+              <button class="phone-edit-trigger" (click)="startEditPhone()" title="Edit Phone Number">
+                <svg lucideEdit3 [size]="14" [strokeWidth]="2"></svg>
+              </button>
+            </div>
+          </ng-template>
         </div>
+
         <div class="info-item" *ngIf="profile()!.designation">
           <span class="info-label">Designation</span>
           <span class="info-value">{{ profile()!.designation }}</span>
@@ -93,9 +138,17 @@
           <span class="info-label">Department</span>
           <span class="info-value">{{ profile()!.department }}</span>
         </div>
+        <div class="info-item" *ngIf="profile()!.role">
+          <span class="info-label">Role</span>
+          <span class="info-value">{{ profile()!.role }}</span>
+        </div>
         <div class="info-item" *ngIf="profile()!.managerName">
           <span class="info-label">Reporting Manager</span>
           <span class="info-value">{{ profile()!.managerName }}</span>
+        </div>
+        <div class="info-item" *ngIf="profile()!.joiningDate">
+          <span class="info-label">Date Joined</span>
+          <span class="info-value">{{ profile()!.joiningDate | date:'mediumDate' }}</span>
         </div>
         <div class="info-item" *ngIf="profile()!.employmentStatus">
           <span class="info-label">Employment Status</span>
@@ -303,6 +356,21 @@
         </div>
       </div>
     </div>
+
+  <!-- Full Size Image Preview Modal -->
+  <div class="image-preview-modal-overlay" *ngIf="showPreviewModal()" (click)="closePreviewModal()">
+    <div class="image-preview-modal-panel" (click)="$event.stopPropagation()">
+      <div class="image-preview-modal-header">
+        <h3>Profile Photo</h3>
+        <button class="image-preview-modal-close" (click)="closePreviewModal()" aria-label="Close">
+          <svg lucideX [size]="18" [strokeWidth]="2"></svg>
+        </button>
+      </div>
+      <div class="image-preview-modal-body">
+        <img [src]="getFullImageUrl(profile()!.profilePhotoUrl)" alt="Profile Photo Full Size" class="full-size-preview-img" />
+      </div>
+    </div>
+  </div>
 
   </div>
 </div>

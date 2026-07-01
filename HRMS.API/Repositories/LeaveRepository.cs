@@ -17,6 +17,7 @@ public class LeaveRepository : ILeaveRepository
     public async Task<Employee?> GetEmployeeAsync(Guid employeeId, CancellationToken cancellationToken = default)
     {
         return await context.Employees
+            .Include(x => x.Manager)
             .FirstOrDefaultAsync(x => x.Id == employeeId && !x.IsDeleted, cancellationToken);
     }
 
@@ -30,6 +31,10 @@ public class LeaveRepository : ILeaveRepository
     {
         return await context.LeaveRequests
             .Include(x => x.Employee)
+                .ThenInclude(e => e.User)
+                    .ThenInclude(u => u.Roles)
+            .Include(x => x.Employee)
+                .ThenInclude(e => e.Manager)
             .Include(x => x.LeaveType)
             .FirstOrDefaultAsync(x => x.Id == leaveId, cancellationToken);
     }

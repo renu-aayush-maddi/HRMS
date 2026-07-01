@@ -1,5 +1,5 @@
-import { Component, inject, signal } from '@angular/core';
-import { Router, RouterOutlet } from '@angular/router';
+import { Component, inject, signal, OnInit } from '@angular/core';
+import { Router, RouterOutlet, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
 
@@ -7,7 +7,21 @@ import { Sidebar } from '../../shared/components/sidebar/sidebar';
 import { AuthStore } from '../../stores/auth/auth.store';
 import { AuthService } from '../../core/services/auth.service';
 import { NotificationService } from '../../core/services/notification.service';
-import { LucideMenu, LucideLogOut, LucideBell, LucideBellOff, LucideKey, LucideX, LucideEye, LucideEyeOff } from '@lucide/angular';
+import { EmployeeSelfService } from '../../core/services/employee-self.service';
+import { environment } from '../../../environments/environment';
+import {
+  LucideMenu,
+  LucideLogOut,
+  LucideBell,
+  LucideBellOff,
+  LucideKey,
+  LucideX,
+  LucideEye,
+  LucideEyeOff,
+  LucideUser,
+  LucideSettings,
+  LucideChevronDown
+} from '@lucide/angular';
 
 function passwordMatchValidatorChange(control: AbstractControl): ValidationErrors | null {
   const password = control.get('newPassword');
@@ -23,6 +37,7 @@ function passwordMatchValidatorChange(control: AbstractControl): ValidationError
   imports: [
     CommonModule,
     RouterOutlet,
+    RouterLink,
     Sidebar,
     LucideMenu,
     LucideLogOut,
@@ -32,21 +47,26 @@ function passwordMatchValidatorChange(control: AbstractControl): ValidationError
     LucideX,
     LucideEye,
     LucideEyeOff,
+    LucideUser,
+    LucideSettings,
+    LucideChevronDown,
     ReactiveFormsModule
   ],
   templateUrl: './main-layout.html',
   styleUrl: './main-layout.css'
 })
-export class MainLayout {
+export class MainLayout implements OnInit {
   authStore = inject(AuthStore);
   notificationService = inject(NotificationService);
   private authService = inject(AuthService);
   private router = inject(Router);
   private fb = inject(FormBuilder);
+  private empSelfService = inject(EmployeeSelfService);
 
   readonly isSidebarCollapsed = signal(false);
   readonly isMobileMenuOpen = signal(false);
   readonly isNotificationOpen = signal(false);
+  readonly isProfileDropdownOpen = signal(false);
 
   // Change Password state
   readonly showChangePasswordModal = signal(false);
@@ -148,5 +168,64 @@ export class MainLayout {
     localStorage.removeItem('token');
     this.authStore.clear();
     this.router.navigate(['/login']);
+  }
+
+  ngOnInit(): void {
+    this.loadUserProfile();
+  }
+
+  loadUserProfile(): void {
+    const user = this.authStore.currentUser();
+    if (user) {
+      this.empSelfService.getMyProfile().subscribe({
+        next: (profile) => {
+          this.authStore.setCurrentUser({
+            ...user,
+            firstName: profile.firstName,
+            lastName: profile.lastName,
+            profilePhotoUrl: profile.profilePhotoUrl
+          });
+        },
+        error: (err) => {
+          console.error('Failed to load user profile for header', err);
+        }
+      });
+    }
+  }
+
+  toggleProfileDropdown(event: Event): void {
+    event.stopPropagation();
+    this.isProfileDropdownOpen.update(val => !val);
+  }
+
+  closeProfileDropdown(): void {
+    this.isProfileDropdownOpen.set(false);
+  }
+
+  getFullImageUrl(url: string | null | undefined): string | null {
+    if (!url) return null;
+    if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) {
+      return url;
+    }
+    const baseUrl = environment.apiUrl.replace('/api', '');
+    return `${baseUrl}${url}`;
+  }
+
+  getInitials(): string {
+    const user = this.authStore.currentUser();
+    if (!user) return '';
+    if (user.firstName || user.lastName) {
+      return `${user.firstName?.charAt(0) ?? ''}${user.lastName?.charAt(0) ?? ''}`.toUpperCase();
+    }
+    return user.email?.substring(0, 2).toUpperCase() ?? '';
+  }
+
+  getUserName(): string {
+    const user = this.authStore.currentUser();
+    if (!user) return '';
+    if (user.firstName || user.lastName) {
+      return `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim();
+    }
+    return user.email;
   }
 }

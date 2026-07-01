@@ -1,7 +1,7 @@
 import { Component, OnInit, signal, inject } from '@angular/core';
 
 import { EmployeeService } from '../../../core/services/employee.service';
-import { Employee } from '../../../core/models/employee.model';
+import { Employee, EmployeeFilter } from '../../../core/models/employee.model';
 import { FormsModule } from '@angular/forms';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 
@@ -20,6 +20,9 @@ import { EmployeeProfile } from '../../../core/models/employee-profile.model';
 import { UpdateEmployee } from '../../../core/models/update-employee.model';
 
 import { ToastrService } from 'ngx-toastr';
+import { ActivatedRoute, Router } from '@angular/router';
+import { FilterBarComponent } from '../../../shared/components/filter-bar/filter-bar';
+import { FilterField, SortOption } from '../../../shared/components/filter-bar/filter-bar.model';
 
 import { LucideX, LucideLoader } from '@lucide/angular';
 
@@ -33,7 +36,8 @@ import { LucideX, LucideLoader } from '@lucide/angular';
     FormsModule,
     ReactiveFormsModule,
     LucideX,
-    LucideLoader
+    LucideLoader,
+    FilterBarComponent
   ]
 })
 export class Employees implements OnInit {
@@ -44,11 +48,11 @@ export class Employees implements OnInit {
 
   readonly submitting = signal(false);
 
-  readonly search = signal('');
-
   readonly pageNumber = signal(1);
 
   private toastr = inject(ToastrService);
+  private router = inject(Router);
+  private route = inject(ActivatedRoute);
 
   readonly pageSize = signal(10);
 
@@ -80,6 +84,18 @@ export class Employees implements OnInit {
 
   readonly selectedFile = signal<File | null>(null);
 
+  // Filter Bar Config and State
+  filterFields: FilterField[] = [];
+  sortOptions: SortOption[] = [
+    { value: 'FirstName', label: 'First Name' },
+    { value: 'LastName', label: 'Last Name' },
+    { value: 'EmployeeCode', label: 'Employee ID' },
+    { value: 'Designation', label: 'Designation' }
+  ];
+  filters: { [key: string]: any } = {};
+  sortBy = 'FirstName';
+  descending = false;
+
   constructor(
     private employeeService: EmployeeService,
     private departmentService: DepartmentService,
@@ -108,17 +124,82 @@ export class Employees implements OnInit {
   }
 
   ngOnInit(): void {
-    this.loadEmployees();
     this.loadDepartments();
     this.loadManagers();
+    this.setupFilterFields();
+
+    this.route.queryParams.subscribe(params => {
+      const newFilters: { [key: string]: any } = {};
+      if (params['search']) newFilters['search'] = params['search'];
+      if (params['departmentId']) newFilters['departmentId'] = params['departmentId'];
+      if (params['managerId']) newFilters['managerId'] = params['managerId'];
+      if (params['employmentStatus']) newFilters['employmentStatus'] = params['employmentStatus'];
+      if (params['designation']) newFilters['designation'] = params['designation'];
+
+      this.filters = newFilters;
+      this.sortBy = params['sortBy'] || 'FirstName';
+      this.descending = params['descending'] === 'true';
+      this.pageNumber.set(params['pageNumber'] ? parseInt(params['pageNumber'], 10) : 1);
+
+      this.loadEmployees();
+    });
+  }
+
+  setupFilterFields(): void {
+    const deptOptions = this.departments().map(d => ({ value: d.id, label: d.name }));
+    const managerOptions = this.managers().map(m => ({ value: m.id, label: m.fullName }));
+
+    this.filterFields = [
+      {
+        key: 'departmentId',
+        label: 'Department',
+        type: 'select',
+        options: deptOptions
+      },
+      {
+        key: 'managerId',
+        label: 'Manager',
+        type: 'select',
+        options: managerOptions
+      },
+      {
+        key: 'employmentStatus',
+        label: 'Employment Status',
+        type: 'select',
+        options: [
+          { value: 'Active', label: 'Active' },
+          { value: 'Inactive', label: 'Inactive' },
+          { value: 'Resigned', label: 'Resigned' },
+          { value: 'Terminated', label: 'Terminated' }
+        ]
+      },
+      {
+        key: 'designation',
+        label: 'Designation',
+        type: 'text',
+        placeholder: 'Search designation...'
+      }
+    ];
   }
 
   loadEmployees(): void {
     console.log('loadEmployees called');
     this.loading.set(true);
 
+    const filterObj: EmployeeFilter = {
+      pageNumber: this.pageNumber(),
+      pageSize: this.pageSize(),
+      search: this.filters['search'] || undefined,
+      departmentId: this.filters['departmentId'] || undefined,
+      managerId: this.filters['managerId'] || undefined,
+      employmentStatus: this.filters['employmentStatus'] || undefined,
+      designation: this.filters['designation'] || undefined,
+      sortBy: this.sortBy,
+      descending: this.descending
+    };
+
     this.employeeService
-      .getEmployees(this.pageNumber(), this.pageSize(), this.search())
+      .getEmployees(filterObj)
       .subscribe({
         next: (response) => {
           this.employees.set(response.data);
@@ -133,25 +214,53 @@ export class Employees implements OnInit {
       });
   }
 
-  searchEmployees(): void {
-    this.pageNumber.set(1);
-    this.loadEmployees();
+  onFilterChanged(updatedFilters: any): void {
+    const queryParams: any = { ...updatedFilters, pageNumber: 1 };
+    Object.keys(queryParams).forEach(k => {
+      if (queryParams[k] === null || queryParams[k] === undefined || queryParams[k] === '') {
+        delete queryParams[k];
+      }
+    });
+
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams,
+      queryParamsHandling: 'merge'
+    });
+  }
+
+  onSortChanged(event: { sortBy: string; descending: boolean }): void {
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: {
+        sortBy: event.sortBy,
+        descending: event.descending.toString(),
+        pageNumber: 1
+      },
+      queryParamsHandling: 'merge'
+    });
   }
 
   previousPage(): void {
     if (this.pageNumber() <= 1) {
       return;
     }
-    this.pageNumber.update(p => p - 1);
-    this.loadEmployees();
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { pageNumber: this.pageNumber() - 1 },
+      queryParamsHandling: 'merge'
+    });
   }
 
   nextPage(): void {
     if (this.pageNumber() >= this.totalPages()) {
       return;
     }
-    this.pageNumber.update(p => p + 1);
-    this.loadEmployees();
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { pageNumber: this.pageNumber() + 1 },
+      queryParamsHandling: 'merge'
+    });
   }
 
   loadDepartments(): void {

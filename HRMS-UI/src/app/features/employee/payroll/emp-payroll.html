@@ -30,15 +30,16 @@
 
   <!-- ─── PAYROLL TAB ─── -->
   <div *ngIf="activeTab() === 'payroll'">
-    <div class="filters-bar">
-      <div class="filter-group">
-        <label>Filter by Year</label>
-        <select [ngModel]="payYearFilter()" (ngModelChange)="payYearFilter.set($event); loadPayrolls()" class="form-control">
-          <option value="">All Years</option>
-          <option *ngFor="let y of years" [value]="y">{{ y }}</option>
-        </select>
-      </div>
-    </div>
+    <!-- Filters -->
+    <app-filter-bar
+      [fields]="filterFields"
+      [sortOptions]="sortOptions"
+      [currentFilters]="filters"
+      [sortBy]="sortBy"
+      [descending]="descending"
+      (filterChange)="onFiltersChanged($event)"
+      (sortChange)="onSortChanged($event)"
+    ></app-filter-bar>
 
     <div class="table-card">
       <div class="table-header">

@@ -5,6 +5,7 @@ import { EmployeeEmergencyContactService } from '../../../../core/services/emplo
 import { EmployeeDetailsStore } from '../../../../stores/employee/employee-details.store';
 import { EmployeeEmergencyContact, AddEmployeeEmergencyContact } from '../../../../core/models/employee-subprofile.model';
 import { ToastrService } from 'ngx-toastr';
+import { AuthStore } from '../../../../stores/auth/auth.store';
 
 import {
   LucideUpload,
@@ -49,6 +50,12 @@ export class EmergencyContacts implements OnInit {
   readonly totalRecords = signal(0);
   
   private toastr = inject(ToastrService);
+  private authStore = inject(AuthStore);
+
+  isAdminOrHr(): boolean {
+    const role = this.authStore.currentUser()?.role;
+    return role === 'Admin' || role === 'HR';
+  }
 
   readonly showModal = signal(false);
   editingId: string | null = null;

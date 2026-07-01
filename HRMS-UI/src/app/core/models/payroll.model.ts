@@ -21,6 +21,10 @@ export interface PayrollFilter {
   payMonth?: number;
   payYear?: number;
   status?: string;
+  minNetSalary?: number;
+  maxNetSalary?: number;
+  sortBy?: string;
+  descending?: boolean;
 }
 
 export interface GeneratePayroll {

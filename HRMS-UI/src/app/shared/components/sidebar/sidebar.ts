@@ -66,6 +66,7 @@ export class Sidebar {
 
   readonly employeesExpanded = signal(false);
   readonly employeeDetailsExpanded = signal(false);
+  readonly myDetailsExpanded = signal(false);
 
   readonly menuItems = computed<MenuItem[]>(() => {
     const role = this.authStore.currentUser()?.role;
@@ -145,5 +146,12 @@ export class Sidebar {
       this.toggleCollapse.emit();
     }
     this.employeeDetailsExpanded.update(val => !val);
+  }
+
+  toggleMyDetails(): void {
+    if (this.collapsed()) {
+      this.toggleCollapse.emit();
+    }
+    this.myDetailsExpanded.update(val => !val);
   }
 }

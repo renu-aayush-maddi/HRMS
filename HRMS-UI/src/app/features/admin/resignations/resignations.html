@@ -13,49 +13,15 @@
   </div>
 
   <!-- Filters Panel -->
-  <div class="filters-card">
-    <div class="filters-grid">
-      <!-- Search -->
-      <div class="filter-group">
-        <label for="search">Search Employee</label>
-        <input 
-          type="text" 
-          id="search" 
-          placeholder="Code or name..." 
-          [ngModel]="searchQuery()" 
-          (ngModelChange)="searchQuery.set($event); applyFilters()"
-        />
-      </div>
-
-      <!-- Resignation Status -->
-      <div class="filter-group">
-        <label for="status">Status</label>
-        <select id="status" [ngModel]="selectedStatus()" (ngModelChange)="selectedStatus.set($event); applyFilters()">
-          <option value="">All Statuses</option>
-          <option value="Pending">Pending</option>
-          <option value="Approved">Approved</option>
-          <option value="Rejected">Rejected</option>
-          <option value="Withdrawn">Withdrawn</option>
-        </select>
-      </div>
-
-      <!-- Settlement Status -->
-      <div class="filter-group">
-        <label for="settlement">Settlement Status</label>
-        <select id="settlement" [ngModel]="selectedSettlementStatus()" (ngModelChange)="selectedSettlementStatus.set($event); applyFilters()">
-          <option value="">All Settlements</option>
-          <option value="Pending">Pending</option>
-          <option value="Processing">Processing</option>
-          <option value="Completed">Completed</option>
-        </select>
-      </div>
-
-      <!-- Reset -->
-      <div class="filter-group button-align">
-        <button class="btn-clear" (click)="resetFilters()">Clear Filters</button>
-      </div>
-    </div>
-  </div>
+  <app-filter-bar
+    [fields]="filterFields"
+    [sortOptions]="sortOptions"
+    [currentFilters]="filters"
+    [sortBy]="sortBy"
+    [descending]="descending"
+    (filterChange)="onFiltersChanged($event)"
+    (sortChange)="onSortChanged($event)"
+  ></app-filter-bar>
 
   <!-- Loading State -->
   <div class="loading-state" *ngIf="loading()">

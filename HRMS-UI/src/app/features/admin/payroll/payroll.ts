@@ -4,6 +4,9 @@ import { FormsModule, ReactiveFormsModule, FormBuilder, Validators } from '@angu
 import { PayrollService } from '../../../core/services/payroll.service';
 import { PayrollResponse, PayrollFilter } from '../../../core/models/payroll.model';
 import { ToastrService } from 'ngx-toastr';
+import { ActivatedRoute, Router } from '@angular/router';
+import { FilterBarComponent } from '../../../shared/components/filter-bar/filter-bar';
+import { FilterField, SortOption } from '../../../shared/components/filter-bar/filter-bar.model';
 
 import {
   LucideDownload,
@@ -26,7 +29,8 @@ import {
     LucideCheck,
     LucideCreditCard,
     LucideX,
-    LucideLoader
+    LucideLoader,
+    FilterBarComponent
   ],
   templateUrl: './payroll.html',
   styleUrl: './payroll.css',
@@ -36,16 +40,51 @@ export class Payroll implements OnInit {
   readonly loading = signal(false);
   readonly submitting = signal(false);
 
-  // Filters
-  readonly filterMonth = signal(0);
-  readonly filterYear = signal(0);
-  readonly filterStatus = signal('');
+  // Reusable Filter Config & State
+  filterFields: FilterField[] = [
+    { key: 'employeeId', label: 'Employee ID', type: 'text', placeholder: 'Search Employee ID...' },
+    { key: 'payMonth', label: 'Pay Month', type: 'select', options: [
+      { value: 1, label: 'January' },
+      { value: 2, label: 'February' },
+      { value: 3, label: 'March' },
+      { value: 4, label: 'April' },
+      { value: 5, label: 'May' },
+      { value: 6, label: 'June' },
+      { value: 7, label: 'July' },
+      { value: 8, label: 'August' },
+      { value: 9, label: 'September' },
+      { value: 10, label: 'October' },
+      { value: 11, label: 'November' },
+      { value: 12, label: 'December' }
+    ]},
+    { key: 'payYear', label: 'Pay Year', type: 'number', placeholder: 'Enter year (e.g. 2026)...' },
+    { key: 'status', label: 'Status', type: 'select', options: [
+      { value: 'Draft', label: 'Draft' },
+      { value: 'Approved', label: 'Approved' },
+      { value: 'Paid', label: 'Paid' }
+    ]},
+    { key: 'minNetSalary', label: 'Min Net Salary', type: 'number', placeholder: 'Min salary...' },
+    { key: 'maxNetSalary', label: 'Max Net Salary', type: 'number', placeholder: 'Max salary...' }
+  ];
+
+  sortOptions: SortOption[] = [
+    { value: 'PayMonth', label: 'Pay Month' },
+    { value: 'PayYear', label: 'Pay Year' },
+    { value: 'NetSalary', label: 'Net Salary' },
+    { value: 'Status', label: 'Status' }
+  ];
+
+  filters: { [key: string]: any } = {};
+  sortBy = 'PayMonth';
+  descending = false;
 
   // Generate Modal
   readonly showGenerateModal = signal(false);
   generateForm;
   
   private toastr = inject(ToastrService);
+  private router = inject(Router);
+  private route = inject(ActivatedRoute);
 
   months = [
     { value: 1, name: 'January' },
@@ -78,15 +117,35 @@ export class Payroll implements OnInit {
   }
 
   ngOnInit(): void {
-    this.loadPayrolls();
+    this.route.queryParams.subscribe(params => {
+      const newFilters: any = {};
+      if (params['employeeId']) newFilters['employeeId'] = params['employeeId'];
+      if (params['payMonth']) newFilters['payMonth'] = parseInt(params['payMonth'], 10);
+      if (params['payYear']) newFilters['payYear'] = parseInt(params['payYear'], 10);
+      if (params['status']) newFilters['status'] = params['status'];
+      if (params['minNetSalary']) newFilters['minNetSalary'] = parseFloat(params['minNetSalary']);
+      if (params['maxNetSalary']) newFilters['maxNetSalary'] = parseFloat(params['maxNetSalary']);
+
+      this.filters = newFilters;
+      this.sortBy = params['sortBy'] || 'PayMonth';
+      this.descending = params['descending'] === 'true';
+
+      this.loadPayrolls();
+    });
   }
 
   loadPayrolls(): void {
     this.loading.set(true);
-    const filter: PayrollFilter = {};
-    if (this.filterMonth() > 0) filter.payMonth = this.filterMonth();
-    if (this.filterYear() > 0) filter.payYear = this.filterYear();
-    if (this.filterStatus()) filter.status = this.filterStatus();
+    const filter: PayrollFilter = {
+      sortBy: this.sortBy,
+      descending: this.descending
+    };
+    if (this.filters['employeeId']) filter.employeeId = this.filters['employeeId'];
+    if (this.filters['payMonth']) filter.payMonth = this.filters['payMonth'];
+    if (this.filters['payYear']) filter.payYear = this.filters['payYear'];
+    if (this.filters['status']) filter.status = this.filters['status'];
+    if (this.filters['minNetSalary']) filter.minNetSalary = this.filters['minNetSalary'];
+    if (this.filters['maxNetSalary']) filter.maxNetSalary = this.filters['maxNetSalary'];
 
     this.payrollService.getPayrolls(filter).subscribe({
       next: (data: any) => {
@@ -101,15 +160,30 @@ export class Payroll implements OnInit {
     });
   }
 
-  applyFilters(): void {
-    this.loadPayrolls();
+  onFiltersChanged(updatedFilters: any): void {
+    const queryParams: any = { ...updatedFilters };
+    Object.keys(queryParams).forEach(k => {
+      if (queryParams[k] === null || queryParams[k] === undefined || queryParams[k] === '') {
+        delete queryParams[k];
+      }
+    });
+
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams,
+      queryParamsHandling: 'merge'
+    });
   }
 
-  resetFilters(): void {
-    this.filterMonth.set(0);
-    this.filterYear.set(0);
-    this.filterStatus.set('');
-    this.loadPayrolls();
+  onSortChanged(event: { sortBy: string; descending: boolean }): void {
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: {
+        sortBy: event.sortBy,
+        descending: event.descending.toString()
+      },
+      queryParamsHandling: 'merge'
+    });
   }
 
   openGenerateModal(): void {
@@ -180,9 +254,12 @@ export class Payroll implements OnInit {
 
   exportPayrolls(): void {
     const filter: PayrollFilter = {};
-    if (this.filterMonth() > 0) filter.payMonth = this.filterMonth();
-    if (this.filterYear() > 0) filter.payYear = this.filterYear();
-    if (this.filterStatus()) filter.status = this.filterStatus();
+    if (this.filters['employeeId']) filter.employeeId = this.filters['employeeId'];
+    if (this.filters['payMonth']) filter.payMonth = this.filters['payMonth'];
+    if (this.filters['payYear']) filter.payYear = this.filters['payYear'];
+    if (this.filters['status']) filter.status = this.filters['status'];
+    if (this.filters['minNetSalary']) filter.minNetSalary = this.filters['minNetSalary'];
+    if (this.filters['maxNetSalary']) filter.maxNetSalary = this.filters['maxNetSalary'];
 
     this.payrollService.exportPayrolls(filter).subscribe({
       next: (blob) => {

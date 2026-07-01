@@ -23,6 +23,10 @@ export interface ResignationFilter {
   status?: string;
   finalSettlementStatus?: string;
   search?: string;
+  fromResignationDate?: string;
+  toResignationDate?: string;
+  sortBy?: string;
+  descending?: boolean;
 }
 
 export interface RejectResignation {

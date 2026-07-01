@@ -16,43 +16,15 @@
   </div>
 
   <!-- Filters Panel -->
-  <div class="filters-card">
-    <div class="filters-grid">
-      <!-- Month filter -->
-      <div class="filter-group">
-        <label for="month">Filter Month</label>
-        <select id="month" [ngModel]="filterMonth()" (ngModelChange)="filterMonth.set($event); applyFilters()">
-          <option [ngValue]="0">All Months</option>
-          <option *ngFor="let m of months" [ngValue]="m.value">{{ m.name }}</option>
-        </select>
-      </div>
-
-      <!-- Year filter -->
-      <div class="filter-group">
-        <label for="year">Filter Year</label>
-        <select id="year" [ngModel]="filterYear()" (ngModelChange)="filterYear.set($event); applyFilters()">
-          <option [ngValue]="0">All Years</option>
-          <option *ngFor="let y of years" [ngValue]="y">{{ y }}</option>
-        </select>
-      </div>
-
-      <!-- Status filter -->
-      <div class="filter-group">
-        <label for="status">Status</label>
-        <select id="status" [ngModel]="filterStatus()" (ngModelChange)="filterStatus.set($event); applyFilters()">
-          <option value="">All Statuses</option>
-          <option value="Generated">Generated</option>
-          <option value="Approved">Approved</option>
-          <option value="Paid">Paid</option>
-        </select>
-      </div>
-
-      <!-- Reset -->
-      <div class="filter-group button-align">
-        <button class="btn-clear" (click)="resetFilters()">Clear Filters</button>
-      </div>
-    </div>
-  </div>
+  <app-filter-bar
+    [fields]="filterFields"
+    [sortOptions]="sortOptions"
+    [currentFilters]="filters"
+    [sortBy]="sortBy"
+    [descending]="descending"
+    (filterChange)="onFiltersChanged($event)"
+    (sortChange)="onSortChanged($event)"
+  ></app-filter-bar>
 
   <!-- Loading State -->
   <div class="loading-state" *ngIf="loading()">

@@ -54,7 +54,7 @@ public class EmployeeAddressesController : ControllerBase
         });
     }
 
-    [Authorize(Roles = "Admin,HR")]
+    [Authorize(Roles = "Admin,HR,Manager,Employee")]
     [HttpGet("export")]
     public async Task<IActionResult> ExportAddresses([FromQuery] EmployeeAddressFilterDto filter, CancellationToken cancellationToken)
     {
@@ -66,7 +66,7 @@ public class EmployeeAddressesController : ControllerBase
             $"employee-addresses-{DateTime.Now:yyyyMMddHHmmss}.xlsx");
     }
     
-    [Authorize(Roles = "Admin,HR")]
+    [Authorize(Roles = "Admin,HR,Manager,Employee")]
     [HttpPost("import")]
     public async Task<IActionResult> ImportAddresses(IFormFile file, CancellationToken cancellationToken)
     {

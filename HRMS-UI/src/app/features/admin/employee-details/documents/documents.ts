@@ -5,6 +5,7 @@ import { EmployeeDocumentService } from '../../../../core/services/employee-docu
 import { EmployeeDetailsStore } from '../../../../stores/employee/employee-details.store';
 import { EmployeeDocument } from '../../../../core/models/employee-subprofile.model';
 import { ToastrService } from 'ngx-toastr';
+import { AuthStore } from '../../../../stores/auth/auth.store';
 
 import {
   LucideDownload,
@@ -50,6 +51,12 @@ export class Documents implements OnInit {
   uploadForm;
   
   private toastr = inject(ToastrService);
+  private authStore = inject(AuthStore);
+
+  isAdminOrHr(): boolean {
+    const role = this.authStore.currentUser()?.role;
+    return role === 'Admin' || role === 'HR';
+  }
   readonly selectedFile = signal<File | null>(null);
 
   documentTypes = ['Identity Proof', 'Address Proof', 'Educational Degree', 'Experience Letter', 'Resume', 'Contract', 'Other'];

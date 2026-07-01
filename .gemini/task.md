@@ -1,0 +1,7 @@
+- `[ ]` Integrate Advanced Filtering into Employees Directory
+- `[x]` Integrate Advanced Filtering into Attendance Pages (Employee, Manager, HR)
+- `[x]` Integrate Advanced Filtering into Leave Pages (Employee, Manager, HR)
+- `[/]` Integrate Advanced Filtering into Payroll Pages (Admin/HR, Employee)
+- `[ ]` Integrate Advanced Filtering into Resignations Page
+- `[ ]` Integrate Advanced Filtering into Performance Review Pages (Admin/HR, Manager, Employee)
+- `[ ]` Verify frontend and backend compilations

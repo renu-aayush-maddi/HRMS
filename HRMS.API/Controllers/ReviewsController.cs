@@ -47,7 +47,7 @@ public class ReviewsController : ControllerBase
         return Ok(result);
     }
 
-    [Authorize(Roles = "Employee")]
+    [Authorize(Roles = "Employee,HR,Manager")]
     [HttpGet("my")]
     public async Task<IActionResult> GetMyReviews([FromQuery] ReviewFilterDto filter, CancellationToken cancellationToken)
     {

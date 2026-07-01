@@ -47,7 +47,7 @@ public class EmployeeEmergencyContactsController : ControllerBase
         return Ok(new ApiResponse { Message = "Emergency contact deleted successfully." });
     }
 
-    [Authorize(Roles = "Admin,HR")]
+    [Authorize(Roles = "Admin,HR,Manager,Employee")]
     [HttpGet("export")]
     public async Task<IActionResult> ExportContacts([FromQuery] EmployeeEmergencyContactFilterDto filter, CancellationToken cancellationToken)
     {
@@ -58,7 +58,7 @@ public class EmployeeEmergencyContactsController : ControllerBase
             $"employee-emergency-contacts-{DateTime.Now:yyyyMMddHHmmss}.xlsx");
     }
 
-    [Authorize(Roles = "Admin,HR")]
+    [Authorize(Roles = "Admin,HR,Manager,Employee")]
     [HttpPost("import")]
     public async Task<IActionResult> ImportContacts(IFormFile file, CancellationToken cancellationToken)
     {

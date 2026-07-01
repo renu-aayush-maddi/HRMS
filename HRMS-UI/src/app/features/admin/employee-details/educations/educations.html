@@ -10,17 +10,19 @@
         <h3>Education History for {{ employeeStore.profile()?.firstName }} {{ employeeStore.profile()?.lastName }}</h3>
       </div>
       <div class="right-header">
-        <div class="import-section">
-          <input type="file" (change)="onFileSelected($event)" accept=".xlsx, .xls" class="file-input" />
-          <button class="btn-secondary" (click)="importEducations()" [disabled]="submitting() || !selectedFile()" style="display: inline-flex; align-items: center; gap: 6px;">
-            <svg lucideLoader [size]="16" class="spin-loader" *ngIf="submitting()"></svg>
-            <svg lucideUpload [size]="16" [strokeWidth]="2" *ngIf="!submitting()"></svg>
-            {{ submitting() ? 'Importing...' : 'Import' }}
+        @if (isAdminOrHr()) {
+          <div class="import-section">
+            <input type="file" (change)="onFileSelected($event)" accept=".xlsx, .xls" class="file-input" />
+            <button class="btn-secondary" (click)="importEducations()" [disabled]="submitting() || !selectedFile()" style="display: inline-flex; align-items: center; gap: 6px;">
+              <svg lucideLoader [size]="16" class="spin-loader" *ngIf="submitting()"></svg>
+              <svg lucideUpload [size]="16" [strokeWidth]="2" *ngIf="!submitting()"></svg>
+              {{ submitting() ? 'Importing...' : 'Import' }}
+            </button>
+          </div>
+          <button class="btn-secondary" (click)="exportEducations()" style="display: inline-flex; align-items: center; gap: 6px;">
+            <svg lucideDownload [size]="16" [strokeWidth]="2"></svg> Export
           </button>
-        </div>
-        <button class="btn-secondary" (click)="exportEducations()" style="display: inline-flex; align-items: center; gap: 6px;">
-          <svg lucideDownload [size]="16" [strokeWidth]="2"></svg> Export
-        </button>
+        }
         <button class="btn-primary" (click)="openAddModal()" style="display: inline-flex; align-items: center; gap: 6px;">
           <svg lucidePlus [size]="16" [strokeWidth]="2"></svg> Add Education
         </button>

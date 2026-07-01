@@ -10,9 +10,11 @@
         <h3>Documents for {{ employeeStore.profile()?.firstName }} {{ employeeStore.profile()?.lastName }}</h3>
       </div>
       <div class="right-header">
-        <button class="btn-secondary" (click)="exportDocuments()" style="display: inline-flex; align-items: center; gap: 6px;">
-          <svg lucideDownload [size]="16" [strokeWidth]="2"></svg> Export Log
-        </button>
+        @if (isAdminOrHr()) {
+          <button class="btn-secondary" (click)="exportDocuments()" style="display: inline-flex; align-items: center; gap: 6px;">
+            <svg lucideDownload [size]="16" [strokeWidth]="2"></svg> Export Log
+          </button>
+        }
         <button class="btn-primary" (click)="openUploadModal()" style="display: inline-flex; align-items: center; gap: 6px;">
           <svg lucidePlus [size]="16" [strokeWidth]="2"></svg> Upload Document
         </button>
@@ -52,7 +54,7 @@
               <button class="btn-icon download" (click)="downloadDocument(doc)" [disabled]="submitting()" style="display: inline-flex; align-items: center; gap: 4px;">
                 <svg lucideDownload [size]="14" [strokeWidth]="2"></svg> Download
               </button>
-              <button class="btn-icon approve" *ngIf="!doc.isVerified" (click)="verifyDocument(doc.id)" [disabled]="submitting()" style="display: inline-flex; align-items: center; gap: 4px;">
+              <button class="btn-icon approve" *ngIf="!doc.isVerified && isAdminOrHr()" (click)="verifyDocument(doc.id)" [disabled]="submitting()" style="display: inline-flex; align-items: center; gap: 4px;">
                 <svg lucideCheck [size]="14" [strokeWidth]="2"></svg> Verify
               </button>
               <button class="btn-icon delete" (click)="deleteDocument(doc.id)" [disabled]="submitting()" style="display: inline-flex; align-items: center; gap: 4px;">

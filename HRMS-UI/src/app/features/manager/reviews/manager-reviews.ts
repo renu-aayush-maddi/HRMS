@@ -7,6 +7,8 @@ import { PerformanceCycleService } from '../../../core/services/performance-cycl
 import { ManagerPerformanceReview, TeamMember, AddPerformanceReview } from '../../../core/models/manager.model';
 import { PerformanceCycle } from '../../../core/models/performance-cycle.model';
 import { ToastrService } from 'ngx-toastr';
+import { FilterBarComponent } from '../../../shared/components/filter-bar/filter-bar';
+import { FilterField, SortOption } from '../../../shared/components/filter-bar/filter-bar.model';
 
 import {
   LucideFileText,
@@ -29,7 +31,8 @@ import {
     LucideAlertTriangle,
     LucideStar,
     LucideX,
-    LucideLoader
+    LucideLoader,
+    FilterBarComponent
   ],
   templateUrl: './manager-reviews.html',
   styleUrl: './manager-reviews.css'
@@ -44,8 +47,15 @@ export class ManagerReviews implements OnInit {
   readonly error = signal<string | null>(null);
   readonly successMessage = signal<string | null>(null);
 
-  // Filter
-  readonly selectedEmployeeFilter = signal('');
+  // Reusable Filter Config & State
+  filterFields: FilterField[] = [];
+  sortOptions: SortOption[] = [
+    { value: 'reviewDate', label: 'Review Date' },
+    { value: 'rating', label: 'Rating' }
+  ];
+  filters: { [key: string]: any } = {};
+  sortBy = 'reviewDate';
+  descending = true;
 
   // Modals state
   readonly showAddModal = signal(false);
@@ -76,6 +86,7 @@ export class ManagerReviews implements OnInit {
   ngOnInit(): void {
     this.loadTeamMembers();
     this.loadActiveCycles();
+    this.setupFilterFields();
   }
 
   loadActiveCycles(): void {
@@ -94,6 +105,7 @@ export class ManagerReviews implements OnInit {
     this.managerService.getTeamMembers().subscribe({
       next: (members) => {
         this.team.set(members);
+        this.setupFilterFields();
         this.loadReviews();
       },
       error: (err) => {
@@ -102,6 +114,20 @@ export class ManagerReviews implements OnInit {
         this.loading.set(false);
       }
     });
+  }
+
+  setupFilterFields(): void {
+    const memberOpts = this.team().map(t => ({ value: t.id, label: t.fullName }));
+    this.filterFields = [
+      { key: 'employeeId', label: 'Employee', type: 'select', options: memberOpts },
+      { key: 'rating', label: 'Rating', type: 'select', options: [
+        { value: 1, label: '1 Star' },
+        { value: 2, label: '2 Stars' },
+        { value: 3, label: '3 Stars' },
+        { value: 4, label: '4 Stars' },
+        { value: 5, label: '5 Stars' }
+      ]}
+    ];
   }
 
   loadReviews(): void {
@@ -114,12 +140,11 @@ export class ManagerReviews implements OnInit {
         // Listen to query parameters for auto-filtering or auto-evaluation
         this.route.queryParams.subscribe(params => {
           if (params['employeeId']) {
-            this.selectedEmployeeFilter.set(params['employeeId']);
+            this.filters['employeeId'] = params['employeeId'];
             // Also, open evaluation modal directly with pre-selected employee!
             this.openAddModalWithEmployee(params['employeeId']);
-          } else {
-            this.applyFilters();
           }
+          this.applyFilters();
         });
         
         this.loading.set(false);
@@ -132,15 +157,42 @@ export class ManagerReviews implements OnInit {
     });
   }
 
+  onFiltersChanged(updatedFilters: any): void {
+    this.filters = updatedFilters;
+    this.applyFilters();
+  }
+
+  onSortChanged(event: { sortBy: string; descending: boolean }): void {
+    this.sortBy = event.sortBy;
+    this.descending = event.descending;
+    this.applyFilters();
+  }
+
   applyFilters(): void {
     let result = [...this.reviews()];
 
-    if (this.selectedEmployeeFilter()) {
-      const member = this.team().find(m => m.id === this.selectedEmployeeFilter());
+    if (this.filters['employeeId']) {
+      const member = this.team().find(m => m.id === this.filters['employeeId']);
       if (member) {
         result = result.filter(r => r.employeeName === member.fullName);
       }
     }
+
+    if (this.filters['rating']) {
+      result = result.filter(r => r.rating === parseInt(this.filters['rating'], 10));
+    }
+
+    // Client-side sort
+    result.sort((a: any, b: any) => {
+      let valA = a[this.sortBy];
+      let valB = b[this.sortBy];
+      if (valA === undefined || valA === null) return 1;
+      if (valB === undefined || valB === null) return -1;
+      if (typeof valA === 'string') {
+        return this.descending ? valB.localeCompare(valA) : valA.localeCompare(valB);
+      }
+      return this.descending ? valB - valA : valA - valB;
+    });
 
     this.filteredReviews.set(result);
   }

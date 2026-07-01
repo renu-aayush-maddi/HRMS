@@ -1,0 +1,261 @@
+<div class="filter-bar-wrapper">
+  <!-- Main Filter Bar Container -->
+  <div class="filter-bar-container">
+    <!-- Keyword Search Input -->
+    <div class="search-input-wrapper">
+      <svg lucideSearch [size]="16" class="search-icon"></svg>
+      <input
+        type="text"
+        [value]="localSearch"
+        (input)="onSearchInput($any($event.target).value)"
+        placeholder="Filter by keyword..."
+        class="search-input"
+      />
+      <button *ngIf="localSearch" class="clear-search-btn" (click)="clearSearch()" type="button" title="Clear search">
+        <svg lucideX [size]="14"></svg>
+      </button>
+    </div>
+
+    <!-- Inline Filter Dropdowns (Desktop Only) -->
+    <div class="filter-dropdowns-group">
+      <div
+        *ngFor="let field of fields"
+        style="position: relative; display: inline-block;"
+      >
+        <button
+          type="button"
+          class="dropdown-trigger-btn"
+          [class.active-filter]="isFilterActive(field.key)"
+          [class.open]="activeDropdown === field.key"
+          (click)="toggleDropdown(field.key, $event)"
+        >
+          <span>{{ field.label }}</span>
+          <span *ngIf="isFilterActive(field.key)" class="filter-badge-val" style="margin-left: 2px;">
+            : {{ getFilterValueLabel(field) }}
+          </span>
+          <svg lucideChevronDown [size]="14" class="chevron-icon"></svg>
+        </button>
+
+        <!-- Dropdown Popover Content -->
+        <div
+          *ngIf="activeDropdown === field.key"
+          class="filter-dropdown-popover"
+          (click)="$event.stopPropagation()"
+        >
+          <div class="popover-title">Filter by {{ field.label }}</div>
+          
+          <!-- Select List Type -->
+          <div *ngIf="field.type === 'select'" class="options-list">
+            <div
+              *ngFor="let opt of field.options"
+              class="option-item"
+              (click)="updateFilter(field.key, currentFilters[field.key] === opt.value ? null : opt.value)"
+            >
+              <input
+                type="checkbox"
+                [checked]="currentFilters[field.key] === opt.value"
+                (change)="$event.stopPropagation()"
+              />
+              <span>{{ opt.label }}</span>
+            </div>
+          </div>
+
+          <!-- Date/Text/Number Type -->
+          <div *ngIf="field.type !== 'select'" style="display: flex; flex-direction: column; gap: 8px;">
+            <input
+              [type]="field.type"
+              [value]="currentFilters[field.key] || ''"
+              (change)="updateFilter(field.key, $any($event.target).value)"
+              class="popover-input"
+              [placeholder]="field.placeholder || ('Enter ' + field.label)"
+            />
+          </div>
+
+          <div class="popover-actions">
+            <button
+              type="button"
+              class="btn-popover-clear"
+              (click)="clearFilter(field.key)"
+              [disabled]="!isFilterActive(field.key)"
+            >
+              Clear
+            </button>
+            <button
+              type="button"
+              class="btn-popover-apply"
+              (click)="closeDropdown()"
+            >
+              Apply
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sorting Selector Dropdown -->
+      <div *ngIf="sortOptions.length > 0" style="position: relative; display: inline-block;">
+        <button
+          type="button"
+          class="dropdown-trigger-btn"
+          [class.open]="activeDropdown === 'sorting'"
+          (click)="toggleDropdown('sorting', $event)"
+        >
+          <svg lucideArrowUpDown [size]="14" class="chevron-icon"></svg>
+          <span>Sort By</span>
+          <svg lucideChevronDown [size]="14" class="chevron-icon"></svg>
+        </button>
+
+        <div
+          *ngIf="activeDropdown === 'sorting'"
+          class="filter-dropdown-popover popover-align-right"
+          (click)="$event.stopPropagation()"
+        >
+          <div class="popover-title">Sort Records</div>
+          <div class="options-list">
+            <div
+              *ngFor="let opt of sortOptions"
+              class="option-item"
+              (click)="changeSort(opt.value)"
+              style="justify-content: space-between;"
+            >
+              <span>{{ opt.label }}</span>
+              <svg
+                lucideCheck
+                [size]="14"
+                *ngIf="sortBy === opt.value"
+                style="color: var(--primary-color, #6366f1);"
+              ></svg>
+            </div>
+          </div>
+          <div class="popover-actions" style="justify-content: space-between; align-items: center;">
+            <span class="popover-title" style="margin: 0;">Descending</span>
+            <input
+              type="checkbox"
+              [checked]="descending"
+              (change)="sortChange.emit({ sortBy: sortBy, descending: !descending })"
+              style="cursor: pointer; accent-color: var(--primary-color, #6366f1);"
+            />
+          </div>
+        </div>
+      </div>
+
+      <!-- Reset/Clear Button -->
+      <button
+        *ngIf="hasAnyActiveFilters()"
+        type="button"
+        class="clear-all-btn"
+        (click)="resetAll()"
+        title="Clear all filters"
+      >
+        <svg lucideX [size]="16"></svg>
+      </button>
+    </div>
+
+    <!-- Mobile Filtering Toggle Trigger Button -->
+    <button
+      type="button"
+      class="dropdown-trigger-btn mobile-filter-toggle"
+      [class.active-filter]="hasAnyActiveFilters()"
+      (click)="openMobileDrawer()"
+    >
+      <svg lucideSlidersHorizontal [size]="14"></svg>
+      <span>Filters</span>
+    </button>
+  </div>
+
+  <!-- Mobile Filters Drawer Overlay Panel -->
+  <div *ngIf="mobileDrawerOpen" class="mobile-drawer-overlay" (click)="closeMobileDrawer()">
+    <div class="mobile-drawer-box" (click)="$event.stopPropagation()">
+      <div class="mobile-drawer-header">
+        <h3>Filter & Sort</h3>
+        <button class="mobile-drawer-close-btn" (click)="closeMobileDrawer()">
+          <svg lucideX [size]="20"></svg>
+        </button>
+      </div>
+      
+      <div class="mobile-drawer-content">
+        <!-- Text/Keyword Search -->
+        <div class="mobile-filter-field">
+          <label>Search Keyword</label>
+          <input
+            type="text"
+            [value]="localSearch"
+            (input)="onSearchInput($any($event.target).value)"
+            placeholder="Search..."
+            class="popover-input"
+          />
+        </div>
+
+        <!-- Dynamic Fields -->
+        <div *ngFor="let field of fields" class="mobile-filter-field">
+          <label>{{ field.label }}</label>
+          <select
+            *ngIf="field.type === 'select'"
+            [value]="currentFilters[field.key] || ''"
+            (change)="updateFilter(field.key, $any($event.target).value)"
+            class="popover-input"
+            style="background-image: none;"
+          >
+            <option value="">All</option>
+            <option *ngFor="let opt of field.options" [value]="opt.value">
+              {{ opt.label }}
+            </option>
+          </select>
+          <input
+            *ngIf="field.type !== 'select'"
+            [type]="field.type"
+            [value]="currentFilters[field.key] || ''"
+            (change)="updateFilter(field.key, $any($event.target).value)"
+            class="popover-input"
+            [placeholder]="field.placeholder || ''"
+          />
+        </div>
+
+        <!-- Sorting -->
+        <div *ngIf="sortOptions.length > 0" class="mobile-filter-field">
+          <label>Sort By</label>
+          <select
+            [value]="sortBy"
+            (change)="changeSort($any($event.target).value)"
+            class="popover-input"
+          >
+            <option value="">Default</option>
+            <option *ngFor="let opt of sortOptions" [value]="opt.value">
+              {{ opt.label }}
+            </option>
+          </select>
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 8px;">
+            <span style="font-size: 0.775rem; color: rgba(148, 163, 184, 0.7);">Descending Order</span>
+            <input
+              type="checkbox"
+              [checked]="descending"
+              (change)="sortChange.emit({ sortBy: sortBy, descending: !descending })"
+              style="accent-color: var(--primary-color, #6366f1);"
+            />
+          </div>
+        </div>
+      </div>
+
+      <div class="mobile-drawer-footer">
+        <button class="btn-popover-clear" style="padding: 10px;" (click)="resetAll(); closeMobileDrawer()">
+          Reset All
+        </button>
+        <button class="btn-popover-apply" style="padding: 10px;" (click)="closeMobileDrawer()">
+          Apply Filters
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Active Badges Section -->
+  <div *ngIf="hasAnyActiveFilters()" class="active-filters-row">
+    <span class="active-filters-label">Active Filters:</span>
+    <div *ngFor="let act of getActiveFiltersList()" class="filter-badge">
+      <span class="filter-badge-name">{{ act.label }}:</span>
+      <span class="filter-badge-val">{{ act.displayVal }}</span>
+      <button class="remove-filter-btn" (click)="clearFilter(act.key)">
+        <svg lucideX [size]="10"></svg>
+      </button>
+    </div>
+    <button class="btn-reset-text" (click)="resetAll()">Reset All</button>
+  </div>
+</div>

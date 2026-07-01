@@ -3,56 +3,40 @@
     <h2>Employees</h2>
   </div>
 
-<div class="header-actions">
-
-  <div class="search-bar">
-
+  <div class="header-actions">
     <input
-      type="text"
-      placeholder="Search employees..."
-      [ngModel]="search()"
-      (ngModelChange)="search.set($event)">
+      type="file"
+      (change)="onFileSelected($event)">
 
     <button
       class="btn-secondary"
-      (click)="searchEmployees()">
-
-      Search
-
+      (click)="importEmployees()">
+      Import Excel
     </button>
 
+    <button
+      class="btn-secondary"
+      (click)="exportEmployees()">
+      Export Excel
+    </button>
+
+    <button
+      class="btn-primary"
+      (click)="openAddEmployee()">
+      + Add Employee
+    </button>
   </div>
-
-  <input
-    type="file"
-    (change)="onFileSelected($event)">
-
-  <button
-    class="btn-secondary"
-    (click)="importEmployees()">
-
-    Import Excel
-
-  </button>
-
-  <button
-    class="btn-secondary"
-    (click)="exportEmployees()">
-
-    Export Excel
-
-  </button>
-
-  <button
-    class="btn-primary"
-    (click)="openAddEmployee()">
-
-    + Add Employee
-
-  </button>
-
 </div>
-</div>
+
+<app-filter-bar
+  [fields]="filterFields"
+  [sortOptions]="sortOptions"
+  [currentFilters]="filters"
+  [sortBy]="sortBy"
+  [descending]="descending"
+  (filterChange)="onFilterChanged($event)"
+  (sortChange)="onSortChanged($event)"
+></app-filter-bar>
 
 @if (loading()) {
   <div class="loading-state">

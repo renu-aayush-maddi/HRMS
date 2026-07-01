@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("HRMS.Tests")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+67adc3188864c5ced1a2f1b0067e968bdd73b189")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+36855719f8e3f0acea47e9fc7004fe0da6b526f7")]
 [assembly: System.Reflection.AssemblyProductAttribute("HRMS.Tests")]
 [assembly: System.Reflection.AssemblyTitleAttribute("HRMS.Tests")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

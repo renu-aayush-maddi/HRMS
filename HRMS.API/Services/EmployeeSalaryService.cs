@@ -2,23 +2,35 @@ using HRMS.API.Exceptions;
 using HRMS.API.Interfaces;
 using HRMS.API.Models.DTOs.EmployeeSalary;
 using HRMS.API.Models.Entities;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace HRMS.API.Services;
 
 public class EmployeeSalaryService: IEmployeeSalaryService
 {
     private readonly IEmployeeSalaryRepository employeeSalaryRepository;
+    private readonly IEmployeeAccessResolver accessResolver;
 
     public EmployeeSalaryService(
-        IEmployeeSalaryRepository employeeSalaryRepository)
+        IEmployeeSalaryRepository employeeSalaryRepository,
+        IEmployeeAccessResolver accessResolver)
     {
-        this.employeeSalaryRepository =
-            employeeSalaryRepository;
+        this.employeeSalaryRepository = employeeSalaryRepository;
+        this.accessResolver = accessResolver;
     }
 
-    public void AssignSalary(
-        AssignEmployeeSalaryDto dto)
+    public async Task AssignSalaryAsync(
+        AssignEmployeeSalaryDto dto, CancellationToken cancellationToken = default)
     {
+        var employeeId = await accessResolver.ResolveEmployeeIdAsync(dto.EmployeeId, cancellationToken);
+        await accessResolver.ValidateEmployeeOwnershipAsync(employeeId, cancellationToken);
+
+        dto.EmployeeId = employeeId;
+
         var employee =
             employeeSalaryRepository
             .GetEmployee(dto.EmployeeId);
@@ -86,12 +98,15 @@ public class EmployeeSalaryService: IEmployeeSalaryService
             .SaveChanges();
     }
 
-    public EmployeeSalaryResponseDto
-        GetActiveSalary(Guid employeeId)
+    public async Task<EmployeeSalaryResponseDto>
+        GetActiveSalaryAsync(Guid employeeId, CancellationToken cancellationToken = default)
     {
+        var resolvedEmployeeId = await accessResolver.ResolveEmployeeIdAsync(employeeId, cancellationToken);
+        await accessResolver.ValidateEmployeeOwnershipAsync(resolvedEmployeeId, cancellationToken);
+
         var salary =
             employeeSalaryRepository
-            .GetActiveSalary(employeeId);
+            .GetActiveSalary(resolvedEmployeeId);
 
         if (salary == null)
         {
@@ -122,9 +137,10 @@ public class EmployeeSalaryService: IEmployeeSalaryService
         };
     }
 
-    public List<EmployeeSalaryResponseDto>
-        GetAll()
+    public async Task<List<EmployeeSalaryResponseDto>>
+        GetAllAsync(CancellationToken cancellationToken = default)
     {
+        await Task.CompletedTask;
         return employeeSalaryRepository
             .GetAll()
             .Select(s => new EmployeeSalaryResponseDto
@@ -151,13 +167,16 @@ public class EmployeeSalaryService: IEmployeeSalaryService
             .ToList();
     }
 
-    public List<SalaryHistoryResponseDto>
-    GetSalaryHistory(
-        Guid employeeId)
+    public async Task<List<SalaryHistoryResponseDto>>
+    GetSalaryHistoryAsync(
+        Guid employeeId, CancellationToken cancellationToken = default)
     {
+        var resolvedEmployeeId = await accessResolver.ResolveEmployeeIdAsync(employeeId, cancellationToken);
+        await accessResolver.ValidateEmployeeOwnershipAsync(resolvedEmployeeId, cancellationToken);
+
         var employee =
             employeeSalaryRepository
-            .GetEmployee(employeeId);
+            .GetEmployee(resolvedEmployeeId);
 
         if (employee == null)
         {
@@ -166,7 +185,7 @@ public class EmployeeSalaryService: IEmployeeSalaryService
         }
 
         return employeeSalaryRepository
-            .GetSalaryHistory(employeeId)
+            .GetSalaryHistory(resolvedEmployeeId)
             .Select(x =>
                 new SalaryHistoryResponseDto
                 {

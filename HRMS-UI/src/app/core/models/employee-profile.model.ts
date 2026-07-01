@@ -22,6 +22,12 @@ export interface EmployeeProfile {
 
   salary?: number;
 
+  profilePhotoUrl?: string | null;
+
+  role?: string;
+
+  joiningDate?: string;
+
   educations: EmployeeEducation[];
 
   experiences: EmployeeExperience[];

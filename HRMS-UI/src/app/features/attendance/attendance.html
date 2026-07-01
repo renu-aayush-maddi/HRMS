@@ -33,51 +33,15 @@
   <!-- Tab 1: Attendance Logs -->
   <div *ngIf="activeTab() === 'logs'">
     <!-- Logs Filters -->
-    <div class="filters-card">
-      <div class="filters-grid">
-        <!-- Search Employee -->
-        <div class="filter-group">
-          <label for="logsSearch">Search Employee ID</label>
-          <input 
-            type="text" 
-            id="logsSearch" 
-            placeholder="Search employee guid..." 
-            [ngModel]="logsSearch()" 
-            (ngModelChange)="logsSearch.set($event); applyLogsFilters()"
-          />
-        </div>
-
-        <!-- Attendance Status -->
-        <div class="filter-group">
-          <label for="logsStatus">Status</label>
-          <select id="logsStatus" [ngModel]="logsStatus()" (ngModelChange)="logsStatus.set($event); applyLogsFilters()">
-            <option value="">All Statuses</option>
-            <option value="Present">Present</option>
-            <option value="Absent">Absent</option>
-            <option value="Late">Late</option>
-            <option value="On Leave">On Leave</option>
-            <option value="Half Day">Half Day</option>
-          </select>
-        </div>
-
-        <!-- From Date -->
-        <div class="filter-group">
-          <label for="logsFromDate">From Date</label>
-          <input type="date" id="logsFromDate" [ngModel]="logsFromDate()" (ngModelChange)="logsFromDate.set($event); applyLogsFilters()" />
-        </div>
-
-        <!-- To Date -->
-        <div class="filter-group">
-          <label for="logsToDate">To Date</label>
-          <input type="date" id="logsToDate" [ngModel]="logsToDate()" (ngModelChange)="logsToDate.set($event); applyLogsFilters()" />
-        </div>
-
-        <!-- Reset -->
-        <div class="filter-group button-align">
-          <button class="btn-clear" (click)="resetLogsFilters()">Clear Filters</button>
-        </div>
-      </div>
-    </div>
+    <app-filter-bar
+      [fields]="logsFilterFields"
+      [sortOptions]="logsSortOptions"
+      [currentFilters]="logsFilters"
+      [sortBy]="logsSortBy"
+      [descending]="logsDescending"
+      (filterChange)="onLogsFilterChanged($event)"
+      (sortChange)="onLogsSortChanged($event)"
+    ></app-filter-bar>
 
     <!-- Loading State -->
     <div class="loading-state" *ngIf="loading()">
@@ -143,37 +107,15 @@
   <!-- Tab 2: Regularization Requests -->
   <div *ngIf="activeTab() === 'regularizations'">
     <!-- Req Filters -->
-    <div class="filters-card">
-      <div class="filters-grid">
-        <!-- Status filter -->
-        <div class="filter-group">
-          <label for="reqStatus">Approval Status</label>
-          <select id="reqStatus" [ngModel]="reqStatus()" (ngModelChange)="reqStatus.set($event); applyReqFilters()">
-            <option value="">All Requests</option>
-            <option value="Pending">Pending</option>
-            <option value="Approved">Approved</option>
-            <option value="Rejected">Rejected</option>
-          </select>
-        </div>
-
-        <!-- From Date -->
-        <div class="filter-group">
-          <label for="reqFromDate">From Date</label>
-          <input type="date" id="reqFromDate" [ngModel]="reqFromDate()" (ngModelChange)="reqFromDate.set($event); applyReqFilters()" />
-        </div>
-
-        <!-- To Date -->
-        <div class="filter-group">
-          <label for="reqToDate">To Date</label>
-          <input type="date" id="reqToDate" [ngModel]="reqToDate()" (ngModelChange)="reqToDate.set($event); applyReqFilters()" />
-        </div>
-
-        <!-- Reset -->
-        <div class="filter-group button-align">
-          <button class="btn-clear" (click)="resetReqFilters()">Clear Filters</button>
-        </div>
-      </div>
-    </div>
+    <app-filter-bar
+      [fields]="reqFilterFields"
+      [sortOptions]="reqSortOptions"
+      [currentFilters]="reqFilters"
+      [sortBy]="reqSortBy"
+      [descending]="reqDescending"
+      (filterChange)="onReqFilterChanged($event)"
+      (sortChange)="onReqSortChanged($event)"
+    ></app-filter-bar>
 
     <!-- Loading State -->
     <div class="loading-state" *ngIf="loading()">

@@ -8,47 +8,15 @@
   </div>
 
   <!-- Filters Panel -->
-  <div class="filters-card">
-    <div class="filters-grid">
-      <!-- Leave Type filter -->
-      <div class="filter-group">
-        <label for="leaveType">Leave Type</label>
-        <select id="leaveType" [ngModel]="selectedLeaveTypeId()" (ngModelChange)="selectedLeaveTypeId.set($event); applyFilters()">
-          <option value="">All Leave Types</option>
-          <option *ngFor="let t of leaveTypes()" [value]="t.id">{{ t.name }}</option>
-        </select>
-      </div>
-
-      <!-- Status filter -->
-      <div class="filter-group">
-        <label for="status">Status</label>
-        <select id="status" [ngModel]="selectedStatus()" (ngModelChange)="selectedStatus.set($event); applyFilters()">
-          <option value="">All Statuses</option>
-          <option value="Pending">Pending</option>
-          <option value="Approved">Approved</option>
-          <option value="Rejected">Rejected</option>
-          <option value="Cancelled">Cancelled</option>
-        </select>
-      </div>
-
-      <!-- From Date -->
-      <div class="filter-group">
-        <label for="fromDate">From Date</label>
-        <input type="date" id="fromDate" [ngModel]="filterFromDate()" (ngModelChange)="filterFromDate.set($event); applyFilters()" />
-      </div>
-
-      <!-- To Date -->
-      <div class="filter-group">
-        <label for="toDate">To Date</label>
-        <input type="date" id="toDate" [ngModel]="filterToDate()" (ngModelChange)="filterToDate.set($event); applyFilters()" />
-      </div>
-
-      <!-- Reset -->
-      <div class="filter-group button-align">
-        <button class="btn-clear" (click)="resetFilters()">Clear Filters</button>
-      </div>
-    </div>
-  </div>
+  <app-filter-bar
+    [fields]="filterFields"
+    [sortOptions]="sortOptions"
+    [currentFilters]="filters"
+    [sortBy]="sortBy"
+    [descending]="descending"
+    (filterChange)="onFiltersChanged($event)"
+    (sortChange)="onSortChanged($event)"
+  ></app-filter-bar>
 
   <!-- Loading State -->
   <div class="loading-state" *ngIf="loading()">

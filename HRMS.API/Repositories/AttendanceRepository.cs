@@ -23,6 +23,7 @@ public class AttendanceRepository : IAttendanceRepository
     public async Task<Employee?> GetEmployeeByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         return await context.Employees
+            .Include(x => x.Manager)
             .FirstOrDefaultAsync(x => x.UserId == userId && !x.IsDeleted, cancellationToken);
     }
 

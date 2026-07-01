@@ -369,7 +369,7 @@
       }
 
       <!-- Employee Navigation -->
-      @if (role === 'Employee') {
+      @if (role === 'Employee' || role === 'Manager' || role === 'HR') {
         <li class="menu-group-header" *ngIf="!collapsed()">Self Service</li>
         
         <li>
@@ -383,6 +383,34 @@
             <svg lucideUser [size]="18" [strokeWidth]="1.8" class="menu-icon"></svg>
             <span class="menu-label">My Profile</span>
           </a>
+        </li>
+        <li class="has-submenu" [class.submenu-open]="myDetailsExpanded()">
+          <button class="menu-parent" (click)="toggleMyDetails()" style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+            <span class="menu-parent-left" style="display: flex; align-items: center; gap: 12px;">
+              <svg lucideUser [size]="18" [strokeWidth]="1.8" class="menu-icon"></svg>
+              <span class="submenu-label" *ngIf="!collapsed()">My Details</span>
+            </span>
+            <span class="submenu-arrow" *ngIf="!collapsed()">
+              @if(myDetailsExpanded()){
+                <svg lucideChevronDown [size]="12" [strokeWidth]="2"></svg>
+              } @else {
+                <svg lucideChevronRight [size]="12" [strokeWidth]="2"></svg>
+              }
+            </span>
+          </button>
+
+          @if(myDetailsExpanded()){
+            <ul class="submenu submenu-level-2">
+              <li><a routerLink="/employee/employee-details/overview" routerLinkActive="active-link" (click)="closeMobile.emit()"><span class="submenu-label">Overview</span></a></li>
+              <li><a routerLink="/employee/employee-details/addresses" routerLinkActive="active-link" (click)="closeMobile.emit()"><span class="submenu-label">Addresses</span></a></li>
+              <li><a routerLink="/employee/employee-details/educations" routerLinkActive="active-link" (click)="closeMobile.emit()"><span class="submenu-label">Educations</span></a></li>
+              <li><a routerLink="/employee/employee-details/experiences" routerLinkActive="active-link" (click)="closeMobile.emit()"><span class="submenu-label">Experiences</span></a></li>
+              <li><a routerLink="/employee/employee-details/emergency-contacts" routerLinkActive="active-link" (click)="closeMobile.emit()"><span class="submenu-label">Emergency Contacts</span></a></li>
+              <li><a routerLink="/employee/employee-details/documents" routerLinkActive="active-link" (click)="closeMobile.emit()"><span class="submenu-label">Documents</span></a></li>
+              <li><a routerLink="/employee/employee-details/salary" routerLinkActive="active-link" (click)="closeMobile.emit()"><span class="submenu-label">Salary</span></a></li>
+              <li><a routerLink="/employee/employee-details/leave-balances" routerLinkActive="active-link" (click)="closeMobile.emit()"><span class="submenu-label">Leave Balances</span></a></li>
+            </ul>
+          }
         </li>
         <li>
           <a routerLink="/org-chart" routerLinkActive="active-link" (click)="closeMobile.emit()">

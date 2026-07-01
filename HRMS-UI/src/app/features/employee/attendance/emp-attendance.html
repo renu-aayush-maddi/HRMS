@@ -43,30 +43,15 @@
   </div>
 
   <!-- Filters -->
-  <div class="filters-bar">
-    <div class="filter-group">
-      <label>From</label>
-      <input type="date" [ngModel]="fromDateFilter()" (ngModelChange)="fromDateFilter.set($event)" class="form-control">
-    </div>
-    <div class="filter-group">
-      <label>To</label>
-      <input type="date" [ngModel]="toDateFilter()" (ngModelChange)="toDateFilter.set($event)" class="form-control">
-    </div>
-    <div class="filter-group">
-      <label>Status</label>
-      <select [ngModel]="statusFilter()" (ngModelChange)="statusFilter.set($event)" class="form-control">
-        <option value="">All Statuses</option>
-        <option value="Present">Present</option>
-        <option value="Late">Late</option>
-        <option value="Absent">Absent</option>
-        <option value="Half Day">Half Day</option>
-      </select>
-    </div>
-    <div class="filter-actions">
-      <button class="btn-primary" (click)="applyFilters()">Apply</button>
-      <button class="btn-secondary" (click)="resetFilters()">Reset</button>
-    </div>
-  </div>
+  <app-filter-bar
+    [fields]="filterFields"
+    [sortOptions]="sortOptions"
+    [currentFilters]="filters"
+    [sortBy]="sortBy"
+    [descending]="descending"
+    (filterChange)="onFiltersChanged($event)"
+    (sortChange)="onSortChanged($event)"
+  ></app-filter-bar>
 
   <!-- Attendance Log Table -->
   <div class="table-card">

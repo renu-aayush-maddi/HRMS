@@ -7,6 +7,7 @@ import { EmployeeAddress } from '../../../../core/models/employee-address.model'
 import { AddEmployeeAddress } from '../../../../core/models/add-employee-address.model';
 import { UpdateEmployeeAddress } from '../../../../core/models/update-employee-address.model';
 import { ToastrService } from 'ngx-toastr';
+import { AuthStore } from '../../../../stores/auth/auth.store';
 
 import {
   LucideUpload,
@@ -49,6 +50,12 @@ export class Addresses implements OnInit {
   readonly pageSize = signal(10);
   
   private toastr = inject(ToastrService);
+  private authStore = inject(AuthStore);
+
+  isAdminOrHr(): boolean {
+    const role = this.authStore.currentUser()?.role;
+    return role === 'Admin' || role === 'HR';
+  }
   readonly totalPages = signal(0);
   readonly totalRecords = signal(0);
 

@@ -354,3 +354,4 @@ C:\Users\renua\OneDrive\Desktop\HRMS - Copy\HRMS.Tests\bin\Debug\net8.0\HRMS.API
 C:\Users\renua\OneDrive\Desktop\HRMS - Copy\HRMS.Tests\obj\Debug\net8.0\HRMS.Tests.csproj.Up2Date
 C:\Users\renua\OneDrive\Desktop\HRMS - Copy\HRMS.Tests\obj\Debug\net8.0\HRMS.Tests.genruntimeconfig.cache
 C:\Users\renua\OneDrive\Desktop\HRMS - Copy\HRMS.Tests\obj\Debug\net8.0\ref\HRMS.Tests.dll
+C:\Users\renua\OneDrive\Desktop\HRMS - Copy\HRMS.Tests\obj\Debug\net8.0\HRMS.Tests.sourcelink.json

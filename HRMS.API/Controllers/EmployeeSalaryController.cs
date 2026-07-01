@@ -2,6 +2,9 @@ using HRMS.API.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using HRMS.API.Models.DTOs.EmployeeSalary;
 using Microsoft.AspNetCore.Mvc;
+using System;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace HRMS.API.Controllers;
 
@@ -17,32 +20,32 @@ public class EmployeeSalaryController : ControllerBase
         this.employeeSalaryService = employeeSalaryService;
     }
 
-    [Authorize(Roles = "Admin,HR")]
+    [Authorize(Roles = "Admin,HR,Manager,Employee")]
     [HttpPost]
-    public IActionResult AssignSalary(AssignEmployeeSalaryDto dto)
+    public async Task<IActionResult> AssignSalary(AssignEmployeeSalaryDto dto, CancellationToken cancellationToken)
     {
-        employeeSalaryService.AssignSalary(dto);
+        await employeeSalaryService.AssignSalaryAsync(dto, cancellationToken);
 
         return Ok("Salary Assigned Successfully");
     }
 
     [Authorize(Roles = "Admin,HR")]
     [HttpGet]
-    public IActionResult GetAll()
+    public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
     {
-        return Ok(employeeSalaryService.GetAll());
+        return Ok(await employeeSalaryService.GetAllAsync(cancellationToken));
     }
 
     [HttpGet("{employeeId}")]
-    public IActionResult GetActiveSalary(Guid employeeId)
+    public async Task<IActionResult> GetActiveSalary(Guid employeeId, CancellationToken cancellationToken)
     {
-        return Ok(employeeSalaryService.GetActiveSalary(employeeId));
+        return Ok(await employeeSalaryService.GetActiveSalaryAsync(employeeId, cancellationToken));
     }
 
-    [Authorize(Roles = "Admin,HR")]
+    [Authorize(Roles = "Admin,HR,Manager,Employee")]
     [HttpGet("history/{employeeId}")]
-    public IActionResult GetSalaryHistory(Guid employeeId)
+    public async Task<IActionResult> GetSalaryHistory(Guid employeeId, CancellationToken cancellationToken)
     {
-        return Ok(employeeSalaryService.GetSalaryHistory(employeeId));
+        return Ok(await employeeSalaryService.GetSalaryHistoryAsync(employeeId, cancellationToken));
     }
 }

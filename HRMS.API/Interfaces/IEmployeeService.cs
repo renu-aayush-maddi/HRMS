@@ -27,4 +27,10 @@ public interface IEmployeeService
     Task<byte[]> ExportEmployeesAsync(EmployeeFilterDto filter, CancellationToken cancellationToken = default);
 
     Task<EmployeeImportResultDto> ImportEmployeesAsync(IFormFile file, CancellationToken cancellationToken = default);
+
+    Task UpdateMyProfileAsync(Guid userId, UpdateMyProfileDto dto, CancellationToken cancellationToken = default);
+
+    Task<string> UploadProfilePhotoAsync(Guid userId, IFormFile file, CancellationToken cancellationToken = default);
+
+    Task DeleteProfilePhotoAsync(Guid userId, CancellationToken cancellationToken = default);
 }

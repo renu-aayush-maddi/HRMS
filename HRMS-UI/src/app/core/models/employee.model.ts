@@ -12,3 +12,15 @@ export interface Employee {
   managerId?: string;
   managerName?: string;
 }
+
+export interface EmployeeFilter {
+  search?: string;
+  departmentId?: string;
+  managerId?: string;
+  employmentStatus?: string;
+  designation?: string;
+  sortBy?: string;
+  descending?: boolean;
+  pageNumber?: number;
+  pageSize?: number;
+}
